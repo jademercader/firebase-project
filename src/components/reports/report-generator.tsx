@@ -4,20 +4,19 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { mockClusters, mockTrendAnalysis } from '@/lib/mock-data';
+import { mockTrendAnalysis } from '@/lib/mock-data';
 import type { Cluster } from '@/lib/types';
 import { Printer } from 'lucide-react';
 
 export function ReportGenerator() {
   const [selectedCluster, setSelectedCluster] = useState<Cluster | null>(null);
   const [generatedDate, setGeneratedDate] = useState('');
+  const [clusters, setClusters] = useState<Cluster[]>([]);
 
   useEffect(() => {
-    // Set initial cluster and date on client-side to avoid hydration mismatch
-    if (mockClusters.length > 0) {
-      setSelectedCluster(mockClusters[0]);
-    }
     setGeneratedDate(new Date().toLocaleDateString());
+    // In a real app, you might fetch clusters or get them from a shared state.
+    // For now, we'll leave this empty and let the user know they need to generate them.
   }, []);
 
   const handlePrint = () => {
@@ -38,21 +37,27 @@ export function ReportGenerator() {
                 </Button>
             </CardHeader>
             <CardContent>
-                <Select
-                    value={selectedCluster?.id.toString() ?? ""}
-                    onValueChange={(value) => setSelectedCluster(mockClusters.find(c => c.id === parseInt(value)) || null)}
-                >
-                    <SelectTrigger className="w-[300px]">
-                        <SelectValue placeholder="Select a cluster" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        {mockClusters.map((cluster) => (
-                        <SelectItem key={cluster.id} value={cluster.id.toString()}>
-                            {cluster.name}
-                        </SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
+                {clusters.length > 0 ? (
+                    <Select
+                        value={selectedCluster?.id.toString() ?? ""}
+                        onValueChange={(value) => setSelectedCluster(clusters.find(c => c.id === parseInt(value)) || null)}
+                    >
+                        <SelectTrigger className="w-[300px]">
+                            <SelectValue placeholder="Select a cluster" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {clusters.map((cluster) => (
+                            <SelectItem key={cluster.id} value={cluster.id.toString()}>
+                                {cluster.name}
+                            </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                ) : (
+                    <p className="text-sm text-muted-foreground">
+                        No clusters available. Please run an analysis on the Dashboard page first.
+                    </p>
+                )}
             </CardContent>
         </Card>
 

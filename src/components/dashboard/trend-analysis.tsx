@@ -8,20 +8,33 @@ import { getTrendAnalysis } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
 import { LineChart, ThumbsUp } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
-import { mockClusters } from '@/lib/mock-data';
+import type { Cluster } from '@/lib/types';
 
-export function TrendAnalysis() {
+interface TrendAnalysisProps {
+    clusters: Cluster[];
+}
+
+export function TrendAnalysis({ clusters }: TrendAnalysisProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<string>('');
+  const [timePeriod, setTimePeriod] = useState('monthly');
   const { toast } = useToast();
 
   const handleAnalyzeTrends = async () => {
+    if (clusters.length === 0) {
+        toast({
+            variant: 'destructive',
+            title: 'No Clusters Found',
+            description: 'Please run the cluster analysis first to generate clusters.',
+        });
+        return;
+    }
     setIsLoading(true);
     setAnalysisResult('');
     const input = {
-      clusterData: JSON.stringify(mockClusters),
+      clusterData: JSON.stringify(clusters),
       healthIndicators: 'disease prevalence, vaccination rates',
-      timePeriod: 'monthly',
+      timePeriod: timePeriod,
     };
     const result = await getTrendAnalysis(input);
     if (result.success && result.data) {
@@ -47,7 +60,7 @@ export function TrendAnalysis() {
       </CardHeader>
       <CardContent className="flex-grow space-y-4">
         <div>
-            <Select defaultValue="monthly">
+            <Select value={timePeriod} onValueChange={setTimePeriod}>
               <SelectTrigger>
                 <SelectValue placeholder="Select time period" />
               </SelectTrigger>
@@ -60,7 +73,11 @@ export function TrendAnalysis() {
         </div>
         <div className='flex-grow'>
           <Textarea
-            placeholder="AI-generated trend analysis will appear here..."
+            placeholder={
+              clusters.length === 0 
+                ? "Run cluster analysis to enable trend identification."
+                : "AI-generated trend analysis will appear here..."
+            }
             value={analysisResult}
             readOnly
             className="h-48 resize-none bg-secondary/50"
@@ -75,7 +92,7 @@ export function TrendAnalysis() {
         </div>
       </CardContent>
       <CardFooter className="flex justify-between">
-        <Button onClick={handleAnalyzeTrends} disabled={isLoading}>
+        <Button onClick={handleAnalyzeTrends} disabled={isLoading || clusters.length === 0}>
           {isLoading ? 'Analyzing...' : 'Analyze Trends'}
         </Button>
         {analysisResult && (

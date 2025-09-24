@@ -4,21 +4,33 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { getCleansingSuggestions } from '@/app/actions';
-import { mockHealthRecords } from '@/lib/mock-data';
 import { useToast } from '@/hooks/use-toast';
-import { Bot, Sparkles } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
 import { Skeleton } from '../ui/skeleton';
+import type { HealthRecord } from '@/lib/types';
 
-export function CleansingSuggestions() {
+interface CleansingSuggestionsProps {
+    records: HealthRecord[];
+}
+
+export function CleansingSuggestions({ records }: CleansingSuggestionsProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [suggestions, setSuggestions] = useState('');
   const { toast } = useToast();
 
   const handleCleanseData = async () => {
+    if (records.length === 0) {
+        toast({
+            variant: 'destructive',
+            title: 'No Data',
+            description: 'Please upload data before scanning for errors.',
+        });
+        return;
+    }
     setIsLoading(true);
     setSuggestions('');
     const input = {
-      healthRecordsData: JSON.stringify(mockHealthRecords),
+      healthRecordsData: JSON.stringify(records),
     };
     const result = await getCleansingSuggestions(input);
     if (result.success && result.data) {
@@ -60,7 +72,7 @@ export function CleansingSuggestions() {
         )}
       </CardContent>
       <CardFooter className="flex-col items-stretch gap-2">
-        <Button onClick={handleCleanseData} disabled={isLoading}>
+        <Button onClick={handleCleanseData} disabled={isLoading || records.length === 0}>
           {isLoading ? 'Scanning...' : 'Scan for Errors'}
         </Button>
         <Button variant="outline" disabled={!suggestions || isLoading}>

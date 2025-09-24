@@ -8,11 +8,15 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { mockHealthRecords } from '@/lib/mock-data';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
+import type { HealthRecord } from '@/lib/types';
 
-export function DataTable() {
+interface DataTableProps {
+    records: HealthRecord[];
+}
+
+export function DataTable({ records }: DataTableProps) {
   return (
     <Card>
       <CardHeader>
@@ -24,7 +28,7 @@ export function DataTable() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead padding="checkbox">
+                <TableHead>
                     <Checkbox />
                 </TableHead>
                 <TableHead>Name</TableHead>
@@ -35,9 +39,9 @@ export function DataTable() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {mockHealthRecords.map((record) => (
+              {records.length > 0 ? records.map((record) => (
                 <TableRow key={record.id}>
-                   <TableCell padding="checkbox">
+                   <TableCell>
                         <Checkbox />
                     </TableCell>
                   <TableCell className="font-medium">{record.name}</TableCell>
@@ -50,7 +54,13 @@ export function DataTable() {
                   </TableCell>
                   <TableCell>{record.vaccinationStatus}</TableCell>
                 </TableRow>
-              ))}
+              )) : (
+                <TableRow>
+                    <TableCell colSpan={6} className="text-center h-24">
+                        No data to display. Please upload a file.
+                    </TableCell>
+                </TableRow>
+              )}
             </TableBody>
           </Table>
         </div>

@@ -1,28 +1,47 @@
 'use client';
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { mockClusters } from '@/lib/mock-data';
+import type { Cluster } from '@/lib/types';
+import { Skeleton } from '@/components/ui/skeleton';
 
-const diseaseData = mockClusters.map(cluster => ({
-    name: cluster.name.split(':')[0],
-    'Hypertension': cluster.healthMetrics['Hypertension'] || 0,
-    'Diabetes': cluster.healthMetrics['Diabetes'] || 0,
-    'Asthma': cluster.healthMetrics['Asthma'] || 0,
-}));
+const diseaseIndicators = ['Hypertension', 'Diabetes', 'Asthma'];
+const vaccinationIndicators = ['Vaccinated', 'Partially Vaccinated', 'Not Vaccinated'];
 
-const vaccinationData = mockClusters.map(cluster => ({
-    name: cluster.name.split(':')[0],
-    Vaccinated: cluster.healthMetrics['Vaccinated'] || 0,
-    'Partially Vaccinated': cluster.healthMetrics['Partially Vaccinated'] || 0,
-    'Not Vaccinated': cluster.healthMetrics['Not Vaccinated'] || 0,
-}));
+interface ClusterChartsProps {
+    clusters: Cluster[];
+    isLoading: boolean;
+}
 
+export function ClusterCharts({ clusters, isLoading }: ClusterChartsProps) {
+  const diseaseData = clusters.map(cluster => {
+    const data: { [key: string]: any } = { name: cluster.name.split(':')[0] };
+    diseaseIndicators.forEach(indicator => {
+      data[indicator] = cluster.healthMetrics[indicator] || 0;
+    });
+    return data;
+  });
 
-export function ClusterCharts() {
-  return (
-    <div className="space-y-4">
-        <h3 className="text-2xl font-bold tracking-tight font-headline">Cluster-Specific Metrics</h3>
-        <div className="grid gap-4 md:grid-cols-2">
+  const vaccinationData = clusters.map(cluster => {
+    const data: { [key: string]: any } = { name: cluster.name.split(':')[0] };
+    vaccinationIndicators.forEach(indicator => {
+      data[indicator] = cluster.healthMetrics[indicator] || 0;
+    });
+    return data;
+  });
+
+  const renderContent = () => {
+    if (isLoading) {
+      return <Skeleton className="w-full h-[300px]" />;
+    }
+    if (clusters.length === 0) {
+      return (
+        <div className="flex items-center justify-center h-[300px]">
+          <p className="text-muted-foreground">Run cluster analysis to see metrics.</p>
+        </div>
+      );
+    }
+    return (
+      <div className="grid gap-4 md:grid-cols-2">
             <Card>
                 <CardHeader>
                     <CardTitle>Disease Prevalence per Cluster</CardTitle>
@@ -64,6 +83,14 @@ export function ClusterCharts() {
                 </CardContent>
             </Card>
         </div>
+    );
+  };
+
+
+  return (
+    <div className="space-y-4">
+        <h3 className="text-2xl font-bold tracking-tight font-headline">Cluster-Specific Metrics</h3>
+        {renderContent()}
     </div>
   );
 }

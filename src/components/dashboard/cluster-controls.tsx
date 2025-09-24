@@ -6,10 +6,59 @@ import { Slider } from '@/components/ui/slider';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
 import { PlayCircle } from 'lucide-react';
-import { healthIndicators } from '@/lib/mock-data';
+import { healthIndicators, mockHealthRecords } from '@/lib/mock-data';
+import { useToast } from '@/hooks/use-toast';
+import { runClusterAnalysis } from '@/app/actions';
+import type { Cluster } from '@/lib/types';
 
-export function ClusterControls() {
+interface ClusterControlsProps {
+    setClusters: (clusters: Cluster[]) => void;
+    setIsLoading: (isLoading: boolean) => void;
+}
+
+export function ClusterControls({ setClusters, setIsLoading }: ClusterControlsProps) {
   const [numClusters, setNumClusters] = useState(3);
+  const [selectedIndicators, setSelectedIndicators] = useState<string[]>(
+    healthIndicators.map(i => i.id)
+  );
+  const [isAnalysisRunning, setIsAnalysisRunning] = useState(false);
+  const { toast } = useToast();
+
+  const handleIndicatorChange = (indicatorId: string, checked: boolean) => {
+    setSelectedIndicators(prev => 
+      checked ? [...prev, indicatorId] : prev.filter(id => id !== indicatorId)
+    );
+  };
+
+  const handleRunAnalysis = async () => {
+      setIsAnalysisRunning(true);
+      setIsLoading(true);
+      setClusters([]);
+      
+      const result = await runClusterAnalysis({
+          healthRecordsData: JSON.stringify(mockHealthRecords),
+          healthIndicators: selectedIndicators,
+          numClusters: numClusters,
+      });
+
+      if (result.success && result.data) {
+          setClusters(result.data.clusters);
+          toast({
+              title: "Analysis Complete",
+              description: `${result.data.clusters.length} clusters have been identified.`
+          })
+      } else {
+          toast({
+              variant: "destructive",
+              title: "Analysis Failed",
+              description: result.error || "Could not run cluster analysis.",
+          });
+      }
+
+      setIsAnalysisRunning(false);
+      setIsLoading(false);
+  };
+
 
   return (
     <Card>
@@ -25,7 +74,11 @@ export function ClusterControls() {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {healthIndicators.map((indicator) => (
                     <div key={indicator.id} className="flex items-center space-x-2">
-                        <Checkbox id={indicator.id} defaultChecked />
+                        <Checkbox 
+                            id={indicator.id} 
+                            checked={selectedIndicators.includes(indicator.id)}
+                            onCheckedChange={(checked) => handleIndicatorChange(indicator.id, !!checked)}
+                        />
                         <label
                             htmlFor={indicator.id}
                             className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
@@ -48,9 +101,9 @@ export function ClusterControls() {
             />
             <p className="text-xs text-muted-foreground">Use the elbow method or domain knowledge to select the optimal number.</p>
         </div>
-         <Button>
+         <Button onClick={handleRunAnalysis} disabled={isAnalysisRunning}>
           <PlayCircle className="mr-2 h-4 w-4" />
-          Run Cluster Analysis
+          {isAnalysisRunning ? 'Analyzing...' : 'Run Cluster Analysis'}
         </Button>
       </CardContent>
     </Card>
