@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -9,7 +9,14 @@ import type { Cluster } from '@/lib/types';
 import { Printer } from 'lucide-react';
 
 export function ReportGenerator() {
-  const [selectedCluster, setSelectedCluster] = useState<Cluster | null>(mockClusters[0]);
+  const [selectedCluster, setSelectedCluster] = useState<Cluster | null>(null);
+
+  useEffect(() => {
+    // Set initial cluster on client-side to avoid hydration mismatch
+    if (mockClusters.length > 0) {
+      setSelectedCluster(mockClusters[0]);
+    }
+  }, []);
 
   const handlePrint = () => {
     window.print();
@@ -30,7 +37,7 @@ export function ReportGenerator() {
             </CardHeader>
             <CardContent>
                 <Select
-                    defaultValue={selectedCluster?.id.toString()}
+                    value={selectedCluster?.id.toString() ?? ""}
                     onValueChange={(value) => setSelectedCluster(mockClusters.find(c => c.id === parseInt(value)) || null)}
                 >
                     <SelectTrigger className="w-[300px]">
