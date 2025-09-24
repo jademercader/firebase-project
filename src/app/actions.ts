@@ -2,7 +2,9 @@
 import { identifyDataErrors, IdentifyDataErrorsInput } from '@/ai/flows/automated-data-cleansing';
 import { identifyTrends, TrendIdentificationInput } from '@/ai/flows/trend-identification';
 import { performClusterAnalysis, PerformClusterAnalysisInput } from '@/ai/flows/cluster-analysis';
+import { calculateClusterMetrics } from '@/lib/analysis-utils';
 import { z } from 'zod';
+import type { HealthRecord } from '@/lib/types';
 
 const IdentifyDataErrorsInputSchema = z.object({
   healthRecordsData: z.string(),
@@ -50,30 +52,6 @@ export async function getTrendAnalysis(input: TrendIdentificationInput) {
     }
 }
 
-function extractJsonFromString(text: string): any | null {
-  const jsonRegex = /```json\s*([\s\S]*?)\s*```/;
-  const match = text.match(jsonRegex);
-
-  if (match && match[1]) {
-    try {
-      return JSON.parse(match[1]);
-    } catch (error) {
-      console.error('Failed to parse extracted JSON:', error);
-      return null;
-    }
-  }
-  
-  // Fallback for cases where the AI doesn't use markdown
-  try {
-    return JSON.parse(text);
-  } catch (error) {
-    console.error('Failed to parse raw text as JSON:', error);
-  }
-
-  return null;
-}
-
-
 export async function runClusterAnalysis(input: PerformClusterAnalysisInput) {
     const validatedInput = PerformClusterAnalysisInputSchema.safeParse(input);
     if (!validatedInput.success) {
@@ -81,16 +59,22 @@ export async function runClusterAnalysis(input: PerformClusterAnalysisInput) {
     }
 
     try {
+        // The AI's job is simplified: it just returns clusters with record IDs.
         const result = await performClusterAnalysis(validatedInput.data);
-        const clusters = extractJsonFromString(result.clusters);
         
-        if (!clusters) {
-             return { success: false, error: 'Failed to parse cluster data from AI response.' };
+        if (!result || !result.clusters) {
+             return { success: false, error: 'AI did not return valid cluster data.' };
         }
         
-        return { success: true, data: { clusters } };
-    } catch (error) {
-        console.error(error);
-        return { success: false, error: 'Failed to run cluster analysis.' };
+        // The raw health records are needed for calculations.
+        const healthRecords: HealthRecord[] = JSON.parse(validatedInput.data.healthRecordsData);
+        
+        // We perform the detailed calculations in our own code for reliability.
+        const detailedClusters = calculateClusterMetrics(result.clusters, healthRecords);
+
+        return { success: true, data: { clusters: detailedClusters } };
+    } catch (error: any) {
+        console.error('Error in runClusterAnalysis:', error);
+        return { success: false, error: error.message || 'Failed to run cluster analysis.' };
     }
 }

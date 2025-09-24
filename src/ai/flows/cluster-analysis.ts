@@ -13,7 +13,7 @@ import {z} from 'zod';
 const PerformClusterAnalysisInputSchema = z.object({
   healthRecordsData: z
     .string()
-    .describe('A JSON string of Barangay health records.'),
+    .describe('A JSON string of Barangay health records, containing at least an `id` for each record.'),
   healthIndicators: z
     .array(z.string())
     .describe('A list of health indicators to consider for clustering.'),
@@ -23,24 +23,15 @@ const PerformClusterAnalysisInputSchema = z.object({
 });
 export type PerformClusterAnalysisInput = z.infer<typeof PerformClusterAnalysisInputSchema>;
 
-
-const ClusterSchema = z.object({
-    id: z.number(),
-    name: z.string(),
-    records: z.array(z.any()), // Keeping records flexible for the AI
-    demographics: z.object({
-        averageAge: z.number(),
-        genderDistribution: z.record(z.string(), z.number()),
-    }),
-    healthMetrics: z.record(z.string(), z.number()),
+const ClusterResultSchema = z.object({
+    clusterName: z.string().describe("A descriptive name for the cluster (e.g., 'Elderly with Chronic Illness', 'Young & Healthy')."),
+    recordIds: z.array(z.string()).describe("An array of record IDs belonging to this cluster.")
 });
 
 const PerformClusterAnalysisOutputSchema = z.object({
   clusters: z
-    .string()
-    .describe(
-      `A JSON string representing an array of identified clusters. Each cluster object should conform to this structure: ${JSON.stringify(ClusterSchema.shape, null, 2)}`
-    ),
+    .array(ClusterResultSchema)
+    .describe('An array of identified clusters, each containing a name and the IDs of the records within it.'),
 });
 export type PerformClusterAnalysisOutput = z.infer<typeof PerformClusterAnalysisOutputSchema>;
 
@@ -56,13 +47,11 @@ const prompt = ai.definePrompt({
 
 Instructions:
 1.  Analyze the health records provided in the \`healthRecordsData\` JSON string.
-2.  Use the specified \`healthIndicators\` to form distinct clusters.
+2.  Use the specified \`healthIndicators\` to group the records into distinct clusters.
 3.  Create exactly \`numClusters\` clusters.
-4.  For each cluster, provide a descriptive name (e.g., 'Elderly with Chronic Illness', 'Young & Healthy').
-5.  Calculate the demographics for each cluster: average age and gender distribution.
-6.  Calculate the key health metrics for each cluster: count of prevalent diseases and vaccination statuses based on the provided indicators.
-7.  The final output must be a single JSON string containing an array of cluster objects.
-8.  CRITICAL: The JSON output must be enclosed in a markdown code block like this: \`\`\`json ... \`\`\`. Do not include any other text or explanations outside of the markdown block.
+4.  For each cluster, provide a descriptive name.
+5.  For each cluster, provide an array of the record \`id\` strings that belong to it.
+6.  CRITICAL: Your output MUST be a valid JSON object that conforms to the specified output schema. Do not include any other text, explanations, or markdown.
 
 Health Records Data:
 {{{healthRecordsData}}}
