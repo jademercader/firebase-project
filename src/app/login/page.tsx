@@ -1,3 +1,4 @@
+'use client';
 
 import { Stethoscope } from 'lucide-react';
 import Link from 'next/link';
