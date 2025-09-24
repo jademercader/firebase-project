@@ -8,6 +8,7 @@ import AppLayout from '@/components/layout/app-layout';
 export const metadata: Metadata = {
   title: 'Barangay Health Insights',
   description: 'Cluster Analysis of Barangay Health Records for Improved Public Health Monitoring',
+  icons: null, // Explicitly disable icon generation
 };
 
 export default function RootLayout({
@@ -17,6 +18,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head />
       <body className="font-body antialiased" suppressHydrationWarning>
         <FirebaseClientProvider>
           <AuthStateGuard>
