@@ -3,6 +3,7 @@ import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { FirebaseClientProvider } from '@/firebase/client-provider';
 import { AuthStateGuard } from '@/components/auth/auth-state-guard';
+import AppLayout from '@/components/layout/app-layout';
 
 export const metadata: Metadata = {
   title: 'Barangay Health Insights',
@@ -24,7 +25,9 @@ export default function RootLayout({
       <body className="font-body antialiased" suppressHydrationWarning>
         <FirebaseClientProvider>
           <AuthStateGuard>
-            {children}
+            <AppLayout>
+              {children}
+            </AppLayout>
           </AuthStateGuard>
         </FirebaseClientProvider>
         <Toaster />
