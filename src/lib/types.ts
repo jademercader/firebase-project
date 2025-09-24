@@ -29,3 +29,9 @@ export type Cluster = {
     [indicator: string]: number;
   };
 };
+
+export type User = {
+    name: string;
+    email: string;
+    password?: string;
+};
