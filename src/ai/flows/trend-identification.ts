@@ -38,6 +38,26 @@ Health Indicators: {{{healthIndicators}}}
 Time Period: {{{timePeriod}}}
 
 Provide a concise summary of the identified trends and anomalies for each cluster. CRITICAL: Your output must be only the summary text, with no conversational text or markdown formatting.`,
+  config: {
+    safetySettings: [
+      {
+        category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
+        threshold: 'BLOCK_NONE',
+      },
+       {
+        category: 'HARM_CATEGORY_HARASSMENT',
+        threshold: 'BLOCK_NONE',
+      },
+       {
+        category: 'HARM_CATEGORY_HATE_SPEECH',
+        threshold: 'BLOCK_NONE',
+      },
+       {
+        category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
+        threshold: 'BLOCK_NONE',
+      },
+    ],
+  },
 });
 
 const identifyTrendsFlow = ai.defineFlow(
