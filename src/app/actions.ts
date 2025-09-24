@@ -50,6 +50,30 @@ export async function getTrendAnalysis(input: TrendIdentificationInput) {
     }
 }
 
+function extractJsonFromString(text: string): any | null {
+  const jsonRegex = /```json\s*([\s\S]*?)\s*```/;
+  const match = text.match(jsonRegex);
+
+  if (match && match[1]) {
+    try {
+      return JSON.parse(match[1]);
+    } catch (error) {
+      console.error('Failed to parse extracted JSON:', error);
+      return null;
+    }
+  }
+  
+  // Fallback for cases where the AI doesn't use markdown
+  try {
+    return JSON.parse(text);
+  } catch (error) {
+    console.error('Failed to parse raw text as JSON:', error);
+  }
+
+  return null;
+}
+
+
 export async function runClusterAnalysis(input: PerformClusterAnalysisInput) {
     const validatedInput = PerformClusterAnalysisInputSchema.safeParse(input);
     if (!validatedInput.success) {
@@ -58,8 +82,12 @@ export async function runClusterAnalysis(input: PerformClusterAnalysisInput) {
 
     try {
         const result = await performClusterAnalysis(validatedInput.data);
-        // The output from the AI is a string, so we need to parse it.
-        const clusters = JSON.parse(result.clusters);
+        const clusters = extractJsonFromString(result.clusters);
+        
+        if (!clusters) {
+             return { success: false, error: 'Failed to parse cluster data from AI response.' };
+        }
+        
         return { success: true, data: { clusters } };
     } catch (error) {
         console.error(error);

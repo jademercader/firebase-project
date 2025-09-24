@@ -61,7 +61,8 @@ Instructions:
 4.  For each cluster, provide a descriptive name (e.g., 'Elderly with Chronic Illness', 'Young & Healthy').
 5.  Calculate the demographics for each cluster: average age and gender distribution.
 6.  Calculate the key health metrics for each cluster: count of prevalent diseases and vaccination statuses based on the provided indicators.
-7.  The final output must be a single JSON string containing an array of cluster objects. Do not include any other text or explanations.
+7.  The final output must be a single JSON string containing an array of cluster objects.
+8.  CRITICAL: The JSON output must be enclosed in a markdown code block like this: \`\`\`json ... \`\`\`. Do not include any other text or explanations outside of the markdown block.
 
 Health Records Data:
 {{{healthRecordsData}}}
