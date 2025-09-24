@@ -40,6 +40,7 @@ Your output should be a detailed report of your findings. CRITICAL: Your output 
 
 Data:\n{{{healthRecordsData}}}`,
   config: {
+    model: 'gemini-pro',
     safetySettings: [
       {
         category: 'HARM_CATEGORY_DANGEROUS_CONTENT',

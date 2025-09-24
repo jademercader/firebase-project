@@ -63,6 +63,7 @@ Number of Clusters:
 {{{numClusters}}}
 `,
   config: {
+    model: 'gemini-pro',
     safetySettings: [
       {
         category: 'HARM_CATEGORY_DANGEROUS_CONTENT',

@@ -39,6 +39,7 @@ Time Period: {{{timePeriod}}}
 
 Provide a concise summary of the identified trends and anomalies for each cluster. CRITICAL: Your output must be only the summary text, with no conversational text or markdown formatting.`,
   config: {
+    model: 'gemini-pro',
     safetySettings: [
       {
         category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
