@@ -31,6 +31,7 @@ const prompt = ai.definePrompt({
   name: 'trendIdentificationPrompt',
   input: {schema: TrendIdentificationInputSchema},
   output: {schema: TrendIdentificationOutputSchema},
+  model: 'gemini-pro',
   prompt: `You are an expert in public health data analysis. Your task is to analyze the provided cluster data over time and identify significant trends and anomalies for each cluster, focusing on the specified health indicators.
 
 Cluster Data: {{{clusterData}}}
@@ -39,7 +40,6 @@ Time Period: {{{timePeriod}}}
 
 Provide a concise summary of the identified trends and anomalies for each cluster. CRITICAL: Your output must be only the summary text, with no conversational text or markdown formatting.`,
   config: {
-    model: 'gemini-pro',
     safetySettings: [
       {
         category: 'HARM_CATEGORY_DANGEROUS_CONTENT',

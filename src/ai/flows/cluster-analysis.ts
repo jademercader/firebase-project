@@ -43,6 +43,7 @@ const prompt = ai.definePrompt({
   name: 'performClusterAnalysisPrompt',
   input: {schema: PerformClusterAnalysisInputSchema},
   output: {schema: PerformClusterAnalysisOutputSchema},
+  model: 'gemini-pro',
   prompt: `You are a public health data scientist. Your task is to perform a cluster analysis on the provided health records.
 
 Instructions:
@@ -63,7 +64,6 @@ Number of Clusters:
 {{{numClusters}}}
 `,
   config: {
-    model: 'gemini-pro',
     safetySettings: [
       {
         category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
