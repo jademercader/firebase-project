@@ -7,7 +7,7 @@ import { HealthRecord } from '@/lib/types';
 import { mockHealthRecords } from '@/lib/mock-data';
 
 export default function UploadPage() {
-  const [records, setRecords] = useState<HealthRecord[]>(mockHealthRecords);
+  const [records, setRecords] = useState<HealthRecord[]>([]);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   const handleFileUpload = (file: File) => {

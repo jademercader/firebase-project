@@ -9,14 +9,14 @@ import { PlayCircle } from 'lucide-react';
 import { healthIndicators, mockHealthRecords } from '@/lib/mock-data';
 import { useToast } from '@/hooks/use-toast';
 import { runClusterAnalysis } from '@/app/actions';
-import type { Cluster } from '@/lib/types';
+import { useClusters } from '@/app/page';
 
 interface ClusterControlsProps {
-    setClusters: (clusters: Cluster[]) => void;
     setIsLoading: (isLoading: boolean) => void;
 }
 
-export function ClusterControls({ setClusters, setIsLoading }: ClusterControlsProps) {
+export function ClusterControls({ setIsLoading }: ClusterControlsProps) {
+  const { setClusters } = useClusters();
   const [numClusters, setNumClusters] = useState(3);
   const [selectedIndicators, setSelectedIndicators] = useState<string[]>(
     healthIndicators.map(i => i.id)
@@ -33,7 +33,9 @@ export function ClusterControls({ setClusters, setIsLoading }: ClusterControlsPr
   const handleRunAnalysis = async () => {
       setIsAnalysisRunning(true);
       setIsLoading(true);
-      setClusters([]);
+      if (setClusters) {
+        setClusters([]);
+      }
       
       const result = await runClusterAnalysis({
           healthRecordsData: JSON.stringify(mockHealthRecords),
@@ -41,7 +43,7 @@ export function ClusterControls({ setClusters, setIsLoading }: ClusterControlsPr
           numClusters: numClusters,
       });
 
-      if (result.success && result.data) {
+      if (result.success && result.data && setClusters) {
           setClusters(result.data.clusters);
           toast({
               title: "Analysis Complete",

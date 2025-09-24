@@ -1,14 +1,12 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
-import { FirebaseClientProvider } from '@/firebase/client-provider';
-import { AuthStateGuard } from '@/components/auth/auth-state-guard';
 import AppLayout from '@/components/layout/app-layout';
 
 export const metadata: Metadata = {
   title: 'Barangay Health Insights',
   description: 'Cluster Analysis of Barangay Health Records for Improved Public Health Monitoring',
-  icons: null, // Explicitly disable icon generation
+  icons: null,
 };
 
 export default function RootLayout({
@@ -20,13 +18,9 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <head />
       <body className="font-body antialiased" suppressHydrationWarning>
-        <FirebaseClientProvider>
-          <AuthStateGuard>
-            <AppLayout>
-              {children}
-            </AppLayout>
-          </AuthStateGuard>
-        </FirebaseClientProvider>
+        <AppLayout>
+          {children}
+        </AppLayout>
         <Toaster />
       </body>
     </html>

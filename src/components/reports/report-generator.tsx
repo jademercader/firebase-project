@@ -7,17 +7,24 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { mockTrendAnalysis } from '@/lib/mock-data';
 import type { Cluster } from '@/lib/types';
 import { Printer } from 'lucide-react';
+import { useClusters } from '@/app/page';
 
 export function ReportGenerator() {
+  const { clusters } = useClusters();
   const [selectedCluster, setSelectedCluster] = useState<Cluster | null>(null);
   const [generatedDate, setGeneratedDate] = useState('');
-  const [clusters, setClusters] = useState<Cluster[]>([]);
 
   useEffect(() => {
     setGeneratedDate(new Date().toLocaleDateString());
-    // In a real app, you might fetch clusters or get them from a shared state.
-    // For now, we'll leave this empty and let the user know they need to generate them.
   }, []);
+
+  useEffect(() => {
+    if (clusters.length > 0 && !selectedCluster) {
+        setSelectedCluster(clusters[0]);
+    } else if (clusters.length === 0) {
+        setSelectedCluster(null);
+    }
+  }, [clusters, selectedCluster]);
 
   const handlePrint = () => {
     window.print();
@@ -31,7 +38,7 @@ export function ReportGenerator() {
                     <CardTitle className="font-headline">Report Configuration</CardTitle>
                     <CardDescription>Select a cluster to generate a detailed report.</CardDescription>
                 </div>
-                 <Button onClick={handlePrint} className='print:hidden'>
+                 <Button onClick={handlePrint} className='print:hidden' disabled={!selectedCluster}>
                     <Printer className="mr-2 h-4 w-4" />
                     Print Report
                 </Button>

@@ -1,18 +1,19 @@
 'use client';
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import type { Cluster } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useClusters } from '@/app/page';
 
 const diseaseIndicators = ['Hypertension', 'Diabetes', 'Asthma'];
 const vaccinationIndicators = ['Vaccinated', 'Partially Vaccinated', 'Not Vaccinated'];
 
 interface ClusterChartsProps {
-    clusters: Cluster[];
     isLoading: boolean;
 }
 
-export function ClusterCharts({ clusters, isLoading }: ClusterChartsProps) {
+export function ClusterCharts({ isLoading }: ClusterChartsProps) {
+  const { clusters } = useClusters();
+
   const diseaseData = clusters.map(cluster => {
     const data: { [key: string]: any } = { name: cluster.name.split(':')[0] };
     diseaseIndicators.forEach(indicator => {
