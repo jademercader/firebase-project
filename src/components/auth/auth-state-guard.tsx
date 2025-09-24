@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, type ReactNode } from 'react';
+import { useEffect, type ReactNode, useState } from 'react';
 import { useAuth } from '@/context/auth-context';
 import { usePathname, useRouter } from 'next/navigation';
 import { Skeleton } from '../ui/skeleton';
@@ -11,9 +11,14 @@ export function AuthStateGuard({ children }: { children: ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
+  const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
-    if (!isLoading) {
+    setIsClient(true);
+  }, []);
+  
+  useEffect(() => {
+    if (!isLoading && isClient) {
       const isPublic = publicPaths.includes(pathname);
       if (!isAuthenticated && !isPublic) {
         router.replace('/login');
@@ -22,9 +27,9 @@ export function AuthStateGuard({ children }: { children: ReactNode }) {
         router.replace('/');
       }
     }
-  }, [isAuthenticated, isLoading, router, pathname]);
+  }, [isAuthenticated, isLoading, router, pathname, isClient]);
 
-  if (isLoading || (!isAuthenticated && !publicPaths.includes(pathname))) {
+  if (isLoading || !isClient || (!isAuthenticated && !publicPaths.includes(pathname))) {
     return (
         <div className="flex flex-col h-screen">
             <header className="sticky top-0 z-10 w-full bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
