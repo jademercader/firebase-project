@@ -3,15 +3,12 @@ import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, CartesianGrid, Toolti
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { mockClusters } from '@/lib/mock-data';
 
-const diseaseData = mockClusters.flatMap(cluster => 
-  Object.entries(cluster.healthMetrics)
-    .filter(([key]) => ['Diabetes', 'Hypertension', 'Asthma'].includes(key))
-    .map(([disease, count]) => ({
-      name: cluster.name.split(':')[0],
-      disease,
-      count
-    }))
-);
+const diseaseData = mockClusters.map(cluster => ({
+    name: cluster.name.split(':')[0],
+    'Hypertension': cluster.healthMetrics['Hypertension'] || 0,
+    'Diabetes': cluster.healthMetrics['Diabetes'] || 0,
+    'Asthma': cluster.healthMetrics['Asthma'] || 0,
+}));
 
 const vaccinationData = mockClusters.map(cluster => ({
     name: cluster.name.split(':')[0],
@@ -39,9 +36,9 @@ export function ClusterCharts() {
                         <YAxis />
                         <Tooltip />
                         <Legend />
-                        <Bar dataKey="count" name="Hypertension Cases" stackId="a" fill="hsl(var(--chart-1))" />
-                        <Bar dataKey="count" name="Diabetes Cases" stackId="a" fill="hsl(var(--chart-2))" />
-                        <Bar dataKey="count" name="Asthma Cases" stackId="a" fill="hsl(var(--chart-3))" />
+                        <Bar dataKey="Hypertension" name="Hypertension Cases" stackId="a" fill="hsl(var(--chart-1))" />
+                        <Bar dataKey="Diabetes" name="Diabetes Cases" stackId="a" fill="hsl(var(--chart-2))" />
+                        <Bar dataKey="Asthma" name="Asthma Cases" stackId="a" fill="hsl(var(--chart-3))" />
                     </BarChart>
                     </ResponsiveContainer>
                 </CardContent>

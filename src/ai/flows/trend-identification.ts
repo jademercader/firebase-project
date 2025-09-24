@@ -9,7 +9,7 @@
  */
 
 import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
+import {z} from 'zod';
 
 const TrendIdentificationInputSchema = z.object({
   clusterData: z.string().describe('The cluster data as a JSON string, including historical data.'),
