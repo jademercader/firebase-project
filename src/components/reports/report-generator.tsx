@@ -10,12 +10,14 @@ import { Printer } from 'lucide-react';
 
 export function ReportGenerator() {
   const [selectedCluster, setSelectedCluster] = useState<Cluster | null>(null);
+  const [generatedDate, setGeneratedDate] = useState('');
 
   useEffect(() => {
-    // Set initial cluster on client-side to avoid hydration mismatch
+    // Set initial cluster and date on client-side to avoid hydration mismatch
     if (mockClusters.length > 0) {
       setSelectedCluster(mockClusters[0]);
     }
+    setGeneratedDate(new Date().toLocaleDateString());
   }, []);
 
   const handlePrint = () => {
@@ -58,7 +60,7 @@ export function ReportGenerator() {
         <Card id="report-content">
           <CardHeader>
             <CardTitle className="text-2xl font-headline">{selectedCluster.name} - Health Report</CardTitle>
-            <CardDescription>Generated on: {new Date().toLocaleDateString()}</CardDescription>
+            <CardDescription>Generated on: {generatedDate}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             <div>
