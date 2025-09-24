@@ -1,15 +1,20 @@
+'use client';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Bell } from 'lucide-react';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 export function Header() {
+  const isMobile = useIsMobile();
   return (
     <header className="sticky top-0 z-10 w-full bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="flex h-14 items-center px-4 md:px-8 border-b">
-        <div className="flex items-center gap-2 md:hidden">
-          <SidebarTrigger />
-        </div>
+        {isMobile && (
+          <div className="flex items-center gap-2 md:hidden">
+            <SidebarTrigger />
+          </div>
+        )}
         <div className="flex flex-1 items-center justify-end space-x-4">
           <nav className="flex items-center space-x-2">
             <Button variant="ghost" size="icon" className="rounded-full">
