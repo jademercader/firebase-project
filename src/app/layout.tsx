@@ -5,10 +5,11 @@ import { FirebaseClientProvider } from '@/firebase/client-provider';
 import { AuthStateGuard } from '@/components/auth/auth-state-guard';
 import AppLayout from '@/components/layout/app-layout';
 
-export const metadata: Metadata = {
-  title: 'Barangay Health Insights',
-  description: 'Cluster Analysis of Barangay Health Records for Improved Public Health Monitoring',
-};
+// Removing metadata export to prevent favicon errors during build
+// export const metadata: Metadata = {
+//   title: 'Barangay Health Insights',
+//   description: 'Cluster Analysis of Barangay Health Records for Improved Public Health Monitoring',
+// };
 
 export default function RootLayout({
   children,
@@ -17,6 +18,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <title>Barangay Health Insights</title>
+        <meta name="description" content="Cluster Analysis of Barangay Health Records for Improved Public Health Monitoring" />
+      </head>
       <body className="font-body antialiased" suppressHydrationWarning>
         <FirebaseClientProvider>
           <AuthStateGuard>
