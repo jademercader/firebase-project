@@ -13,7 +13,7 @@ import {z} from 'zod';
 const IdentifyDataErrorsInputSchema = z.object({
   healthRecordsData: z
     .string()
-    .describe('The uploaded Barangay health records data in CSV or XLSX format.'),
+    .describe('The uploaded Barangay health records data in JSON format.'),
 });
 export type IdentifyDataErrorsInput = z.infer<typeof IdentifyDataErrorsInputSchema>;
 
@@ -36,7 +36,7 @@ const prompt = ai.definePrompt({
   output: {schema: IdentifyDataErrorsOutputSchema},
   prompt: `You are a data quality expert. Review the following Barangay health records data and identify any potential errors, inconsistencies, or missing values. 
   
-Your output should be a detailed report of your findings. Do not include any conversational text or markdown formatting.
+Your output should be a detailed report of your findings. CRITICAL: Your output must be only the report text, with no conversational text or markdown formatting.
 
 Data:\n{{{healthRecordsData}}}`, 
 });

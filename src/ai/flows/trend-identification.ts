@@ -37,7 +37,7 @@ Cluster Data: {{{clusterData}}}
 Health Indicators: {{{healthIndicators}}}
 Time Period: {{{timePeriod}}}
 
-Provide a concise summary of the identified trends and anomalies for each cluster. Your output must be only the summary text, with no conversational text or markdown formatting.`,
+Provide a concise summary of the identified trends and anomalies for each cluster. CRITICAL: Your output must be only the summary text, with no conversational text or markdown formatting.`,
 });
 
 const identifyTrendsFlow = ai.defineFlow(
