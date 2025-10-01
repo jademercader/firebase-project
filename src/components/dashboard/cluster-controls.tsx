@@ -12,7 +12,6 @@ import { runClusterAnalysis } from '@/app/actions';
 import { useData } from '@/app/page';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { Info, Database } from 'lucide-react';
-import Link from 'next/link';
 
 interface ClusterControlsProps {
     setIsLoading: (isLoading: boolean) => void;
@@ -75,12 +74,12 @@ export function ClusterControls({ setIsLoading }: ClusterControlsProps) {
         <Alert className={isUsingUploadedData ? 'border-primary/50 text-primary' : ''}>
           <Database className="h-4 w-4" />
           <AlertTitle className="font-bold">
-            {isUsingUploadedData ? 'Using Uploaded Data' : 'No Data Uploaded'}
+            {isUsingUploadedData ? 'Using Uploaded Data' : 'Using Sample Data'}
           </AlertTitle>
           <AlertDescription>
             {isUsingUploadedData
               ? `Analysis will run on the ${healthRecords.length} records you uploaded.`
-              : <>Please go to the <Link href="/upload" className='underline font-medium'>Upload Data</Link> page to begin.</>}
+              : 'This is sample data. Go to the Upload Data page to use your own file.'}
           </AlertDescription>
         </Alert>
         <div className="space-y-4">
@@ -92,7 +91,6 @@ export function ClusterControls({ setIsLoading }: ClusterControlsProps) {
                             id={indicator.id} 
                             checked={selectedIndicators.includes(indicator.id)}
                             onCheckedChange={(checked) => handleIndicatorChange(indicator.id, !!checked)}
-                            disabled={healthRecords.length === 0}
                         />
                         <label
                             htmlFor={indicator.id}
@@ -113,11 +111,10 @@ export function ClusterControls({ setIsLoading }: ClusterControlsProps) {
               step={1}
               value={[numClusters]}
               onValueChange={(value) => setNumClusters(value[0])}
-              disabled={healthRecords.length === 0}
             />
             <p className="text-xs text-muted-foreground">Use the elbow method or domain knowledge to select the optimal number.</p>
         </div>
-         <Button onClick={handleRunAnalysis} disabled={isAnalysisRunning || healthRecords.length === 0}>
+         <Button onClick={handleRunAnalysis} disabled={isAnalysisRunning}>
           <PlayCircle className="mr-2 h-4 w-4" />
           {isAnalysisRunning ? 'Analyzing...' : 'Run Cluster Analysis'}
         </Button>

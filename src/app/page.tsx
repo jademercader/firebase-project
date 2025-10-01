@@ -12,6 +12,7 @@ import AppLayout from '@/components/layout/app-layout';
 import { createContext, useContext } from 'react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Info } from 'lucide-react';
+import { mockHealthRecords } from '@/lib/mock-data';
 
 export const DataContext = createContext<{
   clusters: Cluster[];
@@ -53,10 +54,18 @@ export default function DashboardPage() {
         if (parsedRecords.length > 0) {
           setHealthRecords(parsedRecords);
           setIsUsingUploadedData(true);
+        } else {
+          setHealthRecords(mockHealthRecords);
+          setIsUsingUploadedData(false);
         }
+      } else {
+        setHealthRecords(mockHealthRecords);
+        setIsUsingUploadedData(false);
       }
     } catch (error) {
       console.error("Failed to load data from localStorage", error);
+       setHealthRecords(mockHealthRecords);
+       setIsUsingUploadedData(false);
     }
     setIsInitialLoad(false);
   }, []);
