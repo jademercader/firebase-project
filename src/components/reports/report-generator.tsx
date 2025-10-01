@@ -6,87 +6,51 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { getTrendAnalysis } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
-import type { Cluster, HealthRecord } from '@/lib/types';
+import type { Cluster } from '@/lib/types';
 import { Printer, LineChart, FileWarning } from 'lucide-react';
 import { useClusters } from '@/app/page';
 import Link from 'next/link';
 
 const SELECTED_CLUSTER_ID_KEY = 'selected_report_cluster_id';
+const CLUSTERS_STORAGE_KEY = 'health_clusters';
 
-const sampleHealthRecords: HealthRecord[] = [
-    { id: 'S001', name: 'Elena Reyes', age: 75, gender: 'Female', address: 'Purok Dahlia', disease: 'Hypertension', vaccinationStatus: 'Vaccinated', checkupDate: '2023-10-15' },
-    { id: 'S002', name: 'Roberto Santos', age: 82, gender: 'Male', address: 'Purok Sampaguita', disease: 'Diabetes', vaccinationStatus: 'Partially Vaccinated', checkupDate: '2023-10-16' },
-    { id: 'S003', name: 'Lydia Cruz', age: 78, gender: 'Female', address: 'Purok Dahlia', disease: 'Diabetes', vaccinationStatus: 'Vaccinated', checkupDate: '2023-10-18' },
-    { id: 'S004', name: 'Arturo Garcia', age: 85, gender: 'Male', address: 'Purok Ilang-Ilang', disease: 'Hypertension', vaccinationStatus: 'Not Vaccinated', checkupDate: '2023-10-20' },
-];
-
-const sampleCluster: Cluster = {
-    id: 99,
-    name: "Sample: High-Risk Elders",
-    records: sampleHealthRecords,
-    demographics: {
-        averageAge: 80.0,
-        genderDistribution: { 'Female': 2, 'Male': 2 },
-    },
-    healthMetrics: {
-        'Hypertension': 2,
-        'Diabetes': 2,
-        'Vaccinated': 2,
-        'Partially Vaccinated': 1,
-        'Not Vaccinated': 1,
-    },
-};
-
-const sampleTrendAnalysis = `Based on historical data for the 'High-Risk Elders' cluster, a concerning upward trend in uncontrolled Diabetes has been observed over the past six months, increasing by 12%. Additionally, there is a notable anomaly in the vaccination records, with a recent drop-off in booster shot administration. Immediate follow-up is recommended for members who are not fully vaccinated, and a review of diabetes management plans is advised.`;
 
 export function ReportGenerator() {
-  const { clusters: realClusters } = useClusters();
+  const [clusters, setClusters] = useState<Cluster[]>([]);
   const [selectedCluster, setSelectedCluster] = useState<Cluster | null>(null);
   const [generatedDate, setGeneratedDate] = useState('');
   const [trendAnalysisResult, setTrendAnalysisResult] = useState('');
   const [isTrendLoading, setIsTrendLoading] = useState(false);
   const { toast } = useToast();
 
-  const clusters = realClusters.length > 0 ? realClusters : [sampleCluster];
-
   useEffect(() => {
     setGeneratedDate(new Date().toLocaleDateString());
-  }, []);
-
-  useEffect(() => {
-    if (clusters.length > 0) {
-        if(realClusters.length === 0) {
-            // If we are using the sample, just select it.
-            setSelectedCluster(sampleCluster);
-            setTrendAnalysisResult(sampleTrendAnalysis);
-            return;
+    
+    // Load clusters from localStorage
+    try {
+      const savedClustersRaw = localStorage.getItem(CLUSTERS_STORAGE_KEY);
+      if (savedClustersRaw) {
+        const savedClusters = JSON.parse(savedClustersRaw);
+        if (savedClusters.length > 0) {
+            setClusters(savedClusters);
+            const savedClusterId = localStorage.getItem(SELECTED_CLUSTER_ID_KEY);
+            const clusterToSelect =
+                (savedClusterId && savedClusters.find((c: Cluster) => c.id.toString() === savedClusterId))
+                || savedClusters[0];
+            setSelectedCluster(clusterToSelect);
         }
-
-        const savedClusterId = localStorage.getItem(SELECTED_CLUSTER_ID_KEY);
-        const clusterToSelect =
-            (savedClusterId && clusters.find(c => c.id.toString() === savedClusterId))
-            || clusters[0];
-
-        setSelectedCluster(clusterToSelect);
-    } else {
-        setSelectedCluster(null);
+      }
+    } catch (error) {
+        console.error("Failed to load or parse clusters from localStorage", error);
     }
-    setTrendAnalysisResult('');
-  }, [realClusters, clusters]);
-
+  }, []);
 
   const handleClusterChange = (clusterId: string) => {
     const cluster = clusters.find((c) => c.id.toString() === clusterId);
     if (cluster) {
-        if(cluster.id === sampleCluster.id) {
-            setTrendAnalysisResult(sampleTrendAnalysis);
-        } else {
-            setTrendAnalysisResult('');
-        }
+        setTrendAnalysisResult('');
         setSelectedCluster(cluster);
-        if (realClusters.length > 0) {
-          localStorage.setItem(SELECTED_CLUSTER_ID_KEY, cluster.id.toString());
-        }
+        localStorage.setItem(SELECTED_CLUSTER_ID_KEY, cluster.id.toString());
     }
   }
 
@@ -95,11 +59,11 @@ export function ReportGenerator() {
   };
 
   const handleAnalyzeTrends = async () => {
-    if (!selectedCluster || selectedCluster.id === sampleCluster.id) {
+    if (!selectedCluster) {
         toast({
             variant: 'destructive',
-            title: 'Cannot Analyze Sample',
-            description: 'Trend analysis can only be run on clusters generated from the dashboard.',
+            title: 'No Cluster Selected',
+            description: 'Please select a cluster to analyze.',
         });
         return;
     }
@@ -136,47 +100,42 @@ export function ReportGenerator() {
             <CardTitle className="font-headline">Report Configuration</CardTitle>
             <CardDescription>Select a cluster to generate a detailed report.</CardDescription>
           </div>
-          <Button onClick={handlePrint} disabled={!selectedCluster}>
+           <Button onClick={handlePrint} disabled={!selectedCluster}>
             <Printer className="mr-2 h-4 w-4" />
             Print Report
           </Button>
         </CardHeader>
         <CardContent className="print:hidden">
-            <div className="flex items-end gap-4">
-                 <div className='flex-grow'>
-                    <label className='text-sm font-medium'>Select Cluster</label>
-                    <Select
-                        value={selectedCluster?.id.toString() ?? ''}
-                        onValueChange={handleClusterChange}
-                        disabled={clusters.length === 0}
-                    >
-                        <SelectTrigger className="w-full md:w-[300px] mt-2">
-                        <SelectValue placeholder="No analysis found..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                        {clusters.map((cluster) => (
-                            <SelectItem key={cluster.id} value={cluster.id.toString()}>
-                            {cluster.name}
-                            </SelectItem>
-                        ))}
-                        </SelectContent>
-                    </Select>
-                 </div>
-                 <Button onClick={handleAnalyzeTrends} disabled={isTrendLoading || !selectedCluster || selectedCluster.id === sampleCluster.id}>
-                    <LineChart className="mr-2 h-4 w-4" />
-                    {isTrendLoading ? 'Analyzing...' : 'Analyze Trends for Report'}
-                </Button>
-            </div>
-            {realClusters.length === 0 && (
-                 <div className="mt-4 p-3 bg-accent/50 rounded-md border border-dashed border-accent-foreground/30 text-sm text-accent-foreground">
-                    This is a sample report. To generate a report with your own data, please{' '}
-                    <Link href="/" className="font-bold underline hover:text-primary">run a cluster analysis on the dashboard</Link>.
+            {clusters.length > 0 ? (
+                <div className="flex items-end gap-4">
+                    <div className='flex-grow'>
+                        <label className='text-sm font-medium'>Select Cluster</label>
+                        <Select
+                            value={selectedCluster?.id.toString() ?? ''}
+                            onValueChange={handleClusterChange}
+                        >
+                            <SelectTrigger className="w-full md:w-[300px] mt-2">
+                            <SelectValue placeholder="Select a cluster..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                            {clusters.map((cluster) => (
+                                <SelectItem key={cluster.id} value={cluster.id.toString()}>
+                                {cluster.name}
+                                </SelectItem>
+                            ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <Button onClick={handleAnalyzeTrends} disabled={isTrendLoading || !selectedCluster}>
+                        <LineChart className="mr-2 h-4 w-4" />
+                        {isTrendLoading ? 'Analyzing...' : 'Analyze Trends for Report'}
+                    </Button>
                 </div>
-            )}
+            ) : null}
         </CardContent>
       </Card>
 
-      {selectedCluster ? (
+      {clusters.length > 0 && selectedCluster ? (
         <Card id="report-content">
           <CardHeader>
             <CardTitle className="text-2xl font-headline">{selectedCluster.name} - Health Report</CardTitle>
@@ -225,7 +184,7 @@ export function ReportGenerator() {
                 <div className='text-center text-muted-foreground flex flex-col items-center gap-4'>
                     <FileWarning className='w-16 h-16 text-primary/20' />
                     <div>
-                        <h3 className='font-bold text-lg text-foreground'>No Report to Display</h3>
+                        <h3 className='font-bold text-lg text-foreground'>No Analysis Data Found</h3>
                         <p className='mt-1'>To generate a new report, please go to the dashboard and run a cluster analysis first.</p>
                     </div>
                      <Button asChild>
