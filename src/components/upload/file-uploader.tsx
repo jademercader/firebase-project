@@ -14,25 +14,16 @@ interface FileUploaderProps {
 
 export function FileUploader({ onFileSelected, onSaveData, hasRecords }: FileUploaderProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { toast } = useToast();
-
+  
   const handleFileChange = () => {
     const file = fileInputRef.current?.files?.[0];
     if (file) {
       onFileSelected(file);
-       toast({
-        title: 'File Selected',
-        description: `Using mock data from ${file.name} for preview.`,
-      });
     }
   };
 
   const handleSaveClick = () => {
       onSaveData();
-      toast({
-        title: 'Data Saved for Analysis',
-        description: 'Navigate to the dashboard to run cluster analysis.',
-      });
   };
 
   return (
@@ -51,7 +42,7 @@ export function FileUploader({ onFileSelected, onSaveData, hasRecords }: FileUpl
              />
              <Button onClick={handleSaveClick} disabled={!hasRecords}>
                 <Save className="mr-2 h-4 w-4" />
-                Use this Data
+                Save Data for Analysis
             </Button>
         </div>
         <p className="text-xs text-muted-foreground mt-2">Note: This is a demo. Selecting a file loads mock data for processing.</p>
