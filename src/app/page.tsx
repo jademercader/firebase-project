@@ -6,39 +6,58 @@ import { ClusterMap } from '@/components/dashboard/cluster-map';
 import { ClusterCharts } from '@/components/dashboard/cluster-charts';
 import { TrendAnalysis } from '@/components/dashboard/trend-analysis';
 import { Separator } from '@/components/ui/separator';
-import type { Cluster } from '@/lib/types';
+import type { Cluster, HealthRecord } from '@/lib/types';
 import AppLayout from '@/components/layout/app-layout';
+import { mockHealthRecords } from '@/lib/mock-data';
 
 import { createContext, useContext } from 'react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Info } from 'lucide-react';
 
-export const ClusterContext = createContext<{
+export const DataContext = createContext<{
   clusters: Cluster[];
   setClusters: React.Dispatch<React.SetStateAction<Cluster[]>>;
+  healthRecords: HealthRecord[];
+  isUsingUploadedData: boolean;
 }>({
   clusters: [],
   setClusters: () => {},
+  healthRecords: [],
+  isUsingUploadedData: false,
 });
 
-export function useClusters() {
-  return useContext(ClusterContext);
+export function useData() {
+  return useContext(DataContext);
 }
 
 const CLUSTERS_STORAGE_KEY = 'health_clusters';
+const RECORDS_STORAGE_KEY = 'health_records';
 
 export default function DashboardPage() {
   const [clusters, setClusters] = useState<Cluster[]>([]);
+  const [healthRecords, setHealthRecords] = useState<HealthRecord[]>(mockHealthRecords);
+  const [isUsingUploadedData, setIsUsingUploadedData] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
 
-  // Load clusters from localStorage on initial render
+  // Load data from localStorage on initial render
   useEffect(() => {
     try {
       const savedClusters = localStorage.getItem(CLUSTERS_STORAGE_KEY);
       if (savedClusters) {
         setClusters(JSON.parse(savedClusters));
       }
+
+      const savedRecords = localStorage.getItem(RECORDS_STORAGE_KEY);
+      if (savedRecords) {
+        const parsedRecords = JSON.parse(savedRecords);
+        if (parsedRecords.length > 0) {
+          setHealthRecords(parsedRecords);
+          setIsUsingUploadedData(true);
+        }
+      }
     } catch (error) {
-      console.error("Failed to load clusters from localStorage", error);
+      console.error("Failed to load data from localStorage", error);
     }
     setIsInitialLoad(false);
   }, []);
@@ -56,7 +75,7 @@ export default function DashboardPage() {
 
   return (
     <AppLayout>
-      <ClusterContext.Provider value={{ clusters, setClusters }}>
+      <DataContext.Provider value={{ clusters, setClusters, healthRecords, isUsingUploadedData }}>
         <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
           <div className="flex items-center justify-between space-y-2">
             <h2 className="text-3xl font-bold tracking-tight font-headline">Dashboard</h2>
@@ -75,7 +94,7 @@ export default function DashboardPage() {
             <ClusterCharts isLoading={isLoading} />
           </div>
         </div>
-      </ClusterContext.Provider>
+      </DataContext.Provider>
     </AppLayout>
   );
 }

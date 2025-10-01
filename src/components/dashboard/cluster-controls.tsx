@@ -6,17 +6,20 @@ import { Slider } from '@/components/ui/slider';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
 import { PlayCircle } from 'lucide-react';
-import { healthIndicators, mockHealthRecords } from '@/lib/mock-data';
+import { healthIndicators } from '@/lib/mock-data';
 import { useToast } from '@/hooks/use-toast';
 import { runClusterAnalysis } from '@/app/actions';
-import { useClusters } from '@/app/page';
+import { useData } from '@/app/page';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
+import { Info, Database } from 'lucide-react';
+import Link from 'next/link';
 
 interface ClusterControlsProps {
     setIsLoading: (isLoading: boolean) => void;
 }
 
 export function ClusterControls({ setIsLoading }: ClusterControlsProps) {
-  const { setClusters } = useClusters();
+  const { setClusters, healthRecords, isUsingUploadedData } = useData();
   const [numClusters, setNumClusters] = useState(3);
   const [selectedIndicators, setSelectedIndicators] = useState<string[]>(
     healthIndicators.map(i => i.id)
@@ -33,17 +36,15 @@ export function ClusterControls({ setIsLoading }: ClusterControlsProps) {
   const handleRunAnalysis = async () => {
       setIsAnalysisRunning(true);
       setIsLoading(true);
-      if (setClusters) {
-        setClusters([]);
-      }
+      setClusters([]);
       
       const result = await runClusterAnalysis({
-          healthRecordsData: JSON.stringify(mockHealthRecords),
+          healthRecordsData: JSON.stringify(healthRecords),
           healthIndicators: selectedIndicators,
           numClusters: numClusters,
       });
 
-      if (result.success && result.data && setClusters) {
+      if (result.success && result.data) {
           setClusters(result.data.clusters);
           toast({
               title: "Analysis Complete",
@@ -71,6 +72,17 @@ export function ClusterControls({ setIsLoading }: ClusterControlsProps) {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
+        <Alert className={isUsingUploadedData ? 'border-primary/50 text-primary' : ''}>
+          <Database className="h-4 w-4" />
+          <AlertTitle className="font-bold">
+            {isUsingUploadedData ? 'Using Uploaded Data' : 'Using Sample Data'}
+          </AlertTitle>
+          <AlertDescription>
+            {isUsingUploadedData
+              ? `Analysis will run on the ${healthRecords.length} records you uploaded.`
+              : <>No data has been uploaded. Analysis will run on sample data. <Link href="/upload" className='underline font-medium'>Upload your own data</Link> to begin.</>}
+          </AlertDescription>
+        </Alert>
         <div className="space-y-4">
             <Label>Select Health Indicators for Clustering</Label>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -103,7 +115,7 @@ export function ClusterControls({ setIsLoading }: ClusterControlsProps) {
             />
             <p className="text-xs text-muted-foreground">Use the elbow method or domain knowledge to select the optimal number.</p>
         </div>
-         <Button onClick={handleRunAnalysis} disabled={isAnalysisRunning}>
+         <Button onClick={handleRunAnalysis} disabled={isAnalysisRunning || healthRecords.length === 0}>
           <PlayCircle className="mr-2 h-4 w-4" />
           {isAnalysisRunning ? 'Analyzing...' : 'Run Cluster Analysis'}
         </Button>

@@ -11,12 +11,17 @@ export default function UploadPage() {
   const [records, setRecords] = useState<HealthRecord[]>([]);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
-  const handleFileUpload = (file: File) => {
+  const handleFileSelected = (file: File) => {
     // In a real app, you'd parse the file here.
     // For now, we just use the mock data when a file is selected.
     setSelectedFile(file);
     setRecords(mockHealthRecords);
   };
+  
+  const handleSaveData = () => {
+    const RECORDS_STORAGE_KEY = 'health_records';
+    localStorage.setItem(RECORDS_STORAGE_KEY, JSON.stringify(records));
+  }
 
   return (
     <AppLayout>
@@ -26,7 +31,11 @@ export default function UploadPage() {
         </div>
         <div className="grid gap-8 lg:grid-cols-3">
             <div className="lg:col-span-2 space-y-6">
-            <FileUploader onFileUpload={handleFileUpload} />
+            <FileUploader 
+              onFileSelected={handleFileSelected} 
+              onSaveData={handleSaveData} 
+              hasRecords={records.length > 0}
+            />
             <DataTable records={records} />
             </div>
             <div className="lg:col-span-1">

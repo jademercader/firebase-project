@@ -3,8 +3,8 @@
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useClusters } from '@/app/page';
-import { Users, Stethoscope, HeartPulse } from 'lucide-react';
+import { useData } from '@/app/page';
+import { Users, Stethoscope } from 'lucide-react';
 import type { Cluster } from '@/lib/types';
 
 const diseaseIndicators = ['Hypertension', 'Diabetes', 'Asthma'];
@@ -29,7 +29,7 @@ const getMostPrevalentCondition = (cluster: Cluster) => {
 
 
 export function ClusterCharts({ isLoading }: ClusterChartsProps) {
-  const { clusters } = useClusters();
+  const { clusters } = useData();
 
   const diseaseData = clusters.map(cluster => {
     const data: { [key: string]: any } = { name: cluster.name.split(':')[0] };

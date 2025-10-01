@@ -8,7 +8,6 @@ import { getTrendAnalysis } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
 import type { Cluster } from '@/lib/types';
 import { Printer, LineChart, FileWarning } from 'lucide-react';
-import { useClusters } from '@/app/page';
 import Link from 'next/link';
 
 const SELECTED_CLUSTER_ID_KEY = 'selected_report_cluster_id';
