@@ -8,7 +8,6 @@ import { TrendAnalysis } from '@/components/dashboard/trend-analysis';
 import { Separator } from '@/components/ui/separator';
 import type { Cluster, HealthRecord } from '@/lib/types';
 import AppLayout from '@/components/layout/app-layout';
-import { mockHealthRecords } from '@/lib/mock-data';
 
 import { createContext, useContext } from 'react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -35,7 +34,7 @@ const RECORDS_STORAGE_KEY = 'health_records';
 
 export default function DashboardPage() {
   const [clusters, setClusters] = useState<Cluster[]>([]);
-  const [healthRecords, setHealthRecords] = useState<HealthRecord[]>(mockHealthRecords);
+  const [healthRecords, setHealthRecords] = useState<HealthRecord[]>([]);
   const [isUsingUploadedData, setIsUsingUploadedData] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isInitialLoad, setIsInitialLoad] = useState(true);

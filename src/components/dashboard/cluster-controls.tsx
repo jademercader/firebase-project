@@ -75,12 +75,12 @@ export function ClusterControls({ setIsLoading }: ClusterControlsProps) {
         <Alert className={isUsingUploadedData ? 'border-primary/50 text-primary' : ''}>
           <Database className="h-4 w-4" />
           <AlertTitle className="font-bold">
-            {isUsingUploadedData ? 'Using Uploaded Data' : 'Using Sample Data'}
+            {isUsingUploadedData ? 'Using Uploaded Data' : 'No Data Uploaded'}
           </AlertTitle>
           <AlertDescription>
             {isUsingUploadedData
               ? `Analysis will run on the ${healthRecords.length} records you uploaded.`
-              : <>No data has been uploaded. Analysis will run on sample data. <Link href="/upload" className='underline font-medium'>Upload your own data</Link> to begin.</>}
+              : <>Please go to the <Link href="/upload" className='underline font-medium'>Upload Data</Link> page to begin.</>}
           </AlertDescription>
         </Alert>
         <div className="space-y-4">
@@ -92,6 +92,7 @@ export function ClusterControls({ setIsLoading }: ClusterControlsProps) {
                             id={indicator.id} 
                             checked={selectedIndicators.includes(indicator.id)}
                             onCheckedChange={(checked) => handleIndicatorChange(indicator.id, !!checked)}
+                            disabled={healthRecords.length === 0}
                         />
                         <label
                             htmlFor={indicator.id}
@@ -112,6 +113,7 @@ export function ClusterControls({ setIsLoading }: ClusterControlsProps) {
               step={1}
               value={[numClusters]}
               onValueChange={(value) => setNumClusters(value[0])}
+              disabled={healthRecords.length === 0}
             />
             <p className="text-xs text-muted-foreground">Use the elbow method or domain knowledge to select the optimal number.</p>
         </div>
