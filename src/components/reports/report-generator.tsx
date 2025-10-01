@@ -10,34 +10,12 @@ import type { Cluster } from '@/lib/types';
 import { Printer, LineChart } from 'lucide-react';
 import { useClusters } from '@/app/page';
 
-const sampleCluster: Cluster = {
-    id: 99,
-    name: 'Sample: High-Risk Elders',
-    records: [
-        { id: 'S001', name: 'Elena Reyes', age: 75, gender: 'Female', address: 'Purok 5', disease: 'Hypertension', vaccinationStatus: 'Vaccinated', checkupDate: '2023-10-01' },
-        { id: 'S002', name: 'Roberto Santos', age: 82, gender: 'Male', address: 'Purok 1', disease: 'Diabetes', vaccinationStatus: 'Partially Vaccinated', checkupDate: '2023-10-02' },
-    ],
-    demographics: {
-        averageAge: 78.5,
-        genderDistribution: { 'Female': 1, 'Male': 1 },
-    },
-    healthMetrics: {
-        'Hypertension': 1,
-        'Diabetes': 1,
-        'Vaccinated': 1,
-        'Partially Vaccinated': 1,
-    },
-};
-
-const sampleTrendAnalysis = `Based on the latest data for the "High-Risk Elders" cluster, a concerning trend has emerged over the past quarter. There has been a 25% increase in hospital admissions related to complications from Diabetes. Additionally, while vaccination rates for influenza are high, booster uptake for pneumonia is lagging by 40% compared to other elderly clusters. No significant anomalies were detected in the prevalence of Hypertension. It is recommended to initiate a targeted awareness campaign for pneumonia boosters and a review of diabetes management plans for this group.`;
-
 
 export function ReportGenerator() {
   const { clusters } = useClusters();
-  const [allClusters, setAllClusters] = useState<Cluster[]>([sampleCluster]);
-  const [selectedCluster, setSelectedCluster] = useState<Cluster | null>(sampleCluster);
+  const [selectedCluster, setSelectedCluster] = useState<Cluster | null>(null);
   const [generatedDate, setGeneratedDate] = useState('');
-  const [trendAnalysisResult, setTrendAnalysisResult] = useState(sampleTrendAnalysis);
+  const [trendAnalysisResult, setTrendAnalysisResult] = useState('');
   const [isTrendLoading, setIsTrendLoading] = useState(false);
   const { toast } = useToast();
 
@@ -46,27 +24,25 @@ export function ReportGenerator() {
   }, []);
 
   useEffect(() => {
-    const combined = [sampleCluster, ...clusters];
-    setAllClusters(combined);
-    
-    // If there's no selected cluster or the selected one is no longer in the list, default to the sample.
-    if (!selectedCluster || !combined.find(c => c.id === selectedCluster.id)) {
-        setSelectedCluster(sampleCluster);
-        setTrendAnalysisResult(sampleTrendAnalysis);
+    if (clusters.length > 0) {
+        // If a cluster is already selected, try to find it in the new list.
+        // Otherwise, default to the first cluster in the list.
+        const currentSelectedId = selectedCluster?.id;
+        const newSelectedCluster = currentSelectedId ? clusters.find(c => c.id === currentSelectedId) : clusters[0];
+        setSelectedCluster(newSelectedCluster || clusters[0]);
+    } else {
+        setSelectedCluster(null);
     }
-
-  }, [clusters, selectedCluster]);
+    // Reset trend analysis when clusters change
+    setTrendAnalysisResult('');
+  }, [clusters]);
 
 
   const handleClusterChange = (clusterId: string) => {
-    const cluster = allClusters.find((c) => c.id === parseInt(clusterId));
+    const cluster = clusters.find((c) => c.id === parseInt(clusterId));
     setSelectedCluster(cluster || null);
-    // Reset analysis if it's not the sample cluster
-    if (cluster && cluster.id !== sampleCluster.id) {
-        setTrendAnalysisResult('');
-    } else {
-        setTrendAnalysisResult(sampleTrendAnalysis);
-    }
+    // Reset analysis when selection changes
+    setTrendAnalysisResult('');
   }
 
   const handlePrint = () => {
@@ -74,11 +50,11 @@ export function ReportGenerator() {
   };
 
   const handleAnalyzeTrends = async () => {
-    if (!selectedCluster || selectedCluster.id === sampleCluster.id) {
+    if (!selectedCluster) {
         toast({
-            variant: 'default',
-            title: 'Sample Report',
-            description: 'This is a sample report with pre-generated trend analysis.',
+            variant: 'destructive',
+            title: 'No Cluster Selected',
+            description: 'Please select a cluster to analyze.',
         });
         return;
     }
@@ -92,6 +68,10 @@ export function ReportGenerator() {
     const result = await getTrendAnalysis(input);
     if (result.success && result.data) {
       setTrendAnalysisResult(result.data.trends);
+       toast({
+        title: 'Analysis Complete',
+        description: 'Trends for the selected cluster have been generated.',
+      });
     } else {
       toast({
         variant: 'destructive',
@@ -109,7 +89,7 @@ export function ReportGenerator() {
         <CardHeader className="flex-row items-center justify-between print:hidden">
           <div>
             <CardTitle className="font-headline">Report Configuration</CardTitle>
-            <CardDescription>Select a cluster to generate a detailed report. A sample is shown by default.</CardDescription>
+            <CardDescription>Select a cluster to generate a detailed report.</CardDescription>
           </div>
           <Button onClick={handlePrint} disabled={!selectedCluster}>
             <Printer className="mr-2 h-4 w-4" />
@@ -123,12 +103,13 @@ export function ReportGenerator() {
                     <Select
                         value={selectedCluster?.id.toString() ?? ''}
                         onValueChange={handleClusterChange}
+                        disabled={clusters.length === 0}
                     >
                         <SelectTrigger className="w-full md:w-[300px] mt-2">
-                        <SelectValue placeholder="Select a cluster" />
+                        <SelectValue placeholder="No clusters analyzed yet..." />
                         </SelectTrigger>
                         <SelectContent>
-                        {allClusters.map((cluster) => (
+                        {clusters.map((cluster) => (
                             <SelectItem key={cluster.id} value={cluster.id.toString()}>
                             {cluster.name}
                             </SelectItem>
@@ -149,7 +130,7 @@ export function ReportGenerator() {
         </CardContent>
       </Card>
 
-      {selectedCluster && (
+      {selectedCluster ? (
         <Card id="report-content">
           <CardHeader>
             <CardTitle className="text-2xl font-headline">{selectedCluster.name} - Health Report</CardTitle>
@@ -191,6 +172,15 @@ export function ReportGenerator() {
           <CardFooter>
             <p className="text-xs text-muted-foreground">This is an auto-generated report by Barangay Health Insights. For official use only.</p>
           </CardFooter>
+        </Card>
+      ) : (
+        <Card>
+            <CardContent className='p-8'>
+                <div className='text-center'>
+                    <h3 className='font-bold text-lg'>No Report to Display</h3>
+                    <p className='text-muted-foreground mt-2'>Please go to the Dashboard, run a cluster analysis, and then select a cluster here to view its report.</p>
+                </div>
+            </CardContent>
         </Card>
       )}
     </div>
