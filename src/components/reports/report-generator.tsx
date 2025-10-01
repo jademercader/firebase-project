@@ -6,21 +6,48 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { getTrendAnalysis } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
-import type { Cluster } from '@/lib/types';
+import type { Cluster, HealthRecord } from '@/lib/types';
 import { Printer, LineChart, FileWarning } from 'lucide-react';
 import { useClusters } from '@/app/page';
 import Link from 'next/link';
 
 const SELECTED_CLUSTER_ID_KEY = 'selected_report_cluster_id';
 
+const sampleHealthRecords: HealthRecord[] = [
+    { id: 'S001', name: 'Elena Reyes', age: 75, gender: 'Female', address: 'Purok Dahlia', disease: 'Hypertension', vaccinationStatus: 'Vaccinated', checkupDate: '2023-10-15' },
+    { id: 'S002', name: 'Roberto Santos', age: 82, gender: 'Male', address: 'Purok Sampaguita', disease: 'Diabetes', vaccinationStatus: 'Partially Vaccinated', checkupDate: '2023-10-16' },
+    { id: 'S003', name: 'Lydia Cruz', age: 78, gender: 'Female', address: 'Purok Dahlia', disease: 'Diabetes', vaccinationStatus: 'Vaccinated', checkupDate: '2023-10-18' },
+    { id: 'S004', name: 'Arturo Garcia', age: 85, gender: 'Male', address: 'Purok Ilang-Ilang', disease: 'Hypertension', vaccinationStatus: 'Not Vaccinated', checkupDate: '2023-10-20' },
+];
+
+const sampleCluster: Cluster = {
+    id: 99,
+    name: "Sample: High-Risk Elders",
+    records: sampleHealthRecords,
+    demographics: {
+        averageAge: 80.0,
+        genderDistribution: { 'Female': 2, 'Male': 2 },
+    },
+    healthMetrics: {
+        'Hypertension': 2,
+        'Diabetes': 2,
+        'Vaccinated': 2,
+        'Partially Vaccinated': 1,
+        'Not Vaccinated': 1,
+    },
+};
+
+const sampleTrendAnalysis = `Based on historical data for the 'High-Risk Elders' cluster, a concerning upward trend in uncontrolled Diabetes has been observed over the past six months, increasing by 12%. Additionally, there is a notable anomaly in the vaccination records, with a recent drop-off in booster shot administration. Immediate follow-up is recommended for members who are not fully vaccinated, and a review of diabetes management plans is advised.`;
 
 export function ReportGenerator() {
-  const { clusters } = useClusters();
+  const { clusters: realClusters } = useClusters();
   const [selectedCluster, setSelectedCluster] = useState<Cluster | null>(null);
   const [generatedDate, setGeneratedDate] = useState('');
   const [trendAnalysisResult, setTrendAnalysisResult] = useState('');
   const [isTrendLoading, setIsTrendLoading] = useState(false);
   const { toast } = useToast();
+
+  const clusters = realClusters.length > 0 ? realClusters : [sampleCluster];
 
   useEffect(() => {
     setGeneratedDate(new Date().toLocaleDateString());
@@ -28,28 +55,38 @@ export function ReportGenerator() {
 
   useEffect(() => {
     if (clusters.length > 0) {
-        // Try to load the previously selected cluster ID from localStorage
+        if(realClusters.length === 0) {
+            // If we are using the sample, just select it.
+            setSelectedCluster(sampleCluster);
+            setTrendAnalysisResult(sampleTrendAnalysis);
+            return;
+        }
+
         const savedClusterId = localStorage.getItem(SELECTED_CLUSTER_ID_KEY);
-        const clusterToSelect = 
-            (savedClusterId && clusters.find(c => c.id.toString() === savedClusterId)) 
-            || clusters[0]; // Default to the first cluster if saved one isn't found
-            
+        const clusterToSelect =
+            (savedClusterId && clusters.find(c => c.id.toString() === savedClusterId))
+            || clusters[0];
+
         setSelectedCluster(clusterToSelect);
     } else {
         setSelectedCluster(null);
     }
-    // Reset trend analysis when clusters change
     setTrendAnalysisResult('');
-  }, [clusters]);
+  }, [realClusters, clusters]);
 
 
   const handleClusterChange = (clusterId: string) => {
     const cluster = clusters.find((c) => c.id.toString() === clusterId);
     if (cluster) {
+        if(cluster.id === sampleCluster.id) {
+            setTrendAnalysisResult(sampleTrendAnalysis);
+        } else {
+            setTrendAnalysisResult('');
+        }
         setSelectedCluster(cluster);
-        localStorage.setItem(SELECTED_CLUSTER_ID_KEY, cluster.id.toString());
-        // Reset analysis when selection changes
-        setTrendAnalysisResult('');
+        if (realClusters.length > 0) {
+          localStorage.setItem(SELECTED_CLUSTER_ID_KEY, cluster.id.toString());
+        }
     }
   }
 
@@ -58,11 +95,11 @@ export function ReportGenerator() {
   };
 
   const handleAnalyzeTrends = async () => {
-    if (!selectedCluster) {
+    if (!selectedCluster || selectedCluster.id === sampleCluster.id) {
         toast({
             variant: 'destructive',
-            title: 'No Cluster Selected',
-            description: 'Please select a cluster to analyze.',
+            title: 'Cannot Analyze Sample',
+            description: 'Trend analysis can only be run on clusters generated from the dashboard.',
         });
         return;
     }
@@ -114,7 +151,7 @@ export function ReportGenerator() {
                         disabled={clusters.length === 0}
                     >
                         <SelectTrigger className="w-full md:w-[300px] mt-2">
-                        <SelectValue placeholder="Run an analysis on the dashboard first..." />
+                        <SelectValue placeholder="No analysis found..." />
                         </SelectTrigger>
                         <SelectContent>
                         {clusters.map((cluster) => (
@@ -125,11 +162,17 @@ export function ReportGenerator() {
                         </SelectContent>
                     </Select>
                  </div>
-                 <Button onClick={handleAnalyzeTrends} disabled={isTrendLoading || !selectedCluster}>
+                 <Button onClick={handleAnalyzeTrends} disabled={isTrendLoading || !selectedCluster || selectedCluster.id === sampleCluster.id}>
                     <LineChart className="mr-2 h-4 w-4" />
                     {isTrendLoading ? 'Analyzing...' : 'Analyze Trends for Report'}
                 </Button>
             </div>
+            {realClusters.length === 0 && (
+                 <div className="mt-4 p-3 bg-accent/50 rounded-md border border-dashed border-accent-foreground/30 text-sm text-accent-foreground">
+                    This is a sample report. To generate a report with your own data, please{' '}
+                    <Link href="/" className="font-bold underline hover:text-primary">run a cluster analysis on the dashboard</Link>.
+                </div>
+            )}
         </CardContent>
       </Card>
 
