@@ -7,8 +7,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { getTrendAnalysis } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
 import type { Cluster } from '@/lib/types';
-import { Printer, LineChart } from 'lucide-react';
+import { Printer, LineChart, FileWarning } from 'lucide-react';
 import { useClusters } from '@/app/page';
+import Link from 'next/link';
+
+const SELECTED_CLUSTER_ID_KEY = 'selected_report_cluster_id';
 
 
 export function ReportGenerator() {
@@ -25,11 +28,13 @@ export function ReportGenerator() {
 
   useEffect(() => {
     if (clusters.length > 0) {
-        // If a cluster is already selected, try to find it in the new list.
-        // Otherwise, default to the first cluster in the list.
-        const currentSelectedId = selectedCluster?.id;
-        const newSelectedCluster = currentSelectedId ? clusters.find(c => c.id === currentSelectedId) : clusters[0];
-        setSelectedCluster(newSelectedCluster || clusters[0]);
+        // Try to load the previously selected cluster ID from localStorage
+        const savedClusterId = localStorage.getItem(SELECTED_CLUSTER_ID_KEY);
+        const clusterToSelect = 
+            (savedClusterId && clusters.find(c => c.id.toString() === savedClusterId)) 
+            || clusters[0]; // Default to the first cluster if saved one isn't found
+            
+        setSelectedCluster(clusterToSelect);
     } else {
         setSelectedCluster(null);
     }
@@ -39,10 +44,13 @@ export function ReportGenerator() {
 
 
   const handleClusterChange = (clusterId: string) => {
-    const cluster = clusters.find((c) => c.id === parseInt(clusterId));
-    setSelectedCluster(cluster || null);
-    // Reset analysis when selection changes
-    setTrendAnalysisResult('');
+    const cluster = clusters.find((c) => c.id.toString() === clusterId);
+    if (cluster) {
+        setSelectedCluster(cluster);
+        localStorage.setItem(SELECTED_CLUSTER_ID_KEY, cluster.id.toString());
+        // Reset analysis when selection changes
+        setTrendAnalysisResult('');
+    }
   }
 
   const handlePrint = () => {
@@ -106,7 +114,7 @@ export function ReportGenerator() {
                         disabled={clusters.length === 0}
                     >
                         <SelectTrigger className="w-full md:w-[300px] mt-2">
-                        <SelectValue placeholder="No clusters analyzed yet..." />
+                        <SelectValue placeholder="Run an analysis on the dashboard first..." />
                         </SelectTrigger>
                         <SelectContent>
                         {clusters.map((cluster) => (
@@ -122,11 +130,6 @@ export function ReportGenerator() {
                     {isTrendLoading ? 'Analyzing...' : 'Analyze Trends for Report'}
                 </Button>
             </div>
-          { clusters.length === 0 && (
-             <p className="text-sm text-muted-foreground mt-4">
-              To generate a new report, go to the Dashboard page and run a cluster analysis.
-            </p>
-          )}
         </CardContent>
       </Card>
 
@@ -176,9 +179,15 @@ export function ReportGenerator() {
       ) : (
         <Card>
             <CardContent className='p-8'>
-                <div className='text-center'>
-                    <h3 className='font-bold text-lg'>No Report to Display</h3>
-                    <p className='text-muted-foreground mt-2'>Please go to the Dashboard, run a cluster analysis, and then select a cluster here to view its report.</p>
+                <div className='text-center text-muted-foreground flex flex-col items-center gap-4'>
+                    <FileWarning className='w-16 h-16 text-primary/20' />
+                    <div>
+                        <h3 className='font-bold text-lg text-foreground'>No Report to Display</h3>
+                        <p className='mt-1'>To generate a new report, please go to the dashboard and run a cluster analysis first.</p>
+                    </div>
+                     <Button asChild>
+                        <Link href="/">Go to Dashboard</Link>
+                    </Button>
                 </div>
             </CardContent>
         </Card>

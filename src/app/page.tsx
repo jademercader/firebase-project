@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ClusterControls } from '@/components/dashboard/cluster-controls';
 import { ClusterMap } from '@/components/dashboard/cluster-map';
 import { ClusterCharts } from '@/components/dashboard/cluster-charts';
@@ -9,7 +9,6 @@ import { Separator } from '@/components/ui/separator';
 import type { Cluster } from '@/lib/types';
 import AppLayout from '@/components/layout/app-layout';
 
-// Create a context to share clusters between components
 import { createContext, useContext } from 'react';
 
 export const ClusterContext = createContext<{
@@ -24,9 +23,36 @@ export function useClusters() {
   return useContext(ClusterContext);
 }
 
+const CLUSTERS_STORAGE_KEY = 'health_clusters';
+
 export default function DashboardPage() {
   const [clusters, setClusters] = useState<Cluster[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
+
+  // Load clusters from localStorage on initial render
+  useEffect(() => {
+    try {
+      const savedClusters = localStorage.getItem(CLUSTERS_STORAGE_KEY);
+      if (savedClusters) {
+        setClusters(JSON.parse(savedClusters));
+      }
+    } catch (error) {
+      console.error("Failed to load clusters from localStorage", error);
+    }
+    setIsInitialLoad(false);
+  }, []);
+
+  // Save clusters to localStorage whenever they change
+  useEffect(() => {
+    if (!isInitialLoad) {
+      try {
+        localStorage.setItem(CLUSTERS_STORAGE_KEY, JSON.stringify(clusters));
+      } catch (error) {
+        console.error("Failed to save clusters to localStorage", error);
+      }
+    }
+  }, [clusters, isInitialLoad]);
 
   return (
     <AppLayout>
