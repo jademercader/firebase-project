@@ -3,11 +3,10 @@ import { MapContainer, TileLayer, Circle, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '../ui/skeleton';
-import { MapPin, Info } from 'lucide-react';
+import { Info } from 'lucide-react';
 import { useData } from '@/app/page';
 import { Cluster, HealthRecord } from '@/lib/types';
-import { icon } from 'leaflet';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 interface ClusterMapProps {
   isLoading: boolean;
@@ -63,22 +62,29 @@ const getChartColor = (index: number) => {
 
 export function ClusterMap({ isLoading }: ClusterMapProps) {
   const { clusters } = useData();
-  const [map, setMap] = useState<L.Map | null>(null);
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
 
   const renderContent = () => {
     if (isLoading) {
       return <Skeleton className="w-full h-full" />;
     }
+    
+    // Only render the map on the client side after the component has mounted
+    if (!isMounted) {
+      return <Skeleton className="w-full h-full" />;
+    }
 
     return (
       <MapContainer
-        whenReady={setMap}
         center={mapCenter}
         zoom={15}
         style={{ height: '100%', width: '100%', borderRadius: 'var(--radius)' }}
       >
-        {map && (
-          <>
             <TileLayer
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -122,8 +128,6 @@ export function ClusterMap({ isLoading }: ClusterMapProps) {
                 </Circle>
               );
             })}
-          </>
-        )}
       </MapContainer>
     );
   };
