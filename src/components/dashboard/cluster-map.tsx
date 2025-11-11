@@ -7,6 +7,7 @@ import { MapPin, Info } from 'lucide-react';
 import { useData } from '@/app/page';
 import { Cluster, HealthRecord } from '@/lib/types';
 import { icon } from 'leaflet';
+import { useState } from 'react';
 
 interface ClusterMapProps {
   isLoading: boolean;
@@ -62,6 +63,7 @@ const getChartColor = (index: number) => {
 
 export function ClusterMap({ isLoading }: ClusterMapProps) {
   const { clusters } = useData();
+  const [map, setMap] = useState<L.Map | null>(null);
 
   const renderContent = () => {
     if (isLoading) {
@@ -69,50 +71,59 @@ export function ClusterMap({ isLoading }: ClusterMapProps) {
     }
 
     return (
-      <MapContainer center={mapCenter} zoom={15} style={{ height: '100%', width: '100%', borderRadius: 'var(--radius)' }}>
-        <TileLayer
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-        />
+      <MapContainer
+        whenReady={setMap}
+        center={mapCenter}
+        zoom={15}
+        style={{ height: '100%', width: '100%', borderRadius: 'var(--radius)' }}
+      >
+        {map && (
+          <>
+            <TileLayer
+              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            />
 
-        {clusters.length === 0 && (
-          <div className="absolute inset-0 flex items-center justify-center p-4 bg-black/30 rounded-md z-[1000] pointer-events-none">
-            <div className="text-center bg-background/80 backdrop-blur-sm text-foreground p-4 rounded-lg border">
-              <Info className="mx-auto h-8 w-8 text-primary mb-2" />
-              <h3 className="font-bold text-lg">Cluster Visualization</h3>
-              <p className="text-sm text-muted-foreground">Run analysis to see cluster locations on the map.</p>
-            </div>
-          </div>
-        )}
+            {clusters.length === 0 && (
+              <div className="absolute inset-0 flex items-center justify-center p-4 bg-black/30 rounded-md z-[1000] pointer-events-none">
+                <div className="text-center bg-background/80 backdrop-blur-sm text-foreground p-4 rounded-lg border">
+                  <Info className="mx-auto h-8 w-8 text-primary mb-2" />
+                  <h3 className="font-bold text-lg">Cluster Visualization</h3>
+                  <p className="text-sm text-muted-foreground">Run analysis to see cluster locations on the map.</p>
+                </div>
+              </div>
+            )}
 
-        {clusters.map((cluster, index) => {
-            const location = getClusterLocation(cluster);
-            const mostCommonPurok = getMostCommonPurok(cluster);
-            if (!location) return null;
+            {clusters.map((cluster, index) => {
+              const location = getClusterLocation(cluster);
+              const mostCommonPurok = getMostCommonPurok(cluster);
+              if (!location) return null;
 
-            // Scale radius based on number of records
-            const radius = 20 + Math.log(cluster.records.length + 1) * 15;
-            const color = getChartColor(index);
+              // Scale radius based on number of records
+              const radius = 20 + Math.log(cluster.records.length + 1) * 15;
+              const color = getChartColor(index);
 
-            return (
+              return (
                 <Circle
-                    key={cluster.id}
-                    center={[location.lat, location.lng]}
-                    radius={radius}
-                    pathOptions={{
-                        color: color,
-                        fillColor: color,
-                        fillOpacity: 0.5,
-                    }}
+                  key={cluster.id}
+                  center={[location.lat, location.lng]}
+                  radius={radius}
+                  pathOptions={{
+                    color: color,
+                    fillColor: color,
+                    fillOpacity: 0.5,
+                  }}
                 >
-                    <Popup>
-                        <div className="font-bold">{cluster.name}</div>
-                        <div>{cluster.records.length} records</div>
-                        <div className="text-xs text-muted-foreground">Location: {mostCommonPurok}</div>
-                    </Popup>
+                  <Popup>
+                    <div className="font-bold">{cluster.name}</div>
+                    <div>{cluster.records.length} records</div>
+                    <div className="text-xs text-muted-foreground">Location: {mostCommonPurok}</div>
+                  </Popup>
                 </Circle>
-            )
-        })}
+              );
+            })}
+          </>
+        )}
       </MapContainer>
     );
   };
