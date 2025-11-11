@@ -48,19 +48,16 @@ const getClusterLocation = (cluster: Cluster): { lat: number; lng: number } | nu
     return purokCoordinates[mostCommonPurok] || null;
 }
 
-const chartColors = ['--chart-1', '--chart-2', '--chart-3', '--chart-4', '--chart-5'];
+const chartColorsHSL = [
+    'hsl(var(--chart-1))',
+    'hsl(var(--chart-2))',
+    'hsl(var(--chart-3))',
+    'hsl(var(--chart-4))',
+    'hsl(var(--chart-5))',
+];
+
 const getChartColor = (index: number) => {
-    const colorVar = chartColors[index % chartColors.length];
-    // We need to get the HSL value from the CSS variable
-    // This is a simplified approach. In a real app, you might use getComputedStyle on the client.
-    const colors: { [key: string]: string } = {
-        '--chart-1': 'hsl(180 100% 30%)',
-        '--chart-2': 'hsl(202 69% 55%)',
-        '--chart-3': 'hsl(197 37% 44%)',
-        '--chart-4': 'hsl(43 74% 66%)',
-        '--chart-5': 'hsl(27 87% 67%)',
-    };
-    return colors[colorVar] || 'hsl(var(--primary))';
+    return chartColorsHSL[index % chartColorsHSL.length];
 };
 
 export function ClusterMap({ isLoading }: ClusterMapProps) {
@@ -95,6 +92,7 @@ export function ClusterMap({ isLoading }: ClusterMapProps) {
 
             // Scale radius based on number of records
             const radius = 20 + Math.log(cluster.records.length + 1) * 15;
+            const color = getChartColor(index);
 
             return (
                 <Circle
@@ -102,8 +100,8 @@ export function ClusterMap({ isLoading }: ClusterMapProps) {
                     center={[location.lat, location.lng]}
                     radius={radius}
                     pathOptions={{
-                        color: getChartColor(index),
-                        fillColor: getChartColor(index),
+                        color: color,
+                        fillColor: color,
                         fillOpacity: 0.5,
                     }}
                 >
