@@ -74,12 +74,12 @@ export function ClusterControls({ setIsLoading }: ClusterControlsProps) {
         <Alert className={isUsingUploadedData ? 'border-primary/50 text-primary' : ''}>
           <Database className="h-4 w-4" />
           <AlertTitle className="font-bold">
-            {isUsingUploadedData ? 'Using Uploaded Data' : 'Using Sample Data'}
+            {isUsingUploadedData ? 'Using Uploaded Data' : 'No Data Loaded'}
           </AlertTitle>
           <AlertDescription>
             {isUsingUploadedData
               ? `Analysis will run on the ${healthRecords.length} records you uploaded.`
-              : 'This is sample data. Go to the Upload Data page to use your own file.'}
+              : 'Please go to the Upload Data page to use your own file.'}
           </AlertDescription>
         </Alert>
         <div className="space-y-4">
@@ -111,10 +111,11 @@ export function ClusterControls({ setIsLoading }: ClusterControlsProps) {
               step={1}
               value={[numClusters]}
               onValueChange={(value) => setNumClusters(value[0])}
+              disabled={!isUsingUploadedData}
             />
             <p className="text-xs text-muted-foreground">Use the elbow method or domain knowledge to select the optimal number.</p>
         </div>
-         <Button onClick={handleRunAnalysis} disabled={isAnalysisRunning}>
+         <Button onClick={handleRunAnalysis} disabled={isAnalysisRunning || !isUsingUploadedData}>
           <PlayCircle className="mr-2 h-4 w-4" />
           {isAnalysisRunning ? 'Analyzing...' : 'Run Cluster Analysis'}
         </Button>

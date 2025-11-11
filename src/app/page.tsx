@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { ClusterControls } from '@/components/dashboard/cluster-controls';
-import { ClusterMap } from '@/components/dashboard/cluster-map';
 import { ClusterCharts } from '@/components/dashboard/cluster-charts';
 import { TrendAnalysis } from '@/components/dashboard/trend-analysis';
 import { Separator } from '@/components/ui/separator';
@@ -10,9 +9,18 @@ import type { Cluster, HealthRecord } from '@/lib/types';
 import AppLayout from '@/components/layout/app-layout';
 
 import { createContext, useContext } from 'react';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Info } from 'lucide-react';
 import { mockHealthRecords } from '@/lib/mock-data';
+import dynamic from 'next/dynamic';
+import { Skeleton } from '@/components/ui/skeleton';
+
+const DynamicClusterMap = dynamic(
+  () => import('@/components/dashboard/cluster-map').then((mod) => mod.ClusterMap),
+  { 
+    ssr: false,
+    loading: () => <Skeleton className="w-full h-[582px]" />
+  }
+);
+
 
 export const DataContext = createContext<{
   clusters: Cluster[];
@@ -55,16 +63,16 @@ export default function DashboardPage() {
           setHealthRecords(parsedRecords);
           setIsUsingUploadedData(true);
         } else {
-          setHealthRecords(mockHealthRecords);
+          setHealthRecords([]);
           setIsUsingUploadedData(false);
         }
       } else {
-        setHealthRecords(mockHealthRecords);
+        setHealthRecords([]);
         setIsUsingUploadedData(false);
       }
     } catch (error) {
       console.error("Failed to load data from localStorage", error);
-       setHealthRecords(mockHealthRecords);
+       setHealthRecords([]);
        setIsUsingUploadedData(false);
     }
     setIsInitialLoad(false);
@@ -92,7 +100,7 @@ export default function DashboardPage() {
             <ClusterControls setIsLoading={setIsLoading} />
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
               <div className="col-span-4">
-                <ClusterMap isLoading={isLoading} />
+                <DynamicClusterMap isLoading={isLoading} />
               </div>
               <div className="col-span-4 lg:col-span-3">
                 <TrendAnalysis />

@@ -2,6 +2,8 @@
 @tailwind components;
 @tailwind utilities;
 
+@import 'leaflet/dist/leaflet.css';
+
 body {
   font-family: 'PT Sans', sans-serif;
 }
@@ -85,4 +87,18 @@ body {
   body {
     @apply bg-background text-foreground;
   }
+}
+
+.leaflet-popup-content-wrapper {
+    @apply bg-popover text-popover-foreground rounded-md shadow-md;
+    border-radius: var(--radius);
+}
+
+.leaflet-popup-content {
+    @apply text-sm;
+    margin: 10px;
+}
+
+.leaflet-popup-tip {
+    @apply bg-popover;
 }
