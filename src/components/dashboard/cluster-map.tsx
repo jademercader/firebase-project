@@ -3,10 +3,11 @@ import Image from 'next/image';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Skeleton } from '../ui/skeleton';
-import { MapPin } from 'lucide-react';
+import { MapPin, Info } from 'lucide-react';
 import { useData } from '@/app/page';
 import { Cluster, HealthRecord } from '@/lib/types';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
+import { Separator } from '@/components/ui/separator';
 
 interface ClusterMapProps {
   isLoading: boolean;
@@ -19,9 +20,9 @@ const purokCoordinates: { [key: string]: { top: string; left: string } } = {
   'Purok 4': { top: '65%', left: '70%' },
 };
 
-const getClusterLocation = (cluster: Cluster): { top: string; left: string } | null => {
+const getMostCommonPurok = (cluster: Cluster): string => {
     if (!cluster.records || cluster.records.length === 0) {
-        return null;
+        return 'N/A';
     }
 
     const purokCounts = cluster.records.reduce((acc, record: HealthRecord) => {
@@ -34,8 +35,14 @@ const getClusterLocation = (cluster: Cluster): { top: string; left: string } | n
 
     const mostCommonPurok = Object.keys(purokCounts).reduce((a, b) =>
         purokCounts[a] > purokCounts[b] ? a : b
-    , '');
+    , 'Unknown');
+    
+    return mostCommonPurok;
+}
 
+
+const getClusterLocation = (cluster: Cluster): { top: string; left: string } | null => {
+    const mostCommonPurok = getMostCommonPurok(cluster);
     return purokCoordinates[mostCommonPurok] || null;
 }
 
@@ -59,7 +66,7 @@ export function ClusterMap({ isLoading }: ClusterMapProps) {
     }
 
     return (
-      <>
+      <TooltipProvider>
         <Image
           src={mapImage.imageUrl}
           alt={mapImage.description}
@@ -70,14 +77,16 @@ export function ClusterMap({ isLoading }: ClusterMapProps) {
         />
         {clusters.length === 0 && (
           <div className="absolute inset-0 flex items-center justify-center p-4 bg-black/30 rounded-md">
-            <div className="text-center bg-black/50 text-white p-4 rounded-lg">
+            <div className="text-center bg-background/80 backdrop-blur-sm text-foreground p-4 rounded-lg border">
+              <Info className="mx-auto h-8 w-8 text-primary mb-2" />
               <h3 className="font-bold text-lg">Cluster Visualization</h3>
-              <p className="text-sm">Run analysis to see cluster locations.</p>
+              <p className="text-sm text-muted-foreground">Run analysis to see cluster locations.</p>
             </div>
           </div>
         )}
         {clusters.map((cluster, index) => {
             const location = getClusterLocation(cluster);
+            const mostCommonPurok = getMostCommonPurok(cluster);
             if (!location) return null;
 
             const colorVar = chartColors[index % chartColors.length];
@@ -92,18 +101,20 @@ export function ClusterMap({ isLoading }: ClusterMapProps) {
                                 left: location.left,
                                 backgroundColor: `hsl(var(${colorVar}))`,
                                 border: '2px solid white',
-                                boxShadow: '0 0 8px hsl(var(--background))'
+                                boxShadow: '0 0 10px hsl(var(--background)), 0 0 5px hsl(var(--background))'
                             }}
                         />
                     </TooltipTrigger>
                     <TooltipContent>
                         <p className='font-bold'>{cluster.name}</p>
-                        <p>{cluster.records.length} records</p>
+                        <p className="text-sm text-muted-foreground">{cluster.records.length} records</p>
+                        <Separator className="my-1" />
+                        <p className="text-xs">Most common location: <span className='font-semibold'>{mostCommonPurok}</span></p>
                     </TooltipContent>
                 </Tooltip>
             )
         })}
-      </>
+      </TooltipProvider>
     );
   };
 

@@ -2,9 +2,9 @@
   "placeholderImages": [
     {
       "id": "map",
-      "description": "A stylized map of a barangay area.",
-      "imageUrl": "https://images.unsplash.com/photo-1713098965471-d324f294a71d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHxtYXAlMjBpbGx1c3RyYXRpb258ZW58MHx8fHwxNzU4NzIzMzI0fDA&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "map illustration"
+      "description": "A satellite-style map of a barangay area for visualization.",
+      "imageUrl": "https://images.unsplash.com/photo-1593452331591-1a8a8ab9d454?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHxzYXRlbGxpdGUlMjBtYXAlMjBvZiUyMGElMjB0b3dufGVufDB8fHx8MTc1ODc0MTEzM3ww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "satellite map town"
     }
   ]
 }
