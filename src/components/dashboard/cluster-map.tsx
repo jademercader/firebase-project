@@ -1,13 +1,12 @@
 'use client';
-import { MapContainer, TileLayer, Circle, Popup } from 'react-leaflet';
+import { useEffect, useRef } from 'react';
 import 'leaflet/dist/leaflet.css';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '../ui/skeleton';
 import { Info } from 'lucide-react';
 import { useData } from '@/app/page';
 import { Cluster, HealthRecord } from '@/lib/types';
-import { useState, useEffect } from 'react';
-import type { Map } from 'leaflet';
+import type { Map, LayerGroup } from 'leaflet';
 
 interface ClusterMapProps {
   isLoading: boolean;
@@ -61,17 +60,72 @@ const getChartColor = (index: number) => {
 };
 
 export function ClusterMap({ isLoading }: ClusterMapProps) {
+  const mapContainerRef = useRef<HTMLDivElement>(null);
+  const mapInstanceRef = useRef<Map | null>(null);
+  const clusterLayerRef = useRef<LayerGroup | null>(null);
   const { clusters } = useData();
-  const [map, setMap] = useState<Map | null>(null);
 
-  // CRITICAL: Cleanup function to remove map instance on unmount
+  // Initialize map
   useEffect(() => {
-    return () => {
-      if (map) {
-        map.remove();
-      }
+    if (mapInstanceRef.current || !mapContainerRef.current) return;
+
+    const initializeMap = async () => {
+        const L = await import('leaflet');
+        
+        mapInstanceRef.current = L.map(mapContainerRef.current!, {
+            center: mapCenter,
+            zoom: 15,
+        });
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+        }).addTo(mapInstanceRef.current);
+        
+        clusterLayerRef.current = L.layerGroup().addTo(mapInstanceRef.current);
     };
-  }, [map]);
+
+    initializeMap();
+
+    // Cleanup function
+    return () => {
+        if (mapInstanceRef.current) {
+            mapInstanceRef.current.remove();
+            mapInstanceRef.current = null;
+        }
+    };
+  }, []); 
+
+  // Update clusters on map
+  useEffect(() => {
+    if (!mapInstanceRef.current || !clusterLayerRef.current) return;
+
+    const L = require('leaflet');
+    const layerGroup = clusterLayerRef.current;
+    layerGroup.clearLayers();
+
+    clusters.forEach((cluster, index) => {
+      const location = getClusterLocation(cluster);
+      if (!location) return;
+
+      const radius = 20 + Math.log(cluster.records.length + 1) * 15;
+      const color = getChartColor(index);
+      
+      const popupContent = `
+        <div class="font-bold">${cluster.name}</div>
+        <div>${cluster.records.length} records</div>
+        <div class="text-xs text-muted-foreground">Location: ${getMostCommonPurok(cluster)}</div>
+      `;
+
+      L.circle([location.lat, location.lng], {
+          radius: radius,
+          color: color,
+          fillColor: color,
+          fillOpacity: 0.5,
+      }).addTo(layerGroup).bindPopup(popupContent);
+    });
+
+  }, [clusters]);
+
 
   const renderContent = () => {
     if (isLoading) {
@@ -79,64 +133,21 @@ export function ClusterMap({ isLoading }: ClusterMapProps) {
     }
     
     return (
-      <MapContainer
-        whenReady={setMap}
-        center={mapCenter}
-        zoom={15}
-        style={{ height: '100%', width: '100%', borderRadius: 'var(--radius)' }}
-      >
-        {map ? (
-            <>
-                <TileLayer
-                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                />
-
-                {clusters.length === 0 && (
-                <div className="absolute inset-0 flex items-center justify-center p-4 bg-black/30 rounded-md z-[1000] pointer-events-none">
-                    <div className="text-center bg-background/80 backdrop-blur-sm text-foreground p-4 rounded-lg border">
-                    <Info className="mx-auto h-8 w-8 text-primary mb-2" />
-                    <h3 className="font-bold text-lg">Cluster Visualization</h3>
-                    <p className="text-sm text-muted-foreground">Run analysis to see cluster locations on the map.</p>
-                    </div>
-                </div>
-                )}
-
-                {clusters.map((cluster, index) => {
-                const location = getClusterLocation(cluster);
-        
-                if (!location) return null;
-
-                // Scale radius based on number of records
-                const radius = 20 + Math.log(cluster.records.length + 1) * 15;
-                const color = getChartColor(index);
-
-                return (
-                    <Circle
-                    key={cluster.id}
-                    center={[location.lat, location.lng]}
-                    radius={radius}
-                    pathOptions={{
-                        color: color,
-                        fillColor: color,
-                        fillOpacity: 0.5,
-                    }}
-                    >
-                    <Popup>
-                        <div className="font-bold">{cluster.name}</div>
-                        <div>{cluster.records.length} records</div>
-                        <div className="text-xs text-muted-foreground">Location: {getMostCommonPurok(cluster)}</div>
-                    </Popup>
-                    </Circle>
-                );
-                })}
-            </>
-        ) : (
-             <div className="flex items-center justify-center h-full">
-                <p className="text-muted-foreground">Initializing map...</p>
+      <div style={{ position: 'relative', height: '100%', width: '100%' }}>
+        <div 
+          ref={mapContainerRef} 
+          style={{ height: '100%', width: '100%', borderRadius: 'var(--radius)' }}
+        />
+        {!isLoading && clusters.length === 0 && (
+          <div className="absolute inset-0 flex items-center justify-center p-4 bg-black/30 rounded-md z-[1000] pointer-events-none">
+            <div className="text-center bg-background/80 backdrop-blur-sm text-foreground p-4 rounded-lg border">
+              <Info className="mx-auto h-8 w-8 text-primary mb-2" />
+              <h3 className="font-bold text-lg">Cluster Visualization</h3>
+              <p className="text-sm text-muted-foreground">Run analysis to see cluster locations on the map.</p>
             </div>
+          </div>
         )}
-      </MapContainer>
+      </div>
     );
   };
 
