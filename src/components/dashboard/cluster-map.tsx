@@ -7,13 +7,13 @@ import { Info } from 'lucide-react';
 import { useData } from '@/app/page';
 import { Cluster, HealthRecord } from '@/lib/types';
 import { useState, useEffect } from 'react';
+import type { Map } from 'leaflet';
 
 interface ClusterMapProps {
   isLoading: boolean;
 }
 
 // Define coordinates for each Purok/Barangay.
-// These are approximate coordinates for demonstration purposes around a sample area in the Philippines.
 const purokCoordinates: { [key: string]: { lat: number; lng: number } } = {
   'Purok 1': { lat: 14.5995, lng: 120.9842 },
   'Purok 2': { lat: 14.6020, lng: 120.9860 },
@@ -62,72 +62,72 @@ const getChartColor = (index: number) => {
 
 export function ClusterMap({ isLoading }: ClusterMapProps) {
   const { clusters } = useData();
-  const [isMounted, setIsMounted] = useState(false);
+  const [map, setMap] = useState<Map | null>(null);
 
+  // CRITICAL: Cleanup function to remove map instance on unmount
   useEffect(() => {
-    setIsMounted(true);
-  }, []);
-
+    return () => {
+      if (map) {
+        map.remove();
+      }
+    };
+  }, [map]);
 
   const renderContent = () => {
     if (isLoading) {
       return <Skeleton className="w-full h-full" />;
     }
     
-    // Only render the map on the client side after the component has mounted
-    if (!isMounted) {
-      return <Skeleton className="w-full h-full" />;
-    }
-
     return (
       <MapContainer
+        whenReady={setMap}
         center={mapCenter}
         zoom={15}
         style={{ height: '100%', width: '100%', borderRadius: 'var(--radius)' }}
       >
-            <TileLayer
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-            />
+        <TileLayer
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        />
 
-            {clusters.length === 0 && (
-              <div className="absolute inset-0 flex items-center justify-center p-4 bg-black/30 rounded-md z-[1000] pointer-events-none">
-                <div className="text-center bg-background/80 backdrop-blur-sm text-foreground p-4 rounded-lg border">
-                  <Info className="mx-auto h-8 w-8 text-primary mb-2" />
-                  <h3 className="font-bold text-lg">Cluster Visualization</h3>
-                  <p className="text-sm text-muted-foreground">Run analysis to see cluster locations on the map.</p>
-                </div>
-              </div>
-            )}
+        {clusters.length === 0 && (
+          <div className="absolute inset-0 flex items-center justify-center p-4 bg-black/30 rounded-md z-[1000] pointer-events-none">
+            <div className="text-center bg-background/80 backdrop-blur-sm text-foreground p-4 rounded-lg border">
+              <Info className="mx-auto h-8 w-8 text-primary mb-2" />
+              <h3 className="font-bold text-lg">Cluster Visualization</h3>
+              <p className="text-sm text-muted-foreground">Run analysis to see cluster locations on the map.</p>
+            </div>
+          </div>
+        )}
 
-            {clusters.map((cluster, index) => {
-              const location = getClusterLocation(cluster);
-              const mostCommonPurok = getMostCommonPurok(cluster);
-              if (!location) return null;
+        {clusters.map((cluster, index) => {
+          const location = getClusterLocation(cluster);
+  
+          if (!location) return null;
 
-              // Scale radius based on number of records
-              const radius = 20 + Math.log(cluster.records.length + 1) * 15;
-              const color = getChartColor(index);
+          // Scale radius based on number of records
+          const radius = 20 + Math.log(cluster.records.length + 1) * 15;
+          const color = getChartColor(index);
 
-              return (
-                <Circle
-                  key={cluster.id}
-                  center={[location.lat, location.lng]}
-                  radius={radius}
-                  pathOptions={{
-                    color: color,
-                    fillColor: color,
-                    fillOpacity: 0.5,
-                  }}
-                >
-                  <Popup>
-                    <div className="font-bold">{cluster.name}</div>
-                    <div>{cluster.records.length} records</div>
-                    <div className="text-xs text-muted-foreground">Location: {mostCommonPurok}</div>
-                  </Popup>
-                </Circle>
-              );
-            })}
+          return (
+            <Circle
+              key={cluster.id}
+              center={[location.lat, location.lng]}
+              radius={radius}
+              pathOptions={{
+                color: color,
+                fillColor: color,
+                fillOpacity: 0.5,
+              }}
+            >
+              <Popup>
+                <div className="font-bold">{cluster.name}</div>
+                <div>{cluster.records.length} records</div>
+                <div className="text-xs text-muted-foreground">Location: {getMostCommonPurok(cluster)}</div>
+              </Popup>
+            </Circle>
+          );
+        })}
       </MapContainer>
     );
   };
