@@ -57,7 +57,15 @@ export function AppSidebar() {
                  <SidebarMenuButton icon={<Settings />} tooltip="Settings">Settings</SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
-                 <SidebarMenuButton icon={<HelpCircle />} tooltip="Help">Help</SidebarMenuButton>
+                <Link href="/help" passHref>
+                    <SidebarMenuButton 
+                        isActive={pathname === '/help'}
+                        icon={<HelpCircle />} 
+                        tooltip="Help"
+                    >
+                        Help
+                    </SidebarMenuButton>
+                 </Link>
             </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>
