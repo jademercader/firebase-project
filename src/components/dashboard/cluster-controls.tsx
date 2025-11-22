@@ -46,7 +46,7 @@ export function ClusterControls({ setIsLoading, setClusters, healthRecords, isUs
           numClusters: numClusters,
       });
 
-      if (result.success && result.data) {
+      if (result.success && result.data?.clusters) {
           setClusters(result.data.clusters);
           toast({
               title: "Analysis Complete",
