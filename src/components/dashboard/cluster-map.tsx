@@ -158,11 +158,11 @@ export function ClusterMap({ isLoading, clusters }: ClusterMapProps) {
   };
 
   return (
-    <Card className="h-full">
+    <Card className="h-full flex flex-col">
       <CardHeader>
         <CardTitle className="font-headline">Barangay Cluster Visualization</CardTitle>
       </CardHeader>
-      <CardContent className="h-[400px] md:h-[500px] p-0">
+      <CardContent className="flex-1 p-0">
         {renderContent()}
       </CardContent>
     </Card>

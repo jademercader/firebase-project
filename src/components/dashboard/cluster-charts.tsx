@@ -3,7 +3,6 @@
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useData } from '@/app/page';
 import { Users, Stethoscope } from 'lucide-react';
 import type { Cluster } from '@/lib/types';
 
@@ -12,6 +11,7 @@ const vaccinationIndicators = ['Vaccinated', 'Partially Vaccinated', 'Not Vaccin
 
 interface ClusterChartsProps {
     isLoading: boolean;
+    clusters: Cluster[];
 }
 
 const getMostPrevalentCondition = (cluster: Cluster) => {
@@ -28,9 +28,7 @@ const getMostPrevalentCondition = (cluster: Cluster) => {
 };
 
 
-export function ClusterCharts({ isLoading }: ClusterChartsProps) {
-  const { clusters } = useData();
-
+export function ClusterCharts({ isLoading, clusters }: ClusterChartsProps) {
   const diseaseData = clusters.map(cluster => {
     const data: { [key: string]: any } = { name: cluster.name.split(':')[0] };
     diseaseIndicators.forEach(indicator => {

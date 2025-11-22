@@ -8,10 +8,13 @@ import { getTrendAnalysis } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
 import { LineChart, ThumbsUp } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useData } from '@/app/page';
+import type { Cluster } from '@/lib/types';
 
-export function TrendAnalysis() {
-  const { clusters } = useData();
+interface TrendAnalysisProps {
+    clusters: Cluster[];
+}
+
+export function TrendAnalysis({ clusters }: TrendAnalysisProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<string>('');
   const [timePeriod, setTimePeriod] = useState('monthly');

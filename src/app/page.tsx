@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, createContext, useContext } from 'react';
+import { useState, useEffect } from 'react';
 import { ClusterControls } from '@/components/dashboard/cluster-controls';
 import { ClusterCharts } from '@/components/dashboard/cluster-charts';
 import { TrendAnalysis } from '@/components/dashboard/trend-analysis';
@@ -9,21 +9,6 @@ import type { Cluster, HealthRecord } from '@/lib/types';
 import AppLayout from '@/components/layout/app-layout';
 import { mockHealthRecords } from '@/lib/mock-data';
 import { ClusterMap } from '@/components/dashboard/cluster-map';
-
-export const DataContext = createContext<{
-  healthRecords: HealthRecord[];
-  isUsingUploadedData: boolean;
-  clusters: Cluster[];
-}>({
-  healthRecords: [],
-  isUsingUploadedData: false,
-  clusters: [],
-});
-
-export function useData() {
-  return useContext(DataContext);
-}
-
 
 const CLUSTERS_STORAGE_KEY = 'health_clusters';
 const RECORDS_STORAGE_KEY = 'health_records';
@@ -78,31 +63,29 @@ export default function DashboardPage() {
 
   return (
     <AppLayout>
-      <DataContext.Provider value={{ healthRecords, isUsingUploadedData, clusters }}>
-        <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
-          <div className="flex items-center justify-between space-y-2">
-            <h2 className="text-3xl font-bold tracking-tight font-headline">Dashboard</h2>
-          </div>
-          <div className="space-y-4">
-            <ClusterControls 
-                setIsLoading={setIsLoading} 
-                setClusters={setClusters} 
-                healthRecords={healthRecords} 
-                isUsingUploadedData={isUsingUploadedData} 
-            />
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-              <div className="col-span-4">
-                <ClusterMap isLoading={isLoading} clusters={clusters} />
-              </div>
-              <div className="col-span-4 lg:col-span-3">
-                <TrendAnalysis />
-              </div>
-            </div>
-            <Separator />
-            <ClusterCharts isLoading={isLoading} />
-          </div>
+      <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
+        <div className="flex items-center justify-between space-y-2">
+          <h2 className="text-3xl font-bold tracking-tight font-headline">Dashboard</h2>
         </div>
-      </DataContext.Provider>
+        <div className="space-y-4">
+          <ClusterControls 
+              setIsLoading={setIsLoading} 
+              setClusters={setClusters} 
+              healthRecords={healthRecords} 
+              isUsingUploadedData={isUsingUploadedData} 
+          />
+          <div className="grid grid-cols-1 lg:grid-cols-7 gap-4">
+            <div className="lg:col-span-4 h-[500px]">
+              <ClusterMap isLoading={isLoading} clusters={clusters} />
+            </div>
+            <div className="lg:col-span-3">
+              <TrendAnalysis clusters={clusters} />
+            </div>
+          </div>
+          <Separator />
+          <ClusterCharts isLoading={isLoading} clusters={clusters} />
+        </div>
+      </div>
     </AppLayout>
   );
 }
