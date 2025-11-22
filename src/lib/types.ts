@@ -7,6 +7,8 @@ export type HealthRecord = {
   disease: string;
   vaccinationStatus: 'Vaccinated' | 'Partially Vaccinated' | 'Not Vaccinated';
   checkupDate: string;
+  latitude?: number;
+  longitude?: number;
   [key: string]: any; 
 };
 

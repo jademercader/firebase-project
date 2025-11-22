@@ -13,7 +13,7 @@ import {z} from 'zod';
 const PerformClusterAnalysisInputSchema = z.object({
   healthRecordsData: z
     .string()
-    .describe('A JSON string of Barangay health records, containing at least an `id` for each record.'),
+    .describe('A JSON string of simplified Barangay health records, each containing at least an `id` and the health indicators to be used for clustering.'),
   healthIndicators: z
     .array(z.string())
     .describe('A list of health indicators to consider for clustering.'),
@@ -25,7 +25,7 @@ export type PerformClusterAnalysisInput = z.infer<typeof PerformClusterAnalysisI
 
 const ClusterResultSchema = z.object({
     clusterName: z.string().describe("A descriptive name for the cluster (e.g., 'Elderly with Chronic Illness', 'Young & Healthy')."),
-    recordIds: z.array(z.string()).describe("An array of record IDs belonging to this cluster.")
+    recordIds: z.array(z.string()).describe("An array of the 'id' strings from the original records that belong to this cluster.")
 });
 
 const PerformClusterAnalysisOutputSchema = z.object({
@@ -50,7 +50,7 @@ Instructions:
 1.  Analyze the health records provided in the \`healthRecordsData\` JSON string. Each record in this data has a unique 'id' field.
 2.  Use the specified \`healthIndicators\` to group the records into distinct clusters.
 3.  Create exactly \`numClusters\` clusters.
-4.  For each cluster, provide a descriptive name.
+4.  For each cluster, provide a descriptive name based on the shared characteristics of its members.
 5.  For each cluster, you MUST provide an array of the 'id' strings from the original records that belong to that cluster.
 6.  CRITICAL: Your output MUST be a valid JSON object that conforms to the specified output schema. Do not include any other text, explanations, or markdown.
 

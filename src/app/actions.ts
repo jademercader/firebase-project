@@ -5,6 +5,7 @@ import { performClusterAnalysis, PerformClusterAnalysisInput } from '@/ai/flows/
 import { calculateClusterMetrics } from '@/lib/analysis-utils';
 import { z } from 'zod';
 import type { HealthRecord } from '@/lib/types';
+import { geocodeAddress } from '@/services/geocoding-service';
 
 const IdentifyDataErrorsInputSchema = z.object({
   healthRecordsData: z.string(),
@@ -59,25 +60,32 @@ export async function runClusterAnalysis(input: PerformClusterAnalysisInput) {
     }
 
     try {
-        // The raw health records are needed for calculations.
-        // Parse the records ONCE to ensure data consistency.
         const healthRecords: HealthRecord[] = JSON.parse(validatedInput.data.healthRecordsData);
 
-        // The AI's job is simplified: it just returns clusters with record IDs.
-        // Pass the same data to the AI that we will use for enrichment.
-        const result = await performClusterAnalysis({
-            healthRecordsData: JSON.stringify(healthRecords), // Ensure the AI gets the parsed data as a clean string.
+        const aiResult = await performClusterAnalysis({
+            healthRecordsData: JSON.stringify(healthRecords.map(({ id, age, gender, disease, vaccinationStatus }) => ({ id, age, gender, disease, vaccinationStatus }))),
             healthIndicators: validatedInput.data.healthIndicators,
             numClusters: validatedInput.data.numClusters
         });
         
-        if (!result || !result.clusters) {
+        if (!aiResult || !aiResult.clusters) {
              return { success: false, error: 'AI did not return valid cluster data.' };
         }
         
-        // We perform the detailed calculations in our own code for reliability.
-        // Use the SAME parsed `healthRecords` array for the calculations.
-        const detailedClusters = calculateClusterMetrics(result.clusters, healthRecords);
+        let detailedClusters = calculateClusterMetrics(aiResult.clusters, healthRecords);
+
+        // --- Geocoding Step ---
+        for (const cluster of detailedClusters) {
+            for (const record of cluster.records) {
+                if (record.address && (!record.latitude || !record.longitude)) {
+                    const coords = await geocodeAddress(record.address);
+                    if (coords) {
+                        record.latitude = coords.lat;
+                        record.longitude = coords.lng;
+                    }
+                }
+            }
+        }
 
         return { success: true, data: { clusters: detailedClusters } };
     } catch (error: any) {

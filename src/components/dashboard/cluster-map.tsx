@@ -12,44 +12,7 @@ interface ClusterMapProps {
   clusters: Cluster[];
 }
 
-const cityCoordinates: { [key: string]: { lat: number; lng: number } } = {
-  'Manila': { lat: 14.5995, lng: 120.9842 },
-  'Quezon City': { lat: 14.6760, lng: 121.0437 },
-  'Caloocan': { lat: 14.656, lng: 120.9822 },
-  'Makati': { lat: 14.5547, lng: 121.0244 },
-  'Pasig': { lat: 14.5764, lng: 121.0851 },
-  'Taguig': { lat: 14.5176, lng: 121.0509 }
-};
-
 const mapCenter: [number, number] = [14.5995, 120.9842]; // Default to Manila
-
-const getMostCommonCity = (cluster: Cluster): string => {
-    if (!cluster.records || cluster.records.length === 0) return 'N/A';
-    
-    const cityCounts = cluster.records.reduce((acc, record: HealthRecord) => {
-        const address = record.address || '';
-        const foundCity = Object.keys(cityCoordinates).find(city => 
-            new RegExp(`\\b${city}\\b`, 'i').test(address)
-        );
-
-        if (foundCity) {
-            acc[foundCity] = (acc[foundCity] || 0) + 1;
-        }
-        return acc;
-    }, {} as { [key: string]: number });
-
-    if (Object.keys(cityCounts).length === 0) return 'Unknown';
-
-    return Object.keys(cityCounts).reduce((a, b) => cityCounts[a] > cityCounts[b] ? a : b);
-}
-
-const getClusterLocation = (cluster: Cluster): { lat: number; lng: number } | null => {
-    const mostCommonCity = getMostCommonCity(cluster);
-    if (cityCoordinates[mostCommonCity]) {
-      return cityCoordinates[mostCommonCity];
-    }
-    return null;
-}
 
 const chartColorsHSL = [
     'hsl(var(--chart-1))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))',
@@ -70,7 +33,6 @@ export function ClusterMap({ isLoading, clusters }: ClusterMapProps) {
     const initializeMap = async () => {
       const L = await import('leaflet');
       
-      // Initialize the map ONLY if it hasn't been initialized yet
       if (mapContainerRef.current && !mapInstanceRef.current) {
           mapInstanceRef.current = L.map(mapContainerRef.current, {
               center: mapCenter,
@@ -81,65 +43,62 @@ export function ClusterMap({ isLoading, clusters }: ClusterMapProps) {
               attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
           }).addTo(mapInstanceRef.current);
           
-          // Initialize and add the cluster layer group to the map
           clusterLayerRef.current = L.layerGroup().addTo(mapInstanceRef.current);
       }
     };
 
     initializeMap();
 
-    // Cleanup function to run when the component unmounts
     return () => {
         if (mapInstanceRef.current) {
             mapInstanceRef.current.remove();
             mapInstanceRef.current = null;
         }
     };
-  }, []); // Empty dependency array ensures this runs only once
+  }, []);
 
   // Effect for drawing/updating clusters
   useEffect(() => {
-    // Ensure map and layer group are ready
     if (!mapInstanceRef.current || !clusterLayerRef.current) return;
 
     const L = require('leaflet');
     const layerGroup = clusterLayerRef.current;
     
-    // Clear previous cluster circles before drawing new ones
     layerGroup.clearLayers();
-    const circles:any[] = [];
+    const markers: any[] = [];
 
-    // If there are clusters, draw them
     if (clusters && clusters.length > 0) {
         clusters.forEach((cluster, index) => {
-          const location = getClusterLocation(cluster);
-          if (!location) return; // Skip if no location can be determined
-
-          const radius = 500 + Math.log(cluster.records.length + 1) * 250;
           const color = getChartColor(index);
           
-          const popupContent = `
-            <div class="font-bold">${cluster.name}</div>
-            <div>${cluster.records.length} records</div>
-            <div class="text-xs text-muted-foreground">Location: ${getMostCommonCity(cluster)}</div>
-          `;
+          cluster.records.forEach((record) => {
+            if (record.latitude && record.longitude) {
+              const popupContent = `
+                <div class="font-bold">${record.name}</div>
+                <div>Cluster: ${cluster.name}</div>
+                <div class="text-xs text-muted-foreground">${record.address}</div>
+              `;
 
-          const circle = L.circle([location.lat, location.lng], {
-              radius: radius,
-              color: color,
-              fillColor: color,
-              fillOpacity: 0.5,
-          }).addTo(layerGroup).bindPopup(popupContent);
-          circles.push(circle);
+              const circleMarker = L.circleMarker([record.latitude, record.longitude], {
+                  radius: 8,
+                  color: color,
+                  fillColor: color,
+                  fillOpacity: 0.7,
+              }).addTo(layerGroup).bindPopup(popupContent);
+              markers.push(circleMarker);
+            }
+          });
         });
         
-        // This is the crucial fix: if we have circles, fit the map view to them.
-        if (circles.length > 0) {
-            const featureGroup = L.featureGroup(circles);
+        if (markers.length > 0) {
+            const featureGroup = L.featureGroup(markers);
             mapInstanceRef.current.fitBounds(featureGroup.getBounds(), { padding: [50, 50] });
+        } else {
+            // If no markers could be drawn (e.g., failed geocoding), reset to default view
+            mapInstanceRef.current.setView(mapCenter, 11);
         }
     }
-  }, [clusters]); // This effect re-runs whenever the 'clusters' prop changes
+  }, [clusters]);
 
   const renderContent = () => {
     if (isLoading) {
