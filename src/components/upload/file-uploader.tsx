@@ -30,13 +30,13 @@ export function FileUploader({ onFileSelected, onSaveData, hasRecords }: FileUpl
     <Card>
       <CardHeader>
         <CardTitle className="font-headline">Upload Health Records</CardTitle>
-        <CardDescription>Upload records (CSV/XLSX) to make them available for analysis on the dashboard.</CardDescription>
+        <CardDescription>Upload records (CSV format supported) to make them available for analysis on the dashboard.</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="flex w-full items-center space-x-2">
             <Input 
                 type="file" 
-                accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel"
+                accept=".csv"
                 ref={fileInputRef}
                 onChange={handleFileChange}
              />
@@ -45,7 +45,7 @@ export function FileUploader({ onFileSelected, onSaveData, hasRecords }: FileUpl
                 Save Data for Analysis
             </Button>
         </div>
-        <p className="text-xs text-muted-foreground mt-2">Note: This is a demo. Selecting a file loads mock data for processing.</p>
+        <p className="text-xs text-muted-foreground mt-2">Note: Please ensure your CSV file has a header row.</p>
       </CardContent>
     </Card>
   );

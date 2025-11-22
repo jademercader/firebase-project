@@ -1,10 +1,10 @@
 'use client';
 import { useState } from 'react';
+import Papa from 'papaparse';
 import { FileUploader } from '@/components/upload/file-uploader';
 import { DataTable } from '@/components/upload/data-table';
 import { CleansingSuggestions } from '@/components/upload/cleansing-suggestions';
 import { HealthRecord } from '@/lib/types';
-import { mockHealthRecords } from '@/lib/mock-data';
 import AppLayout from '@/components/layout/app-layout';
 import { useToast } from '@/hooks/use-toast';
 
@@ -14,14 +14,35 @@ export default function UploadPage() {
   const { toast } = useToast();
 
   const handleFileSelected = (file: File) => {
-    // In a real app, you'd parse the file here.
-    // For now, we just use the mock data when a file is selected.
     setSelectedFile(file);
-    setRecords(mockHealthRecords);
-     toast({
-        title: 'File Ready for Preview',
-        description: `Showing sample data. Press "Save Data for Analysis" to use it.`,
+
+    if (file) {
+      Papa.parse(file, {
+        header: true,
+        skipEmptyLines: true,
+        complete: (results) => {
+          // Assuming the CSV headers match the HealthRecord keys
+          const parsedRecords = results.data.map((row: any) => ({
+            ...row,
+            age: parseInt(row.age, 10) || 0, // Ensure age is a number
+          })) as HealthRecord[];
+          setRecords(parsedRecords);
+          toast({
+            title: 'File Parsed Successfully',
+            description: `${parsedRecords.length} records loaded from ${file.name}.`,
+          });
+        },
+        error: (error: any) => {
+          console.error('Error parsing CSV:', error);
+          setRecords([]);
+          toast({
+            variant: 'destructive',
+            title: 'File Parsing Failed',
+            description: 'Could not read the CSV file. Please check its format and try again.',
+          });
+        },
       });
+    }
   };
   
   const handleSaveData = () => {
