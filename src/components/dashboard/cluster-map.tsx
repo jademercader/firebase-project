@@ -5,14 +5,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '../ui/skeleton';
 import { Info } from 'lucide-react';
 import type { Cluster, HealthRecord } from '@/lib/types';
-import type { Map as LeafletMap, LayerGroup, Circle } from 'leaflet';
+import type { Map as LeafletMap, LayerGroup } from 'leaflet';
 
 interface ClusterMapProps {
   isLoading: boolean;
   clusters: Cluster[];
 }
 
-// Define coordinates for each Purok/Barangay.
 const purokCoordinates: { [key: string]: { lat: number; lng: number } } = {
   'Purok 1': { lat: 14.5995, lng: 120.9842 },
   'Purok 2': { lat: 14.6020, lng: 120.9860 },
@@ -20,15 +19,12 @@ const purokCoordinates: { [key: string]: { lat: number; lng: number } } = {
   'Purok 4': { lat: 14.5965, lng: 120.9835 },
 };
 
-// Default center for the map
 const mapCenter: [number, number] = [14.5995, 120.9842];
 
 const getMostCommonPurok = (cluster: Cluster): string => {
-    if (!cluster.records || cluster.records.length === 0) {
-        return 'N/A';
-    }
+    if (!cluster.records || cluster.records.length === 0) return 'N/A';
+    
     const purokCounts = cluster.records.reduce((acc, record: HealthRecord) => {
-        // Extract "Purok X" from the full address string
         const match = record.address?.match(/Purok\s*\d+/i);
         const purok = match ? match[0] : 'Unknown';
         if (purok !== 'Unknown') {
@@ -37,17 +33,10 @@ const getMostCommonPurok = (cluster: Cluster): string => {
         return acc;
     }, {} as { [key: string]: number });
 
-    if (Object.keys(purokCounts).length === 0) {
-        return 'Unknown';
-    }
+    if (Object.keys(purokCounts).length === 0) return 'Unknown';
 
-    const mostCommonPurok = Object.keys(purokCounts).reduce((a, b) =>
-        purokCounts[a] > purokCounts[b] ? a : b
-    );
-    
-    return mostCommonPurok;
+    return Object.keys(purokCounts).reduce((a, b) => purokCounts[a] > purokCounts[b] ? a : b);
 }
-
 
 const getClusterLocation = (cluster: Cluster): { lat: number; lng: number } | null => {
     const mostCommonPurok = getMostCommonPurok(cluster);
@@ -56,16 +45,11 @@ const getClusterLocation = (cluster: Cluster): { lat: number; lng: number } | nu
 }
 
 const chartColorsHSL = [
-    'hsl(var(--chart-1))',
-    'hsl(var(--chart-2))',
-    'hsl(var(--chart-3))',
-    'hsl(var(--chart-4))',
-    'hsl(var(--chart-5))',
+    'hsl(var(--chart-1))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))',
+    'hsl(var(--chart-4))', 'hsl(var(--chart-5))',
 ];
 
-const getChartColor = (index: number) => {
-    return chartColorsHSL[index % chartColorsHSL.length];
-};
+const getChartColor = (index: number) => chartColorsHSL[index % chartColorsHSL.length];
 
 export function ClusterMap({ isLoading, clusters }: ClusterMapProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
@@ -73,34 +57,32 @@ export function ClusterMap({ isLoading, clusters }: ClusterMapProps) {
   const clusterLayerRef = useRef<LayerGroup | null>(null);
   const initializedRef = useRef(false);
 
-  // Initialize map
   useEffect(() => {
-    if (!mapContainerRef.current || initializedRef.current) return;
+    if (typeof window === 'undefined' || !mapContainerRef.current || initializedRef.current) return;
 
     const initializeMap = async () => {
-        const L = await import('leaflet');
-        
-        // This check prevents re-initialization on the same container
-        if (mapContainerRef.current && (mapContainerRef.current as any)._leaflet_id) {
-            return;
-        }
+      const L = await import('leaflet');
+      
+      // Check if container already has a map
+      if ((mapContainerRef.current as any)._leaflet_id) {
+          return;
+      }
+      
+      mapInstanceRef.current = L.map(mapContainerRef.current!, {
+          center: mapCenter,
+          zoom: 15,
+      });
 
-        mapInstanceRef.current = L.map(mapContainerRef.current!, {
-            center: mapCenter,
-            zoom: 15,
-        });
-
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-        }).addTo(mapInstanceRef.current);
-        
-        clusterLayerRef.current = L.layerGroup().addTo(mapInstanceRef.current);
-        initializedRef.current = true;
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+      }).addTo(mapInstanceRef.current);
+      
+      clusterLayerRef.current = L.layerGroup().addTo(mapInstanceRef.current);
+      initializedRef.current = true;
     };
 
     initializeMap();
 
-    // Cleanup function to run when component unmounts
     return () => {
         if (mapInstanceRef.current) {
             mapInstanceRef.current.remove();
@@ -110,15 +92,12 @@ export function ClusterMap({ isLoading, clusters }: ClusterMapProps) {
     };
   }, []); 
 
-  // Update clusters on map
   useEffect(() => {
-    // Ensure map and layer are ready
     if (!mapInstanceRef.current || !clusterLayerRef.current) return;
 
     const L = require('leaflet');
     const layerGroup = clusterLayerRef.current;
     
-    // Clear previous cluster circles
     layerGroup.clearLayers();
 
     clusters.forEach((cluster, index) => {
@@ -141,9 +120,7 @@ export function ClusterMap({ isLoading, clusters }: ClusterMapProps) {
           fillOpacity: 0.5,
       }).addTo(layerGroup).bindPopup(popupContent);
     });
-
   }, [clusters]);
-
 
   const renderContent = () => {
     if (isLoading) {

@@ -10,17 +10,7 @@ import AppLayout from '@/components/layout/app-layout';
 
 import { createContext, useContext } from 'react';
 import { mockHealthRecords } from '@/lib/mock-data';
-import dynamic from 'next/dynamic';
-import { Skeleton } from '@/components/ui/skeleton';
-
-const DynamicClusterMap = dynamic(
-  () => import('@/components/dashboard/cluster-map').then((mod) => mod.ClusterMap),
-  { 
-    ssr: false,
-    loading: () => <Skeleton className="w-full h-[582px]" />
-  }
-);
-
+import { ClusterMap } from '@/components/dashboard/cluster-map';
 
 export const DataContext = createContext<{
   clusters: Cluster[];
@@ -100,7 +90,7 @@ export default function DashboardPage() {
             <ClusterControls setIsLoading={setIsLoading} />
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
               <div className="col-span-4">
-                <DynamicClusterMap isLoading={isLoading} clusters={clusters} />
+                <ClusterMap isLoading={isLoading} clusters={clusters} />
               </div>
               <div className="col-span-4 lg:col-span-3">
                 <TrendAnalysis />
