@@ -107,6 +107,7 @@ export function ClusterMap({ isLoading, clusters }: ClusterMapProps) {
     
     // Clear previous cluster circles before drawing new ones
     layerGroup.clearLayers();
+    const circles:any[] = [];
 
     // If there are clusters, draw them
     if (clusters && clusters.length > 0) {
@@ -123,13 +124,20 @@ export function ClusterMap({ isLoading, clusters }: ClusterMapProps) {
             <div class="text-xs text-muted-foreground">Location: ${getMostCommonCity(cluster)}</div>
           `;
 
-          L.circle([location.lat, location.lng], {
+          const circle = L.circle([location.lat, location.lng], {
               radius: radius,
               color: color,
               fillColor: color,
               fillOpacity: 0.5,
           }).addTo(layerGroup).bindPopup(popupContent);
+          circles.push(circle);
         });
+        
+        // This is the crucial fix: if we have circles, fit the map view to them.
+        if (circles.length > 0) {
+            const featureGroup = L.featureGroup(circles);
+            mapInstanceRef.current.fitBounds(featureGroup.getBounds(), { padding: [50, 50] });
+        }
     }
   }, [clusters]); // This effect re-runs whenever the 'clusters' prop changes
 
