@@ -8,6 +8,21 @@ import { HealthRecord } from '@/lib/types';
 import AppLayout from '@/components/layout/app-layout';
 import { useToast } from '@/hooks/use-toast';
 
+// Function to safely get a value from a row, checking for multiple possible keys
+const getRowValue = (row: any, keys: string[]): string => {
+  for (const key of keys) {
+    if (row[key] !== undefined && row[key] !== null) {
+      return String(row[key]);
+    }
+  }
+  return '';
+};
+
+// Function to check if a row is essentially empty
+const isRowEmpty = (row: any): boolean => {
+  return Object.values(row).every(val => val === '' || val === null);
+}
+
 export default function UploadPage() {
   const [records, setRecords] = useState<HealthRecord[]>([]);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -31,24 +46,38 @@ export default function UploadPage() {
             return;
           }
           
-          const parsedRecords = results.data.map((row: any, index: number) => {
-            const age = parseInt(row.age, 10);
-            return {
-              id: row.id || `rec-${Date.now()}-${index}`,
-              name: row.name || row['Name'] || '',
-              age: isNaN(age) ? 0 : age,
-              gender: row.gender || row['Gender'] || 'Other',
-              address: row.address || row['Address'] || '',
-              disease: row.disease || row['Disease'] || 'None',
-              vaccinationStatus: row.vaccinationStatus || row['Vaccination Status'] || 'Not Vaccinated',
-              checkupDate: row.checkupDate || row['Checkup Date'] || new Date().toISOString().split('T')[0],
-            } as HealthRecord;
-          }).filter(record => record.name); // Filter out any empty rows
+          const parsedRecords = results.data
+            .filter((row: any) => !isRowEmpty(row)) // Filter out completely empty rows
+            .map((row: any, index: number): HealthRecord => {
+                const ageString = getRowValue(row, ['age', 'Age']);
+                const age = ageString ? parseInt(ageString, 10) : 0;
+                
+                const name = getRowValue(row, ['name', 'Name', 'Full Name', 'Patient Name']);
+                const gender = getRowValue(row, ['gender', 'Gender']) as HealthRecord['gender'] || 'Other';
+                const address = getRowValue(row, ['address', 'Address']);
+                const disease = getRowValue(row, ['disease', 'Disease']) || 'None';
+                const vaccinationStatus = getRowValue(row, ['vaccinationStatus', 'Vaccination Status', 'vax_status']) as HealthRecord['vaccinationStatus'] || 'Not Vaccinated';
+                const checkupDate = getRowValue(row, ['checkupDate', 'Checkup Date']);
 
-          setRecords(parsedRecords);
+                return {
+                  id: getRowValue(row, ['id', 'ID']) || `rec-${Date.now()}-${index}`,
+                  name,
+                  age: isNaN(age) ? 0 : age,
+                  gender: ['Male', 'Female', 'Other'].includes(gender) ? gender : 'Other',
+                  address,
+                  disease,
+                  vaccinationStatus: ['Vaccinated', 'Partially Vaccinated', 'Not Vaccinated'].includes(vaccinationStatus) ? vaccinationStatus : 'Not Vaccinated',
+                  checkupDate: checkupDate || new Date().toISOString().split('T')[0],
+                };
+          });
+
+          // Final filter to ensure we only keep records that have at least a name or an id.
+          const validRecords = parsedRecords.filter(record => record.name || record.id !== `rec-${Date.now()}-${parsedRecords.indexOf(record)}`);
+
+          setRecords(validRecords);
           toast({
             title: 'File Parsed Successfully',
-            description: `${parsedRecords.length} records loaded from ${file.name}.`,
+            description: `${validRecords.length} records loaded from ${file.name}.`,
           });
         },
         error: (error: any) => {
