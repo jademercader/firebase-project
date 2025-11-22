@@ -28,19 +28,26 @@ const getMostCommonPurok = (cluster: Cluster): string => {
         return 'N/A';
     }
     const purokCounts = cluster.records.reduce((acc, record: HealthRecord) => {
-        const purok = record.address;
-        if (purok) {
+        // Extract "Purok X" from the full address string
+        const match = record.address?.match(/Purok\s*\d+/i);
+        const purok = match ? match[0] : 'Unknown';
+        if (purok !== 'Unknown') {
             acc[purok] = (acc[purok] || 0) + 1;
         }
         return acc;
     }, {} as { [key: string]: number });
 
+    if (Object.keys(purokCounts).length === 0) {
+        return 'Unknown';
+    }
+
     const mostCommonPurok = Object.keys(purokCounts).reduce((a, b) =>
         purokCounts[a] > purokCounts[b] ? a : b
-    , 'Unknown');
+    );
     
     return mostCommonPurok;
 }
+
 
 const getClusterLocation = (cluster: Cluster): { lat: number; lng: number } | null => {
     const mostCommonPurok = getMostCommonPurok(cluster);
@@ -63,8 +70,8 @@ export function ClusterMap({ isLoading }: ClusterMapProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<LeafletMap | null>(null);
   const clusterLayerRef = useRef<LayerGroup | null>(null);
-  const { clusters } = useData();
   const initializedRef = useRef(false);
+  const { clusters } = useData();
 
   // Initialize map
   useEffect(() => {
