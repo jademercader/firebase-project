@@ -1,4 +1,3 @@
-
 'use client';
 import { useEffect, useRef } from 'react';
 import 'leaflet/dist/leaflet.css';
@@ -75,7 +74,7 @@ export function ClusterMap({ isLoading, clusters }: ClusterMapProps) {
       if (mapContainerRef.current && !mapInstanceRef.current) {
           mapInstanceRef.current = L.map(mapContainerRef.current, {
               center: mapCenter,
-              zoom: 12,
+              zoom: 11,
           });
 
           L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
