@@ -6,7 +6,7 @@ import { Skeleton } from '../ui/skeleton';
 import { Info } from 'lucide-react';
 import { useData } from '@/app/page';
 import type { Cluster, HealthRecord } from '@/lib/types';
-import type { Map, LayerGroup } from 'leaflet';
+import type { Map as LeafletMap, LayerGroup, Circle } from 'leaflet';
 
 interface ClusterMapProps {
   isLoading: boolean;
@@ -61,7 +61,7 @@ const getChartColor = (index: number) => {
 
 export function ClusterMap({ isLoading }: ClusterMapProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
-  const mapInstanceRef = useRef<Map | null>(null);
+  const mapInstanceRef = useRef<LeafletMap | null>(null);
   const clusterLayerRef = useRef<LayerGroup | null>(null);
   const { clusters } = useData();
   const initializedRef = useRef(false);
@@ -83,12 +83,12 @@ export function ClusterMap({ isLoading }: ClusterMapProps) {
         }).addTo(mapInstanceRef.current);
         
         clusterLayerRef.current = L.layerGroup().addTo(mapInstanceRef.current);
-        initializedRef.current = true;
+        initializedRef.current = true; // Mark as initialized
     };
 
     initializeMap();
 
-    // Cleanup function
+    // Cleanup function to run when component unmounts
     return () => {
         if (mapInstanceRef.current) {
             mapInstanceRef.current.remove();
