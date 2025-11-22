@@ -57,7 +57,7 @@ export function DataTable({ records }: DataTableProps) {
                   <TableCell>{record.vaccinationStatus}</TableCell>
                 </TableRow>
               )) : (
-                <TableRow>
+                <TableRow key="no-data-row">
                     <TableCell colSpan={7} className="text-center h-24">
                         No data to display. Please upload a file.
                     </TableCell>
