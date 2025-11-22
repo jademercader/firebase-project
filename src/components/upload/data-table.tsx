@@ -34,6 +34,7 @@ export function DataTable({ records }: DataTableProps) {
                 <TableHead>Name</TableHead>
                 <TableHead>Age</TableHead>
                 <TableHead>Gender</TableHead>
+                <TableHead>Address</TableHead>
                 <TableHead>Disease</TableHead>
                 <TableHead>Vaccination Status</TableHead>
               </TableRow>
@@ -47,6 +48,7 @@ export function DataTable({ records }: DataTableProps) {
                   <TableCell className="font-medium">{record.name}</TableCell>
                   <TableCell>{record.age}</TableCell>
                   <TableCell>{record.gender}</TableCell>
+                  <TableCell>{record.address}</TableCell>
                   <TableCell>
                     <Badge variant={record.disease === 'None' ? 'secondary' : 'destructive'}>
                       {record.disease}
@@ -56,7 +58,7 @@ export function DataTable({ records }: DataTableProps) {
                 </TableRow>
               )) : (
                 <TableRow>
-                    <TableCell colSpan={6} className="text-center h-24">
+                    <TableCell colSpan={7} className="text-center h-24">
                         No data to display. Please upload a file.
                     </TableCell>
                 </TableRow>
