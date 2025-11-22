@@ -74,12 +74,12 @@ export function ClusterControls({ setIsLoading }: ClusterControlsProps) {
         <Alert className={isUsingUploadedData ? 'border-primary/50 text-primary' : ''}>
           <Database className="h-4 w-4" />
           <AlertTitle className="font-bold">
-            {isUsingUploadedData ? 'Using Uploaded Data' : 'No Data Loaded'}
+            {isUsingUploadedData ? 'Using Uploaded Data' : 'Using Mock Data'}
           </AlertTitle>
           <AlertDescription>
             {isUsingUploadedData
               ? `Analysis will run on the ${healthRecords.length} records you uploaded.`
-              : 'Please go to the Upload Data page to use your own file.'}
+              : 'Please go to the Upload Data page to use your own file. Analysis is currently running on mock data.'}
           </AlertDescription>
         </Alert>
         <div className="space-y-4">
@@ -91,6 +91,7 @@ export function ClusterControls({ setIsLoading }: ClusterControlsProps) {
                             id={indicator.id} 
                             checked={selectedIndicators.includes(indicator.id)}
                             onCheckedChange={(checked) => handleIndicatorChange(indicator.id, !!checked)}
+                            disabled={!isUsingUploadedData}
                         />
                         <label
                             htmlFor={indicator.id}
