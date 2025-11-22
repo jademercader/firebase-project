@@ -9,16 +9,19 @@ import { PlayCircle } from 'lucide-react';
 import { healthIndicators } from '@/lib/mock-data';
 import { useToast } from '@/hooks/use-toast';
 import { runClusterAnalysis } from '@/app/actions';
-import { useData } from '@/app/page';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { Info, Database } from 'lucide-react';
+import type { Cluster, HealthRecord } from '@/lib/types';
+
 
 interface ClusterControlsProps {
     setIsLoading: (isLoading: boolean) => void;
+    setClusters: (clusters: Cluster[]) => void;
+    healthRecords: HealthRecord[];
+    isUsingUploadedData: boolean;
 }
 
-export function ClusterControls({ setIsLoading }: ClusterControlsProps) {
-  const { setClusters, healthRecords, isUsingUploadedData } = useData();
+export function ClusterControls({ setIsLoading, setClusters, healthRecords, isUsingUploadedData }: ClusterControlsProps) {
   const [numClusters, setNumClusters] = useState(3);
   const [selectedIndicators, setSelectedIndicators] = useState<string[]>(
     healthIndicators.map(i => i.id)
