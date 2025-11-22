@@ -43,7 +43,7 @@ const RECORDS_STORAGE_KEY = 'health_records';
 
 export default function DashboardPage() {
   const [clusters, setClusters] = useState<Cluster[]>([]);
-  const [healthRecords, setHealthRecords] = useState<HealthRecord[]>([]);
+  const [healthRecords, setHealthRecords] = useState<HealthRecord[]>(mockHealthRecords);
   const [isUsingUploadedData, setIsUsingUploadedData] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
@@ -63,16 +63,13 @@ export default function DashboardPage() {
           setHealthRecords(parsedRecords);
           setIsUsingUploadedData(true);
         } else {
-          setHealthRecords([]);
           setIsUsingUploadedData(false);
         }
       } else {
-        setHealthRecords([]);
-        setIsUsingUploadedData(false);
+         setIsUsingUploadedData(false);
       }
     } catch (error) {
       console.error("Failed to load data from localStorage", error);
-       setHealthRecords([]);
        setIsUsingUploadedData(false);
     }
     setIsInitialLoad(false);

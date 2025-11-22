@@ -51,7 +51,8 @@ const getMostCommonPurok = (cluster: Cluster): string => {
 
 const getClusterLocation = (cluster: Cluster): { lat: number; lng: number } | null => {
     const mostCommonPurok = getMostCommonPurok(cluster);
-    return purokCoordinates[mostCommonPurok] || null;
+    const purokKey = mostCommonPurok.charAt(0).toUpperCase() + mostCommonPurok.slice(1);
+    return purokCoordinates[purokKey] || null;
 }
 
 const chartColorsHSL = [
@@ -80,6 +81,11 @@ export function ClusterMap({ isLoading }: ClusterMapProps) {
     const initializeMap = async () => {
         const L = await import('leaflet');
         
+        // Prevent re-initialization
+        if (mapContainerRef.current && (mapContainerRef.current as any)._leaflet_id) {
+            return;
+        }
+
         mapInstanceRef.current = L.map(mapContainerRef.current!, {
             center: mapCenter,
             zoom: 15,
@@ -90,7 +96,7 @@ export function ClusterMap({ isLoading }: ClusterMapProps) {
         }).addTo(mapInstanceRef.current);
         
         clusterLayerRef.current = L.layerGroup().addTo(mapInstanceRef.current);
-        initializedRef.current = true; // Mark as initialized
+        initializedRef.current = true;
     };
 
     initializeMap();
