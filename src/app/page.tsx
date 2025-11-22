@@ -43,7 +43,7 @@ const RECORDS_STORAGE_KEY = 'health_records';
 
 export default function DashboardPage() {
   const [clusters, setClusters] = useState<Cluster[]>([]);
-  const [healthRecords, setHealthRecords] = useState<HealthRecord[]>(mockHealthRecords);
+  const [healthRecords, setHealthRecords] = useState<HealthRecord[]>([]);
   const [isUsingUploadedData, setIsUsingUploadedData] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
@@ -63,13 +63,16 @@ export default function DashboardPage() {
           setHealthRecords(parsedRecords);
           setIsUsingUploadedData(true);
         } else {
+          setHealthRecords(mockHealthRecords);
           setIsUsingUploadedData(false);
         }
       } else {
+         setHealthRecords(mockHealthRecords);
          setIsUsingUploadedData(false);
       }
     } catch (error) {
       console.error("Failed to load data from localStorage", error);
+       setHealthRecords(mockHealthRecords);
        setIsUsingUploadedData(false);
     }
     setIsInitialLoad(false);
@@ -97,7 +100,7 @@ export default function DashboardPage() {
             <ClusterControls setIsLoading={setIsLoading} />
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
               <div className="col-span-4">
-                <DynamicClusterMap isLoading={isLoading} />
+                <DynamicClusterMap isLoading={isLoading} clusters={clusters} />
               </div>
               <div className="col-span-4 lg:col-span-3">
                 <TrendAnalysis />

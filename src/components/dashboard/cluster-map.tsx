@@ -4,12 +4,12 @@ import 'leaflet/dist/leaflet.css';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '../ui/skeleton';
 import { Info } from 'lucide-react';
-import { useData } from '@/app/page';
 import type { Cluster, HealthRecord } from '@/lib/types';
 import type { Map as LeafletMap, LayerGroup, Circle } from 'leaflet';
 
 interface ClusterMapProps {
   isLoading: boolean;
+  clusters: Cluster[];
 }
 
 // Define coordinates for each Purok/Barangay.
@@ -67,12 +67,11 @@ const getChartColor = (index: number) => {
     return chartColorsHSL[index % chartColorsHSL.length];
 };
 
-export function ClusterMap({ isLoading }: ClusterMapProps) {
+export function ClusterMap({ isLoading, clusters }: ClusterMapProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<LeafletMap | null>(null);
   const clusterLayerRef = useRef<LayerGroup | null>(null);
   const initializedRef = useRef(false);
-  const { clusters } = useData();
 
   // Initialize map
   useEffect(() => {
@@ -81,7 +80,7 @@ export function ClusterMap({ isLoading }: ClusterMapProps) {
     const initializeMap = async () => {
         const L = await import('leaflet');
         
-        // Prevent re-initialization
+        // This check prevents re-initialization on the same container
         if (mapContainerRef.current && (mapContainerRef.current as any)._leaflet_id) {
             return;
         }
@@ -113,10 +112,13 @@ export function ClusterMap({ isLoading }: ClusterMapProps) {
 
   // Update clusters on map
   useEffect(() => {
+    // Ensure map and layer are ready
     if (!mapInstanceRef.current || !clusterLayerRef.current) return;
 
     const L = require('leaflet');
     const layerGroup = clusterLayerRef.current;
+    
+    // Clear previous cluster circles
     layerGroup.clearLayers();
 
     clusters.forEach((cluster, index) => {
