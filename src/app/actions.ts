@@ -66,8 +66,9 @@ export async function runClusterAnalysis(input: PerformClusterAnalysisInput) {
         // The AI's job is simplified: it just returns clusters with record IDs.
         // Pass the same data to the AI that we will use for enrichment.
         const result = await performClusterAnalysis({
-            ...validatedInput.data,
-            healthRecordsData: JSON.stringify(healthRecords) // Ensure the AI gets the parsed data
+            healthRecordsData: JSON.stringify(healthRecords), // Ensure the AI gets the parsed data as a clean string.
+            healthIndicators: validatedInput.data.healthIndicators,
+            numClusters: validatedInput.data.numClusters
         });
         
         if (!result || !result.clusters) {
