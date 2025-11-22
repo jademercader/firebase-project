@@ -66,12 +66,13 @@ export function ClusterMap({ isLoading, clusters }: ClusterMapProps) {
   
   // Effect for initializing the map
   useEffect(() => {
-    if (typeof window === 'undefined' || !mapContainerRef.current || mapInstanceRef.current) return;
+    if (typeof window === 'undefined' || !mapContainerRef.current) return;
 
     const initializeMap = async () => {
       const L = await import('leaflet');
       
-      if (mapContainerRef.current && !(mapContainerRef.current as any)._leaflet_id) {
+      // Initialize the map ONLY if it hasn't been initialized yet
+      if (mapContainerRef.current && !mapInstanceRef.current) {
           mapInstanceRef.current = L.map(mapContainerRef.current, {
               center: mapCenter,
               zoom: 12,
@@ -81,50 +82,57 @@ export function ClusterMap({ isLoading, clusters }: ClusterMapProps) {
               attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
           }).addTo(mapInstanceRef.current);
           
+          // Initialize and add the cluster layer group to the map
           clusterLayerRef.current = L.layerGroup().addTo(mapInstanceRef.current);
       }
     };
 
     initializeMap();
 
+    // Cleanup function to run when the component unmounts
     return () => {
         if (mapInstanceRef.current) {
             mapInstanceRef.current.remove();
             mapInstanceRef.current = null;
         }
     };
-  }, []); 
+  }, []); // Empty dependency array ensures this runs only once
 
   // Effect for drawing/updating clusters
   useEffect(() => {
-    if (!mapInstanceRef.current || !clusterLayerRef.current || !clusters) return;
+    // Ensure map and layer group are ready
+    if (!mapInstanceRef.current || !clusterLayerRef.current) return;
 
     const L = require('leaflet');
     const layerGroup = clusterLayerRef.current;
     
+    // Clear previous cluster circles before drawing new ones
     layerGroup.clearLayers();
 
-    clusters.forEach((cluster, index) => {
-      const location = getClusterLocation(cluster);
-      if (!location) return;
+    // If there are clusters, draw them
+    if (clusters && clusters.length > 0) {
+        clusters.forEach((cluster, index) => {
+          const location = getClusterLocation(cluster);
+          if (!location) return; // Skip if no location can be determined
 
-      const radius = 50 + Math.log(cluster.records.length + 1) * 25;
-      const color = getChartColor(index);
-      
-      const popupContent = `
-        <div class="font-bold">${cluster.name}</div>
-        <div>${cluster.records.length} records</div>
-        <div class="text-xs text-muted-foreground">Location: ${getMostCommonCity(cluster)}</div>
-      `;
+          const radius = 500 + Math.log(cluster.records.length + 1) * 250;
+          const color = getChartColor(index);
+          
+          const popupContent = `
+            <div class="font-bold">${cluster.name}</div>
+            <div>${cluster.records.length} records</div>
+            <div class="text-xs text-muted-foreground">Location: ${getMostCommonCity(cluster)}</div>
+          `;
 
-      L.circle([location.lat, location.lng], {
-          radius: radius,
-          color: color,
-          fillColor: color,
-          fillOpacity: 0.5,
-      }).addTo(layerGroup).bindPopup(popupContent);
-    });
-  }, [clusters]);
+          L.circle([location.lat, location.lng], {
+              radius: radius,
+              color: color,
+              fillColor: color,
+              fillOpacity: 0.5,
+          }).addTo(layerGroup).bindPopup(popupContent);
+        });
+    }
+  }, [clusters]); // This effect re-runs whenever the 'clusters' prop changes
 
   const renderContent = () => {
     if (isLoading) {
@@ -161,4 +169,3 @@ export function ClusterMap({ isLoading, clusters }: ClusterMapProps) {
     </Card>
   );
 }
-
