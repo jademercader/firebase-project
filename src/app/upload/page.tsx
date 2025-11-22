@@ -22,9 +22,15 @@ export default function UploadPage() {
         skipEmptyLines: true,
         complete: (results) => {
           // Assuming the CSV headers match the HealthRecord keys
-          const parsedRecords = results.data.map((row: any) => ({
-            ...row,
-            age: parseInt(row.age, 10) || 0, // Ensure age is a number
+          const parsedRecords = results.data.map((row: any, index: number) => ({
+            id: row.id || `R${index + 1}`,
+            name: row.name || '',
+            age: parseInt(row.age, 10) || 0,
+            gender: row.gender || 'Other',
+            address: row.address || '',
+            disease: row.disease || 'None',
+            vaccinationStatus: row.vaccinationStatus || 'Not Vaccinated',
+            checkupDate: row.checkupDate || new Date().toISOString().split('T')[0],
           })) as HealthRecord[];
           setRecords(parsedRecords);
           toast({
