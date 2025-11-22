@@ -43,7 +43,7 @@ const prompt = ai.definePrompt({
   name: 'performClusterAnalysisPrompt',
   input: {schema: PerformClusterAnalysisInputSchema},
   output: {schema: PerformClusterAnalysisOutputSchema},
-  model: 'googleai/gemini-2.5-flash',
+  model: 'googleai/gemini-2.5-pro',
   prompt: `You are a public health data scientist. Your task is to perform a cluster analysis on the provided health records.
 
 Instructions:
