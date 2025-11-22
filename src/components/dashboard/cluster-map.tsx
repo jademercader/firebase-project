@@ -28,7 +28,6 @@ const getMostCommonCity = (cluster: Cluster): string => {
     if (!cluster.records || cluster.records.length === 0) return 'N/A';
     
     const cityCounts = cluster.records.reduce((acc, record: HealthRecord) => {
-        // Attempt to find a known city name in the address string
         const address = record.address || '';
         const foundCity = Object.keys(cityCoordinates).find(city => 
             new RegExp(`\\b${city}\\b`, 'i').test(address)
@@ -64,30 +63,26 @@ export function ClusterMap({ isLoading, clusters }: ClusterMapProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<LeafletMap | null>(null);
   const clusterLayerRef = useRef<LayerGroup | null>(null);
-  const initializedRef = useRef(false);
-
+  
   // Effect for initializing the map
   useEffect(() => {
-    if (typeof window === 'undefined' || !mapContainerRef.current || initializedRef.current) return;
+    if (typeof window === 'undefined' || !mapContainerRef.current || mapInstanceRef.current) return;
 
     const initializeMap = async () => {
       const L = await import('leaflet');
       
-      if (mapContainerRef.current && (mapContainerRef.current as any)._leaflet_id) {
-          return;
-      }
-      
-      mapInstanceRef.current = L.map(mapContainerRef.current!, {
-          center: mapCenter,
-          zoom: 12,
-      });
+      if (mapContainerRef.current && !(mapContainerRef.current as any)._leaflet_id) {
+          mapInstanceRef.current = L.map(mapContainerRef.current, {
+              center: mapCenter,
+              zoom: 12,
+          });
 
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-          attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-      }).addTo(mapInstanceRef.current);
-      
-      clusterLayerRef.current = L.layerGroup().addTo(mapInstanceRef.current);
-      initializedRef.current = true;
+          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+              attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+          }).addTo(mapInstanceRef.current);
+          
+          clusterLayerRef.current = L.layerGroup().addTo(mapInstanceRef.current);
+      }
     };
 
     initializeMap();
@@ -96,7 +91,6 @@ export function ClusterMap({ isLoading, clusters }: ClusterMapProps) {
         if (mapInstanceRef.current) {
             mapInstanceRef.current.remove();
             mapInstanceRef.current = null;
-            initializedRef.current = false;
         }
     };
   }, []); 
@@ -167,3 +161,4 @@ export function ClusterMap({ isLoading, clusters }: ClusterMapProps) {
     </Card>
   );
 }
+
