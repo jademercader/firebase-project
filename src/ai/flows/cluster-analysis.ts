@@ -47,11 +47,11 @@ const prompt = ai.definePrompt({
   prompt: `You are a public health data scientist. Your task is to perform a cluster analysis on the provided health records.
 
 Instructions:
-1.  Analyze the health records provided in the \`healthRecordsData\` JSON string.
+1.  Analyze the health records provided in the \`healthRecordsData\` JSON string. Each record in this data has a unique 'id' field.
 2.  Use the specified \`healthIndicators\` to group the records into distinct clusters.
 3.  Create exactly \`numClusters\` clusters.
 4.  For each cluster, provide a descriptive name.
-5.  For each cluster, provide an array of the record \`id\` strings that belong to it.
+5.  For each cluster, you MUST provide an array of the 'id' strings from the original records that belong to that cluster.
 6.  CRITICAL: Your output MUST be a valid JSON object that conforms to the specified output schema. Do not include any other text, explanations, or markdown.
 
 Health Records Data:
