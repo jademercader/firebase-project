@@ -1,3 +1,4 @@
+
 'use client';
 import { useEffect, useRef } from 'react';
 import 'leaflet/dist/leaflet.css';
@@ -12,41 +13,42 @@ interface ClusterMapProps {
   clusters: Cluster[];
 }
 
-const purokCoordinates: { [key: string]: { lat: number; lng: number } } = {
-  'Purok 1': { lat: 14.5995, lng: 120.9842 },
-  'Purok 2': { lat: 14.6020, lng: 120.9860 },
-  'Purok 3': { lat: 14.5980, lng: 120.9880 },
-  'Purok 4': { lat: 14.5965, lng: 120.9835 },
+const cityCoordinates: { [key: string]: { lat: number; lng: number } } = {
+  'Manila': { lat: 14.5995, lng: 120.9842 },
+  'Quezon City': { lat: 14.6760, lng: 121.0437 },
+  'Caloocan': { lat: 14.656, lng: 120.9822 },
+  'Makati': { lat: 14.5547, lng: 121.0244 },
+  'Pasig': { lat: 14.5764, lng: 121.0851 },
+  'Taguig': { lat: 14.5176, lng: 121.0509 }
 };
 
-const mapCenter: [number, number] = [14.5995, 120.9842];
+const mapCenter: [number, number] = [14.5995, 120.9842]; // Default to Manila
 
-const getMostCommonPurok = (cluster: Cluster): string => {
+const getMostCommonCity = (cluster: Cluster): string => {
     if (!cluster.records || cluster.records.length === 0) return 'N/A';
     
-    const purokCounts = cluster.records.reduce((acc, record: HealthRecord) => {
-        const match = record.address?.match(/Purok\s*\d+/i);
-        const purok = match ? match[0] : 'Unknown';
-        if (purok !== 'Unknown') {
-            acc[purok] = (acc[purok] || 0) + 1;
+    const cityCounts = cluster.records.reduce((acc, record: HealthRecord) => {
+        // Attempt to find a known city name in the address string
+        const address = record.address || '';
+        const foundCity = Object.keys(cityCoordinates).find(city => 
+            new RegExp(`\\b${city}\\b`, 'i').test(address)
+        );
+
+        if (foundCity) {
+            acc[foundCity] = (acc[foundCity] || 0) + 1;
         }
         return acc;
     }, {} as { [key: string]: number });
 
-    if (Object.keys(purokCounts).length === 0) return 'Unknown';
+    if (Object.keys(cityCounts).length === 0) return 'Unknown';
 
-    return Object.keys(purokCounts).reduce((a, b) => purokCounts[a] > purokCounts[b] ? a : b);
+    return Object.keys(cityCounts).reduce((a, b) => cityCounts[a] > cityCounts[b] ? a : b);
 }
 
 const getClusterLocation = (cluster: Cluster): { lat: number; lng: number } | null => {
-    const mostCommonPurok = getMostCommonPurok(cluster);
-    const purokKey = mostCommonPurok.charAt(0).toUpperCase() + mostCommonPurok.slice(1).toLowerCase();
-    const purokNum = purokKey.replace(' ', '');
-    
-    for (const key in purokCoordinates) {
-        if(key.replace(' ', '') === purokNum){
-            return purokCoordinates[key];
-        }
+    const mostCommonCity = getMostCommonCity(cluster);
+    if (cityCoordinates[mostCommonCity]) {
+      return cityCoordinates[mostCommonCity];
     }
     return null;
 }
@@ -71,14 +73,13 @@ export function ClusterMap({ isLoading, clusters }: ClusterMapProps) {
     const initializeMap = async () => {
       const L = await import('leaflet');
       
-      // Prevent re-initialization
       if (mapContainerRef.current && (mapContainerRef.current as any)._leaflet_id) {
           return;
       }
       
       mapInstanceRef.current = L.map(mapContainerRef.current!, {
           center: mapCenter,
-          zoom: 15,
+          zoom: 12,
       });
 
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -91,7 +92,6 @@ export function ClusterMap({ isLoading, clusters }: ClusterMapProps) {
 
     initializeMap();
 
-    // Cleanup function
     return () => {
         if (mapInstanceRef.current) {
             mapInstanceRef.current.remove();
@@ -108,21 +108,19 @@ export function ClusterMap({ isLoading, clusters }: ClusterMapProps) {
     const L = require('leaflet');
     const layerGroup = clusterLayerRef.current;
     
-    // Clear previous cluster circles
     layerGroup.clearLayers();
 
-    // Draw new circles
     clusters.forEach((cluster, index) => {
       const location = getClusterLocation(cluster);
       if (!location) return;
 
-      const radius = 20 + Math.log(cluster.records.length + 1) * 15;
+      const radius = 50 + Math.log(cluster.records.length + 1) * 25;
       const color = getChartColor(index);
       
       const popupContent = `
         <div class="font-bold">${cluster.name}</div>
         <div>${cluster.records.length} records</div>
-        <div class="text-xs text-muted-foreground">Location: ${getMostCommonPurok(cluster)}</div>
+        <div class="text-xs text-muted-foreground">Location: ${getMostCommonCity(cluster)}</div>
       `;
 
       L.circle([location.lat, location.lng], {
