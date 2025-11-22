@@ -40,8 +40,15 @@ const getMostCommonPurok = (cluster: Cluster): string => {
 
 const getClusterLocation = (cluster: Cluster): { lat: number; lng: number } | null => {
     const mostCommonPurok = getMostCommonPurok(cluster);
-    const purokKey = mostCommonPurok.charAt(0).toUpperCase() + mostCommonPurok.slice(1);
-    return purokCoordinates[purokKey] || null;
+    const purokKey = mostCommonPurok.charAt(0).toUpperCase() + mostCommonPurok.slice(1).toLowerCase();
+    const purokNum = purokKey.replace(' ', '');
+    
+    for (const key in purokCoordinates) {
+        if(key.replace(' ', '') === purokNum){
+            return purokCoordinates[key];
+        }
+    }
+    return null;
 }
 
 const chartColorsHSL = [
@@ -57,14 +64,15 @@ export function ClusterMap({ isLoading, clusters }: ClusterMapProps) {
   const clusterLayerRef = useRef<LayerGroup | null>(null);
   const initializedRef = useRef(false);
 
+  // Effect for initializing the map
   useEffect(() => {
     if (typeof window === 'undefined' || !mapContainerRef.current || initializedRef.current) return;
 
     const initializeMap = async () => {
       const L = await import('leaflet');
       
-      // Check if container already has a map
-      if ((mapContainerRef.current as any)._leaflet_id) {
+      // Prevent re-initialization
+      if (mapContainerRef.current && (mapContainerRef.current as any)._leaflet_id) {
           return;
       }
       
@@ -83,6 +91,7 @@ export function ClusterMap({ isLoading, clusters }: ClusterMapProps) {
 
     initializeMap();
 
+    // Cleanup function
     return () => {
         if (mapInstanceRef.current) {
             mapInstanceRef.current.remove();
@@ -92,14 +101,17 @@ export function ClusterMap({ isLoading, clusters }: ClusterMapProps) {
     };
   }, []); 
 
+  // Effect for drawing/updating clusters
   useEffect(() => {
-    if (!mapInstanceRef.current || !clusterLayerRef.current) return;
+    if (!mapInstanceRef.current || !clusterLayerRef.current || !clusters) return;
 
     const L = require('leaflet');
     const layerGroup = clusterLayerRef.current;
     
+    // Clear previous cluster circles
     layerGroup.clearLayers();
 
+    // Draw new circles
     clusters.forEach((cluster, index) => {
       const location = getClusterLocation(cluster);
       if (!location) return;
