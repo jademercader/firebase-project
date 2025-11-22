@@ -60,16 +60,22 @@ export async function runClusterAnalysis(input: PerformClusterAnalysisInput) {
 
     try {
         // The raw health records are needed for calculations.
+        // Parse the records ONCE to ensure data consistency.
         const healthRecords: HealthRecord[] = JSON.parse(validatedInput.data.healthRecordsData);
 
         // The AI's job is simplified: it just returns clusters with record IDs.
-        const result = await performClusterAnalysis(validatedInput.data);
+        // Pass the same data to the AI that we will use for enrichment.
+        const result = await performClusterAnalysis({
+            ...validatedInput.data,
+            healthRecordsData: JSON.stringify(healthRecords) // Ensure the AI gets the parsed data
+        });
         
         if (!result || !result.clusters) {
              return { success: false, error: 'AI did not return valid cluster data.' };
         }
         
         // We perform the detailed calculations in our own code for reliability.
+        // Use the SAME parsed `healthRecords` array for the calculations.
         const detailedClusters = calculateClusterMetrics(result.clusters, healthRecords);
 
         return { success: true, data: { clusters: detailedClusters } };
