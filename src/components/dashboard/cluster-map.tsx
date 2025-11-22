@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '../ui/skeleton';
 import { Info } from 'lucide-react';
 import { useData } from '@/app/page';
-import { Cluster, HealthRecord } from '@/lib/types';
+import type { Cluster, HealthRecord } from '@/lib/types';
 import type { Map, LayerGroup } from 'leaflet';
 
 interface ClusterMapProps {
@@ -67,7 +67,7 @@ export function ClusterMap({ isLoading }: ClusterMapProps) {
 
   // Initialize map
   useEffect(() => {
-    if (mapInstanceRef.current || !mapContainerRef.current) return;
+    if (!mapContainerRef.current || mapInstanceRef.current) return;
 
     const initializeMap = async () => {
         const L = await import('leaflet');
