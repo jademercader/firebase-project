@@ -64,10 +64,11 @@ export function ClusterMap({ isLoading }: ClusterMapProps) {
   const mapInstanceRef = useRef<Map | null>(null);
   const clusterLayerRef = useRef<LayerGroup | null>(null);
   const { clusters } = useData();
+  const initializedRef = useRef(false);
 
   // Initialize map
   useEffect(() => {
-    if (!mapContainerRef.current || mapInstanceRef.current) return;
+    if (!mapContainerRef.current || initializedRef.current) return;
 
     const initializeMap = async () => {
         const L = await import('leaflet');
@@ -82,6 +83,7 @@ export function ClusterMap({ isLoading }: ClusterMapProps) {
         }).addTo(mapInstanceRef.current);
         
         clusterLayerRef.current = L.layerGroup().addTo(mapInstanceRef.current);
+        initializedRef.current = true;
     };
 
     initializeMap();
@@ -91,6 +93,7 @@ export function ClusterMap({ isLoading }: ClusterMapProps) {
         if (mapInstanceRef.current) {
             mapInstanceRef.current.remove();
             mapInstanceRef.current = null;
+            initializedRef.current = false;
         }
     };
   }, []); 
