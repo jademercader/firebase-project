@@ -21,17 +21,30 @@ export default function UploadPage() {
         header: true,
         skipEmptyLines: true,
         complete: (results) => {
-          // Assuming the CSV headers match the HealthRecord keys
-          const parsedRecords = results.data.map((row: any, index: number) => ({
-            id: row.id || `R${index + 1}`,
-            name: row.name || '',
-            age: parseInt(row.age, 10) || 0,
-            gender: row.gender || 'Other',
-            address: row.address || '',
-            disease: row.disease || 'None',
-            vaccinationStatus: row.vaccinationStatus || 'Not Vaccinated',
-            checkupDate: row.checkupDate || new Date().toISOString().split('T')[0],
-          })) as HealthRecord[];
+          if (results.errors.length) {
+            console.error('Error parsing CSV:', results.errors);
+            toast({
+              variant: 'destructive',
+              title: 'File Parsing Failed',
+              description: results.errors.map(e => e.message).join(', '),
+            });
+            return;
+          }
+          
+          const parsedRecords = results.data.map((row: any, index: number) => {
+            const age = parseInt(row.age, 10);
+            return {
+              id: row.id || `rec-${Date.now()}-${index}`,
+              name: row.name || row['Name'] || '',
+              age: isNaN(age) ? 0 : age,
+              gender: row.gender || row['Gender'] || 'Other',
+              address: row.address || row['Address'] || '',
+              disease: row.disease || row['Disease'] || 'None',
+              vaccinationStatus: row.vaccinationStatus || row['Vaccination Status'] || 'Not Vaccinated',
+              checkupDate: row.checkupDate || row['Checkup Date'] || new Date().toISOString().split('T')[0],
+            } as HealthRecord;
+          }).filter(record => record.name); // Filter out any empty rows
+
           setRecords(parsedRecords);
           toast({
             title: 'File Parsed Successfully',
@@ -52,6 +65,14 @@ export default function UploadPage() {
   };
   
   const handleSaveData = () => {
+    if (records.length === 0) {
+       toast({
+        variant: 'destructive',
+        title: 'No Data to Save',
+        description: 'Please upload and parse a file before saving.',
+      });
+      return;
+    }
     const RECORDS_STORAGE_KEY = 'health_records';
     localStorage.setItem(RECORDS_STORAGE_KEY, JSON.stringify(records));
      toast({
