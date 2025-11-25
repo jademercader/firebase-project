@@ -14,7 +14,7 @@ interface ClusterMapProps {
 
 const mapCenter = { lat: 14.5995, lng: 120.9842 }; // Default to Manila
 
-const chartColors = ['#2563eb', '#f97316', '#16a34a', '#9333ea', '#e11d48'];
+const chartColors = ['#2563eb', '#f97316', '#16a34a', '#9333ea', '#e11d48', '#d97706', '#059669', '#7c3aed', '#be123c', '#65a30d'];
 
 const getChartColor = (index: number) => chartColors[index % chartColors.length];
 
@@ -96,7 +96,7 @@ export function ClusterMap({ isLoading, clusters }: ClusterMapProps) {
                   position={{ lat: record.latitude, lng: record.longitude }}
                   onClick={() => setSelectedRecord(record)}
                   icon={{
-                    path: google.maps.SymbolPath.CIRCLE,
+                    path: window.google.maps.SymbolPath.CIRCLE,
                     scale: 8,
                     fillColor: getChartColor(index),
                     fillOpacity: 0.8,
