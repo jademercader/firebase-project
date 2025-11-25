@@ -61,7 +61,7 @@ export async function runClusterAnalysis(input: PerformClusterAnalysisInput) {
 
     try {
         const healthRecords: HealthRecord[] = JSON.parse(validatedInput.data.healthRecordsData);
-
+        
         const aiResult = await performClusterAnalysis({
             healthRecordsData: JSON.stringify(healthRecords.map(({ id, age, gender, disease, vaccinationStatus }) => ({ id, age, gender, disease, vaccinationStatus }))),
             healthIndicators: validatedInput.data.healthIndicators,
@@ -78,10 +78,15 @@ export async function runClusterAnalysis(input: PerformClusterAnalysisInput) {
         for (const cluster of detailedClusters) {
             for (const record of cluster.records) {
                 if (record.address && (!record.latitude || !record.longitude)) {
-                    const coords = await geocodeAddress(record.address);
-                    if (coords) {
-                        record.latitude = coords.lat;
-                        record.longitude = coords.lng;
+                    try {
+                        const coords = await geocodeAddress(record.address);
+                        if (coords) {
+                            record.latitude = coords.lat;
+                            record.longitude = coords.lng;
+                        }
+                    } catch (error: any) {
+                        // If geocoding fails due to a critical error (like a bad API key), stop and return the error.
+                         return { success: false, error: `Geocoding failed: ${error.message}` };
                     }
                 }
             }
