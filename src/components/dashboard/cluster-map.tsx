@@ -22,6 +22,7 @@ export function ClusterMap({ isLoading, clusters }: ClusterMapProps) {
   const { isLoaded, loadError } = useJsApiLoader({
     id: 'google-map-script',
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "",
+    libraries: ['maps'],
   });
 
   const [map, setMap] = React.useState<google.maps.Map | null>(null);
@@ -52,7 +53,7 @@ export function ClusterMap({ isLoading, clusters }: ClusterMapProps) {
 
   React.useEffect(() => {
     if (map && bounds) {
-      map.fitBounds(bounds);
+      map.fitBounds(bounds, 100); // 100px padding
     } else if (map) {
       map.setCenter(mapCenter);
       map.setZoom(11);
