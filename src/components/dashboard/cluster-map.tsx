@@ -59,7 +59,7 @@ export function ClusterMap({ isLoading, clusters }: ClusterMapProps) {
 
   // Effect for drawing/updating clusters
   useEffect(() => {
-    if (!mapInstanceRef.current || !clusterLayerRef.current) return;
+    if (!mapInstanceRef.current || !clusterLayerRef.current || isLoading) return;
 
     const L = require('leaflet');
     const layerGroup = clusterLayerRef.current;
@@ -84,21 +84,26 @@ export function ClusterMap({ isLoading, clusters }: ClusterMapProps) {
                   color: color,
                   fillColor: color,
                   fillOpacity: 0.7,
-              }).addTo(layerGroup).bindPopup(popupContent);
+              }).bindPopup(popupContent);
+              
               markers.push(circleMarker);
             }
           });
         });
         
         if (markers.length > 0) {
+            markers.forEach(marker => marker.addTo(layerGroup));
             const featureGroup = L.featureGroup(markers);
-            mapInstanceRef.current.fitBounds(featureGroup.getBounds(), { padding: [50, 50] });
+            mapInstanceRef.current.fitBounds(featureGroup.getBounds(), { padding: [50, 50], maxZoom: 15 });
         } else {
             // If no markers could be drawn (e.g., failed geocoding), reset to default view
             mapInstanceRef.current.setView(mapCenter, 11);
         }
+    } else {
+        // No clusters, reset map view
+        mapInstanceRef.current.setView(mapCenter, 11);
     }
-  }, [clusters]);
+  }, [clusters, isLoading]);
 
   const renderContent = () => {
     if (isLoading) {
