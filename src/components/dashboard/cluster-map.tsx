@@ -28,7 +28,7 @@ export function ClusterMap({ isLoading, clusters }: ClusterMapProps) {
   const [selectedRecord, setSelectedRecord] = React.useState<HealthRecord | null>(null);
 
   const bounds = useMemo(() => {
-    if (!clusters || clusters.length === 0) return null;
+    if (!isLoaded || !clusters || clusters.length === 0) return null;
     const newBounds = new window.google.maps.LatLngBounds();
     let hasValidCoords = false;
     clusters.forEach(cluster => {
@@ -40,7 +40,7 @@ export function ClusterMap({ isLoading, clusters }: ClusterMapProps) {
       });
     });
     return hasValidCoords ? newBounds : null;
-  }, [clusters]);
+  }, [clusters, isLoaded]);
 
   const onLoad = useCallback((mapInstance: google.maps.Map) => {
     setMap(mapInstance);
