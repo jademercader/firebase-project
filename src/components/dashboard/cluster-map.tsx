@@ -1,123 +1,125 @@
 'use client';
-import { useEffect, useRef } from 'react';
-import 'leaflet/dist/leaflet.css';
+import { useCallback, useMemo } from 'react';
+import { GoogleMap, useJsApiLoader, MarkerF, InfoWindowF } from '@react-google-maps/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '../ui/skeleton';
 import { Info } from 'lucide-react';
 import type { Cluster, HealthRecord } from '@/lib/types';
-import type { Map as LeafletMap, LayerGroup } from 'leaflet';
+import React from 'react';
 
 interface ClusterMapProps {
   isLoading: boolean;
   clusters: Cluster[];
 }
 
-const mapCenter: [number, number] = [14.5995, 120.9842]; // Default to Manila
+const mapCenter = { lat: 14.5995, lng: 120.9842 }; // Default to Manila
 
-const chartColorsHSL = [
-    'hsl(var(--chart-1))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))',
-    'hsl(var(--chart-4))', 'hsl(var(--chart-5))',
-];
+const chartColors = ['#2563eb', '#f97316', '#16a34a', '#9333ea', '#e11d48'];
 
-const getChartColor = (index: number) => chartColorsHSL[index % chartColorsHSL.length];
+const getChartColor = (index: number) => chartColors[index % chartColors.length];
 
 export function ClusterMap({ isLoading, clusters }: ClusterMapProps) {
-  const mapContainerRef = useRef<HTMLDivElement>(null);
-  const mapInstanceRef = useRef<LeafletMap | null>(null);
-  const clusterLayerRef = useRef<LayerGroup | null>(null);
-  
-  // Effect for initializing the map
-  useEffect(() => {
-    if (typeof window === 'undefined' || !mapContainerRef.current) return;
+  const { isLoaded, loadError } = useJsApiLoader({
+    id: 'google-map-script',
+    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "",
+  });
 
-    const initializeMap = async () => {
-      const L = await import('leaflet');
-      
-      if (mapContainerRef.current && !mapInstanceRef.current) {
-          mapInstanceRef.current = L.map(mapContainerRef.current, {
-              center: mapCenter,
-              zoom: 11,
-          });
+  const [map, setMap] = React.useState<google.maps.Map | null>(null);
+  const [selectedRecord, setSelectedRecord] = React.useState<HealthRecord | null>(null);
 
-          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-              attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-          }).addTo(mapInstanceRef.current);
-          
-          clusterLayerRef.current = L.layerGroup().addTo(mapInstanceRef.current);
-      }
-    };
-
-    initializeMap();
-
-    return () => {
-        if (mapInstanceRef.current) {
-            mapInstanceRef.current.remove();
-            mapInstanceRef.current = null;
+  const bounds = useMemo(() => {
+    if (!clusters || clusters.length === 0) return null;
+    const newBounds = new window.google.maps.LatLngBounds();
+    let hasValidCoords = false;
+    clusters.forEach(cluster => {
+      cluster.records.forEach(record => {
+        if (record.latitude && record.longitude) {
+          newBounds.extend(new window.google.maps.LatLng(record.latitude, record.longitude));
+          hasValidCoords = true;
         }
-    };
+      });
+    });
+    return hasValidCoords ? newBounds : null;
+  }, [clusters]);
+
+  const onLoad = useCallback((mapInstance: google.maps.Map) => {
+    setMap(mapInstance);
   }, []);
 
-  // Effect for drawing/updating clusters
-  useEffect(() => {
-    if (!mapInstanceRef.current || !clusterLayerRef.current || isLoading) return;
+  const onUnmount = useCallback(() => {
+    setMap(null);
+  }, []);
 
-    const L = require('leaflet');
-    const layerGroup = clusterLayerRef.current;
-    
-    layerGroup.clearLayers();
-    const markers: any[] = [];
-
-    if (clusters && clusters.length > 0) {
-        clusters.forEach((cluster, index) => {
-          const color = getChartColor(index);
-          
-          cluster.records.forEach((record) => {
-            if (record.latitude && record.longitude) {
-              const popupContent = `
-                <div class="font-bold">${record.name}</div>
-                <div>Cluster: ${cluster.name}</div>
-                <div class="text-xs text-muted-foreground">${record.address}</div>
-              `;
-
-              const circleMarker = L.circleMarker([record.latitude, record.longitude], {
-                  radius: 8,
-                  color: color,
-                  fillColor: color,
-                  fillOpacity: 0.7,
-              }).bindPopup(popupContent);
-              
-              markers.push(circleMarker);
-            }
-          });
-        });
-        
-        if (markers.length > 0) {
-            markers.forEach(marker => marker.addTo(layerGroup));
-            const featureGroup = L.featureGroup(markers);
-            mapInstanceRef.current.fitBounds(featureGroup.getBounds(), { padding: [50, 50], maxZoom: 15 });
-        } else {
-            // If no markers could be drawn (e.g., failed geocoding), reset to default view
-            mapInstanceRef.current.setView(mapCenter, 11);
-        }
-    } else {
-        // No clusters, reset map view
-        mapInstanceRef.current.setView(mapCenter, 11);
+  React.useEffect(() => {
+    if (map && bounds) {
+      map.fitBounds(bounds);
+    } else if (map) {
+      map.setCenter(mapCenter);
+      map.setZoom(11);
     }
-  }, [clusters, isLoading]);
+  }, [map, bounds]);
 
   const renderContent = () => {
-    if (isLoading) {
+    if (loadError) {
+      return (
+        <div className="flex items-center justify-center h-full p-4">
+          <p className="text-destructive text-center">
+            Error loading Google Maps. Please ensure your API key is correct and has the Maps JavaScript API enabled.
+          </p>
+        </div>
+      );
+    }
+
+    if (isLoading || !isLoaded) {
       return <Skeleton className="w-full h-full" />;
     }
-    
+
     return (
       <div style={{ position: 'relative', height: '100%', width: '100%' }}>
-        <div 
-          ref={mapContainerRef} 
-          style={{ height: '100%', width: '100%', borderRadius: 'var(--radius)' }}
-        />
+        <GoogleMap
+          mapContainerStyle={{ height: '100%', width: '100%', borderRadius: 'var(--radius)' }}
+          center={mapCenter}
+          zoom={11}
+          onLoad={onLoad}
+          onUnmount={onUnmount}
+          options={{
+            disableDefaultUI: true,
+            zoomControl: true,
+          }}
+        >
+          {clusters.map((cluster, index) =>
+            cluster.records.map(record =>
+              record.latitude && record.longitude ? (
+                <MarkerF
+                  key={record.id}
+                  position={{ lat: record.latitude, lng: record.longitude }}
+                  onClick={() => setSelectedRecord(record)}
+                  icon={{
+                    path: google.maps.SymbolPath.CIRCLE,
+                    scale: 8,
+                    fillColor: getChartColor(index),
+                    fillOpacity: 0.8,
+                    strokeColor: 'white',
+                    strokeWeight: 1,
+                  }}
+                />
+              ) : null
+            )
+          )}
+          {selectedRecord && selectedRecord.latitude && selectedRecord.longitude && (
+             <InfoWindowF
+                position={{ lat: selectedRecord.latitude, lng: selectedRecord.longitude }}
+                onCloseClick={() => setSelectedRecord(null)}
+              >
+                <div className="p-1">
+                  <p className="font-bold">{selectedRecord.name}</p>
+                  <p className="text-xs text-muted-foreground">{selectedRecord.address}</p>
+                </div>
+              </InfoWindowF>
+          )}
+        </GoogleMap>
         {!isLoading && clusters.length === 0 && (
-          <div className="absolute inset-0 flex items-center justify-center p-4 bg-black/30 rounded-md z-[1000] pointer-events-none">
+          <div className="absolute inset-0 flex items-center justify-center p-4 bg-black/30 rounded-md z-10 pointer-events-none">
             <div className="text-center bg-background/80 backdrop-blur-sm text-foreground p-4 rounded-lg border">
               <Info className="mx-auto h-8 w-8 text-primary mb-2" />
               <h3 className="font-bold text-lg">Cluster Visualization</h3>
