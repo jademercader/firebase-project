@@ -61,9 +61,31 @@ The system's data processing and analytical capabilities are powered by a combin
 
 *   **Geocoding Service**: The Google Geocoding API is utilized for converting textual addresses into geographic coordinates (latitude and longitude). Access is managed through a dedicated server-side action to protect API credentials and centralize logic.
 
-### 2.3 Client-Side (User) Prerequisites
+---
 
-End-users must possess the following to interact with the application:
+## 3.0 System Requirements
+
+This section specifies the necessary prerequisites for the operation and development of the Barangay Health Insights system.
+
+### 3.1 End-User (Client) Prerequisites
+
+To access and interact with the deployed web application, an end-user must possess the following:
 
 *   **Web Browser**: A modern, standards-compliant web browser (e.g., Google Chrome, Mozilla Firefox, Apple Safari, Microsoft Edge) with support for JavaScript (ES6+) and CSS3.
-*   **Network Connectivity**: An active internet connection is mandatory for accessing the hosted application and its integrated cloud services (Google Maps, Google AI).
+*   **Network Connectivity**: An active and stable internet connection is mandatory for accessing the hosted application and its integrated cloud services, including Google Maps, Google Geocoding, and Google AI.
+
+### 3.2 Development and Compilation Environment
+
+To compile, run, and further develop the system locally, the following technical environment is required:
+
+*   **Execution Environment**: Node.js runtime environment with the corresponding Node Package Manager (npm).
+*   **API Credentials**:
+    *   **Google Cloud Platform API Key**: A valid API key must be provisioned from the Google Cloud Console. This key must have both the **Maps JavaScript API** and the **Geocoding API** services enabled.
+    *   **Google AI API Key**: A valid Gemini API key is required to enable the generative AI functionalities.
+*   **Environment Configuration**: An environment file (`.env`) must be configured at the root of the project directory. This file must contain the aforementioned API keys in the specified format:
+    ```
+    NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=your_google_maps_api_key
+    GEMINI_API_KEY=your_gemini_api_key
+    ```
+*   **Dependency Installation**: All requisite software libraries and packages, as defined in the `package.json` file, must be installed by executing the `npm install` command from the project's root directory.
+*   **Local Server Initiation**: The local development server is initiated by executing the `npm run dev` command.
