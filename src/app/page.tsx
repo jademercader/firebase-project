@@ -9,6 +9,7 @@ import type { Cluster, HealthRecord } from '@/lib/types';
 import AppLayout from '@/components/layout/app-layout';
 import { mockHealthRecords } from '@/lib/mock-data';
 import dynamic from 'next/dynamic';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const CLUSTERS_STORAGE_KEY = 'health_clusters';
 const RECORDS_STORAGE_KEY = 'health_records';
@@ -17,7 +18,7 @@ const DynamicClusterMap = dynamic(
   () => import('@/components/dashboard/cluster-map').then((mod) => mod.ClusterMap),
   { 
     ssr: false,
-    loading: () => <div className="lg:col-span-4 h-[500px] w-full bg-muted animate-pulse rounded-lg" />
+    loading: () => <Skeleton className="h-full w-full rounded-lg" />
   }
 );
 

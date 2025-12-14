@@ -98,7 +98,7 @@ export function ClusterMap({ isLoading, clusters }: { isLoading: boolean, cluste
           <MapContainer
             center={mapCenter}
             zoom={11}
-            style={{ height: '100%', width: '100%', borderRadius: 'var(--radius)' }}
+            style={{ height: '100%', width: '100%', borderRadius: 'var(--radius)', opacity: isLoading ? 0.5 : 1 }}
             scrollWheelZoom={true}
           >
             <TileLayer
@@ -107,7 +107,7 @@ export function ClusterMap({ isLoading, clusters }: { isLoading: boolean, cluste
             />
             <MapUpdater clusters={clusters} />
 
-            {!isLoading && clusters.map((cluster, index) =>
+            {clusters.map((cluster, index) =>
               cluster.records.map(record =>
                 record.latitude && record.longitude ? (
                   <Marker
