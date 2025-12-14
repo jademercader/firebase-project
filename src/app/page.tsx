@@ -8,7 +8,6 @@ import { Separator } from '@/components/ui/separator';
 import type { Cluster, HealthRecord } from '@/lib/types';
 import AppLayout from '@/components/layout/app-layout';
 import { mockHealthRecords } from '@/lib/mock-data';
-import { ClusterMap } from '@/components/dashboard/cluster-map';
 import dynamic from 'next/dynamic';
 
 const CLUSTERS_STORAGE_KEY = 'health_clusters';

@@ -1,5 +1,5 @@
 'use client';
-import { useMemo, useEffect, useRef, useState } from 'react';
+import { useMemo, useEffect, useState } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
@@ -143,7 +143,7 @@ export function ClusterMap({ isLoading, clusters }: { isLoading: boolean, cluste
                 </Popup>
             )}
           </MapContainer>
-          {clusters.length === 0 && (
+          {!isLoading && clusters.length === 0 && (
             <div className="absolute inset-0 flex items-center justify-center p-4 bg-black/30 rounded-md z-[1000] pointer-events-none">
               <div className="text-center bg-background/80 backdrop-blur-sm text-foreground p-4 rounded-lg border">
                 <Info className="mx-auto h-8 w-8 text-primary mb-2" />
