@@ -101,8 +101,10 @@ export function ClusterMap() {
   useEffect(() => {
     fetchClusters();
 
-    const handleStorageChange = () => {
-      fetchClusters();
+    const handleStorageChange = (event: StorageEvent) => {
+      if (event.key === CLUSTERS_STORAGE_KEY || event.key === null) {
+        fetchClusters();
+      }
     };
 
     window.addEventListener('storage', handleStorageChange);

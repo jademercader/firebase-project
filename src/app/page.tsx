@@ -34,7 +34,7 @@ export default function DashboardPage() {
             </div>
           </div>
           <Separator />
-          <ClusterCharts isLoading={false} />
+          <ClusterCharts />
         </div>
       </div>
     </AppLayout>

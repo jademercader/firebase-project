@@ -1,4 +1,3 @@
-
 'use client';
 import { useEffect, useState } from 'react';
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
@@ -30,22 +29,30 @@ const getMostPrevalentCondition = (cluster: Cluster) => {
 };
 
 
-export function ClusterCharts({ isLoading }: ClusterChartsProps) {
+export function ClusterCharts() {
   const [clusters, setClusters] = useState<Cluster[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   
   useEffect(() => {
     const fetchClusters = () => {
+        setIsLoading(true);
         try {
             const savedClusters = localStorage.getItem(CLUSTERS_STORAGE_KEY);
             setClusters(savedClusters ? JSON.parse(savedClusters) : []);
         } catch (error) {
             console.error("Failed to load clusters from localStorage", error);
             setClusters([]);
+        } finally {
+            setIsLoading(false);
         }
     };
     fetchClusters();
 
-    const handleStorageChange = () => fetchClusters();
+    const handleStorageChange = (event: StorageEvent) => {
+      if (event.key === CLUSTERS_STORAGE_KEY || event.key === null) {
+        fetchClusters();
+      }
+    };
     window.addEventListener('storage', handleStorageChange);
 
     return () => {

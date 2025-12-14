@@ -72,11 +72,11 @@ export function ClusterControls() {
               description: `${result.data.clusters.length} clusters have been identified. The dashboard will now update.`
           });
           // Dispatch a storage event to notify other components like the map.
-          window.dispatchEvent(new Event('storage'));
+          window.dispatchEvent(new StorageEvent('storage', { key: CLUSTERS_STORAGE_KEY }));
       } else {
           localStorage.removeItem(CLUSTERS_STORAGE_KEY);
           // Dispatch a storage event to clear the map and charts.
-          window.dispatchEvent(new Event('storage'));
+          window.dispatchEvent(new StorageEvent('storage', { key: CLUSTERS_STORAGE_KEY }));
           toast({
               variant: "destructive",
               title: "Analysis Failed",
