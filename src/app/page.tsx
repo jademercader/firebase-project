@@ -26,7 +26,7 @@ export default function DashboardPage() {
   const [clusters, setClusters] = useState<Cluster[]>([]);
   const [healthRecords, setHealthRecords] = useState<HealthRecord[]>([]);
   const [isUsingUploadedData, setIsUsingUploadedData] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
 
   // Load data from localStorage on initial render
@@ -57,6 +57,7 @@ export default function DashboardPage() {
        setIsUsingUploadedData(false);
     }
     setIsInitialLoad(false);
+    setIsLoading(false); // Stop loading after initial data fetch
   }, []);
 
   // Save clusters to localStorage whenever they change
@@ -69,6 +70,21 @@ export default function DashboardPage() {
       }
     }
   }, [clusters, isInitialLoad]);
+  
+  const handleAnalysisStart = () => {
+    setIsLoading(true);
+    setClusters([]);
+  };
+
+  const handleAnalysisComplete = (newClusters: Cluster[]) => {
+      setClusters(newClusters);
+      setIsLoading(false);
+  };
+  
+  const handleAnalysisFail = () => {
+      setIsLoading(false);
+  };
+
 
   return (
     <AppLayout>
@@ -78,8 +94,9 @@ export default function DashboardPage() {
         </div>
         <div className="space-y-4">
           <ClusterControls 
-              setIsLoading={setIsLoading} 
-              setClusters={setClusters} 
+              onAnalysisStart={handleAnalysisStart}
+              onAnalysisComplete={handleAnalysisComplete}
+              onAnalysisFail={handleAnalysisFail}
               healthRecords={healthRecords} 
               isUsingUploadedData={isUsingUploadedData} 
           />

@@ -10,18 +10,19 @@ import { healthIndicators } from '@/lib/mock-data';
 import { useToast } from '@/hooks/use-toast';
 import { runClusterAnalysis } from '@/app/actions';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
-import { Info, Database } from 'lucide-react';
+import { Database } from 'lucide-react';
 import type { Cluster, HealthRecord } from '@/lib/types';
 
 
 interface ClusterControlsProps {
-    setIsLoading: (isLoading: boolean) => void;
-    setClusters: (clusters: Cluster[]) => void;
+    onAnalysisStart: () => void;
+    onAnalysisComplete: (clusters: Cluster[]) => void;
+    onAnalysisFail: () => void;
     healthRecords: HealthRecord[];
     isUsingUploadedData: boolean;
 }
 
-export function ClusterControls({ setIsLoading, setClusters, healthRecords, isUsingUploadedData }: ClusterControlsProps) {
+export function ClusterControls({ onAnalysisStart, onAnalysisComplete, onAnalysisFail, healthRecords, isUsingUploadedData }: ClusterControlsProps) {
   const [numClusters, setNumClusters] = useState(3);
   const [selectedIndicators, setSelectedIndicators] = useState<string[]>(
     healthIndicators.map(i => i.id)
@@ -37,8 +38,7 @@ export function ClusterControls({ setIsLoading, setClusters, healthRecords, isUs
 
   const handleRunAnalysis = async () => {
       setIsAnalysisRunning(true);
-      setIsLoading(true);
-      setClusters([]);
+      onAnalysisStart();
       
       const result = await runClusterAnalysis({
           healthRecordsData: JSON.stringify(healthRecords),
@@ -47,12 +47,13 @@ export function ClusterControls({ setIsLoading, setClusters, healthRecords, isUs
       });
 
       if (result.success && result.data?.clusters) {
-          setClusters(result.data.clusters);
+          onAnalysisComplete(result.data.clusters);
           toast({
               title: "Analysis Complete",
               description: `${result.data.clusters.length} clusters have been identified.`
           })
       } else {
+          onAnalysisFail();
           toast({
               variant: "destructive",
               title: "Analysis Failed",
@@ -61,7 +62,6 @@ export function ClusterControls({ setIsLoading, setClusters, healthRecords, isUs
       }
 
       setIsAnalysisRunning(false);
-      setIsLoading(false);
   };
 
 

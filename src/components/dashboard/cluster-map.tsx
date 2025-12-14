@@ -83,19 +83,6 @@ const MapUpdater = ({ clusters }: { clusters: Cluster[] }) => {
 export function ClusterMap({ isLoading, clusters }: { isLoading: boolean, clusters: Cluster[] }) {
   const [selectedRecord, setSelectedRecord] = useState<HealthRecord | null>(null);
 
-  if (isLoading) {
-    return (
-      <Card className="h-full flex flex-col">
-        <CardHeader>
-          <CardTitle className="font-headline">Barangay Cluster Visualization</CardTitle>
-        </CardHeader>
-        <CardContent className="flex-1 p-0">
-          <Skeleton className="w-full h-full" />
-        </CardContent>
-      </Card>
-    );
-  }
-
   return (
     <Card className="h-full flex flex-col">
       <CardHeader>
@@ -103,6 +90,11 @@ export function ClusterMap({ isLoading, clusters }: { isLoading: boolean, cluste
       </CardHeader>
       <CardContent className="flex-1 p-0">
         <div style={{ position: 'relative', height: '100%', width: '100%' }}>
+          {isLoading && (
+             <div className="absolute inset-0 flex items-center justify-center bg-background/80 z-[1001]">
+                <Skeleton className="w-full h-full" />
+            </div>
+          )}
           <MapContainer
             center={mapCenter}
             zoom={11}
@@ -115,7 +107,7 @@ export function ClusterMap({ isLoading, clusters }: { isLoading: boolean, cluste
             />
             <MapUpdater clusters={clusters} />
 
-            {clusters.map((cluster, index) =>
+            {!isLoading && clusters.map((cluster, index) =>
               cluster.records.map(record =>
                 record.latitude && record.longitude ? (
                   <Marker
