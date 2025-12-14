@@ -65,6 +65,12 @@ const MapBoundsUpdater = ({ bounds }: { bounds: L.LatLngBounds | null }) => {
     } else {
         map.setView(mapCenter, 11);
     }
+    
+    // Cleanup function to remove the map instance on unmount
+    return () => {
+        map.remove();
+    };
+
   }, [map, bounds]);
   return null;
 };
