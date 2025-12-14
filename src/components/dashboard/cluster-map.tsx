@@ -1,5 +1,5 @@
 'use client';
-import { useMemo, useEffect } from 'react';
+import { useMemo, useEffect, useState } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
@@ -9,6 +9,7 @@ import { Skeleton } from '../ui/skeleton';
 import { Info } from 'lucide-react';
 import type { Cluster } from '@/lib/types';
 
+// Fix for default icon issue with Webpack
 const DefaultIcon = L.icon({
   iconUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png',
   iconRetinaUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon-2x.png',
@@ -78,12 +79,39 @@ const MapUpdater = ({ clusters }: { clusters: Cluster[] }) => {
   return null;
 };
 
-interface ClusterMapProps {
-  clusters: Cluster[];
-  isLoading: boolean;
-}
+const CLUSTERS_STORAGE_KEY = 'health_clusters';
 
-export function ClusterMap({ clusters, isLoading }: ClusterMapProps) {
+export function ClusterMap() {
+  const [clusters, setClusters] = useState<Cluster[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const fetchClusters = () => {
+    setIsLoading(true);
+    try {
+      const savedClusters = localStorage.getItem(CLUSTERS_STORAGE_KEY);
+      setClusters(savedClusters ? JSON.parse(savedClusters) : []);
+    } catch (error) {
+      console.error("Failed to load clusters from localStorage", error);
+      setClusters([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  useEffect(() => {
+    fetchClusters();
+
+    const handleStorageChange = () => {
+      fetchClusters();
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, []);
+
   return (
     <Card className="h-full flex flex-col">
       <CardHeader>
@@ -124,7 +152,7 @@ export function ClusterMap({ clusters, isLoading }: ClusterMapProps) {
               )
             )}
 
-            {clusters.length === 0 && (
+            {clusters.length === 0 && !isLoading && (
               <div className="absolute inset-0 flex items-center justify-center p-4 bg-black/30 rounded-md z-[1000] pointer-events-none">
                   <div className="text-center bg-background/80 backdrop-blur-sm text-foreground p-4 rounded-lg border">
                   <Info className="mx-auto h-8 w-8 text-primary mb-2" />

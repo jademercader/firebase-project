@@ -69,7 +69,7 @@ export function ClusterControls() {
           localStorage.setItem(CLUSTERS_STORAGE_KEY, JSON.stringify(result.data.clusters));
           toast({
               title: "Analysis Complete",
-              description: `${result.data.clusters.length} clusters have been identified. Map and charts updating...`
+              description: `${result.data.clusters.length} clusters have been identified. The dashboard will now update.`
           });
           // Dispatch a storage event to notify other components like the map.
           window.dispatchEvent(new Event('storage'));
