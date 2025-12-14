@@ -119,51 +119,53 @@ export function ClusterMap() {
       <CardHeader>
         <CardTitle className="font-headline">Barangay Cluster Visualization</CardTitle>
       </CardHeader>
-      <CardContent className="flex-1 p-0">
-        {isLoading ? (
-           <Skeleton className="h-full w-full rounded-lg" />
-        ) : (
-          <MapContainer
-            center={mapCenter}
-            zoom={11}
-            style={{ height: '100%', width: '100%', borderRadius: 'var(--radius)' }}
-            scrollWheelZoom={true}
-          >
-            <TileLayer
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            />
-            <MapUpdater clusters={clusters} />
+      <CardContent className="flex-1 p-0 relative">
+        <MapContainer
+          center={mapCenter}
+          zoom={11}
+          style={{ height: '100%', width: '100%', borderRadius: 'var(--radius)' }}
+          scrollWheelZoom={true}
+        >
+          <TileLayer
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          />
+          <MapUpdater clusters={clusters} />
 
-            {clusters.map((cluster, index) =>
-              cluster.records.map(record =>
-                record.latitude && record.longitude ? (
-                  <Marker
-                    key={record.id}
-                    position={[record.latitude, record.longitude]}
-                    icon={createColorIcon(getChartColor(index))}
-                  >
-                    <Popup>
-                      <div className="p-1">
-                        <p className="font-bold">{record.name}</p>
-                        <p className="text-xs text-muted-foreground">{record.address}</p>
-                      </div>
-                    </Popup>
-                  </Marker>
-                ) : null
-              )
-            )}
+          {clusters.map((cluster, index) =>
+            cluster.records.map(record =>
+              record.latitude && record.longitude ? (
+                <Marker
+                  key={record.id}
+                  position={[record.latitude, record.longitude]}
+                  icon={createColorIcon(getChartColor(index))}
+                >
+                  <Popup>
+                    <div className="p-1">
+                      <p className="font-bold">{record.name}</p>
+                      <p className="text-xs text-muted-foreground">{record.address}</p>
+                    </div>
+                  </Popup>
+                </Marker>
+              ) : null
+            )
+          )}
+        </MapContainer>
 
-            {clusters.length === 0 && !isLoading && (
-              <div className="absolute inset-0 flex items-center justify-center p-4 bg-black/30 rounded-md z-[1000] pointer-events-none">
-                  <div className="text-center bg-background/80 backdrop-blur-sm text-foreground p-4 rounded-lg border">
-                  <Info className="mx-auto h-8 w-8 text-primary mb-2" />
-                  <h3 className="font-bold text-lg">Cluster Visualization</h3>
-                  <p className="text-sm text-muted-foreground">Run analysis to see cluster locations on the map.</p>
-                  </div>
+        {isLoading && (
+            <div className="absolute inset-0 z-[1000] pointer-events-none">
+                 <Skeleton className="h-full w-full rounded-lg" />
+            </div>
+        )}
+
+        {!isLoading && clusters.length === 0 && (
+          <div className="absolute inset-0 flex items-center justify-center p-4 bg-black/30 rounded-md z-[1000] pointer-events-none">
+              <div className="text-center bg-background/80 backdrop-blur-sm text-foreground p-4 rounded-lg border">
+              <Info className="mx-auto h-8 w-8 text-primary mb-2" />
+              <h3 className="font-bold text-lg">Cluster Visualization</h3>
+              <p className="text-sm text-muted-foreground">Run analysis to see cluster locations on the map.</p>
               </div>
-            )}
-          </MapContainer>
+          </div>
         )}
       </CardContent>
     </Card>
