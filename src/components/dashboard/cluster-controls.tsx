@@ -71,12 +71,11 @@ export function ClusterControls() {
               title: "Analysis Complete",
               description: `${result.data.clusters.length} clusters have been identified. Map and charts updating...`
           });
-          // Trigger a storage event that other components can listen to
+          // Dispatch a storage event to notify other components like the map.
           window.dispatchEvent(new Event('storage'));
-          // A reload can also work as a robust way to sync all components
-          // window.location.reload(); 
       } else {
           localStorage.removeItem(CLUSTERS_STORAGE_KEY);
+          // Dispatch a storage event to clear the map and charts.
           window.dispatchEvent(new Event('storage'));
           toast({
               variant: "destructive",
