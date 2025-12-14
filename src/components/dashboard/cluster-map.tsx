@@ -1,6 +1,9 @@
 'use client';
-import { useCallback, useMemo } from 'react';
-import { GoogleMap, useJsApiLoader, MarkerF, InfoWindowF } from '@react-google-maps/api';
+import { useMemo, useEffect, useRef } from 'react';
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
+import L from 'leaflet';
+
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '../ui/skeleton';
 import { Info } from 'lucide-react';
@@ -12,115 +15,128 @@ interface ClusterMapProps {
   clusters: Cluster[];
 }
 
-const mapCenter = { lat: 14.5995, lng: 120.9842 }; // Default to Manila
+// Fix for default icon not showing in Leaflet
+const DefaultIcon = L.icon({
+  iconUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png',
+  iconRetinaUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon-2x.png',
+  shadowUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png',
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  tooltipAnchor: [16, -28],
+  shadowSize: [41, 41],
+});
+L.Marker.prototype.options.icon = DefaultIcon;
+
+
+const mapCenter: L.LatLngTuple = [14.5995, 120.9842]; // Default to Manila
 
 const chartColors = ['#2563eb', '#f97316', '#16a34a', '#9333ea', '#e11d48', '#d97706', '#059669', '#7c3aed', '#be123c', '#65a30d'];
 
 const getChartColor = (index: number) => chartColors[index % chartColors.length];
 
-export function ClusterMap({ isLoading, clusters }: ClusterMapProps) {
-  const { isLoaded, loadError } = useJsApiLoader({
-    id: 'google-map-script',
-    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "",
-    libraries: ['maps'],
-  });
+const createColorIcon = (color: string) => {
+    const markerHtmlStyles = `
+      background-color: ${color};
+      width: 1.5rem;
+      height: 1.5rem;
+      display: block;
+      left: -0.75rem;
+      top: -0.75rem;
+      position: relative;
+      border-radius: 1.5rem 1.5rem 0;
+      transform: rotate(45deg);
+      border: 1px solid #FFFFFF;`;
 
-  const [map, setMap] = React.useState<google.maps.Map | null>(null);
+    return L.divIcon({
+      className: "my-custom-pin",
+      iconAnchor: [0, 24],
+      popupAnchor: [0, -36],
+      html: `<span style="${markerHtmlStyles}" />`
+    });
+};
+
+
+const MapBoundsUpdater = ({ bounds }: { bounds: L.LatLngBounds | null }) => {
+  const map = useMap();
+  useEffect(() => {
+    if (bounds) {
+      map.fitBounds(bounds, { padding: [50, 50] });
+    } else {
+        map.setView(mapCenter, 11);
+    }
+  }, [map, bounds]);
+  return null;
+};
+
+
+export function ClusterMap({ isLoading, clusters }: ClusterMapProps) {
   const [selectedRecord, setSelectedRecord] = React.useState<HealthRecord | null>(null);
 
   const bounds = useMemo(() => {
-    if (!isLoaded || !clusters || clusters.length === 0) return null;
-    const newBounds = new window.google.maps.LatLngBounds();
-    let hasValidCoords = false;
+    if (!clusters || clusters.length === 0) return null;
+    
+    const points: L.LatLngTuple[] = [];
     clusters.forEach(cluster => {
       cluster.records.forEach(record => {
         if (record.latitude && record.longitude) {
-          newBounds.extend(new window.google.maps.LatLng(record.latitude, record.longitude));
-          hasValidCoords = true;
+          points.push([record.latitude, record.longitude]);
         }
       });
     });
-    return hasValidCoords ? newBounds : null;
-  }, [clusters, isLoaded]);
 
-  const onLoad = useCallback((mapInstance: google.maps.Map) => {
-    setMap(mapInstance);
-  }, []);
-
-  const onUnmount = useCallback(() => {
-    setMap(null);
-  }, []);
-
-  React.useEffect(() => {
-    if (map && bounds) {
-      map.fitBounds(bounds, 100); // 100px padding
-    } else if (map) {
-      map.setCenter(mapCenter);
-      map.setZoom(11);
-    }
-  }, [map, bounds]);
+    return points.length > 0 ? L.latLngBounds(points) : null;
+  }, [clusters]);
 
   const renderContent = () => {
-    if (loadError) {
-      return (
-        <div className="flex items-center justify-center h-full p-4">
-          <p className="text-destructive text-center">
-            Error loading Google Maps. Please ensure your API key is correct and has the Maps JavaScript API enabled.
-          </p>
-        </div>
-      );
-    }
-
-    if (isLoading || !isLoaded) {
+    if (isLoading) {
       return <Skeleton className="w-full h-full" />;
     }
 
     return (
       <div style={{ position: 'relative', height: '100%', width: '100%' }}>
-        <GoogleMap
-          mapContainerStyle={{ height: '100%', width: '100%', borderRadius: 'var(--radius)' }}
+        <MapContainer
           center={mapCenter}
           zoom={11}
-          onLoad={onLoad}
-          onUnmount={onUnmount}
-          options={{
-            disableDefaultUI: true,
-            zoomControl: true,
-          }}
+          style={{ height: '100%', width: '100%', borderRadius: 'var(--radius)' }}
+          scrollWheelZoom={true}
         >
+          <TileLayer
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          />
+          <MapBoundsUpdater bounds={bounds} />
+
           {clusters.map((cluster, index) =>
             cluster.records.map(record =>
               record.latitude && record.longitude ? (
-                <MarkerF
+                <Marker
                   key={record.id}
-                  position={{ lat: record.latitude, lng: record.longitude }}
-                  onClick={() => setSelectedRecord(record)}
-                  icon={{
-                    path: window.google.maps.SymbolPath.CIRCLE,
-                    scale: 8,
-                    fillColor: getChartColor(index),
-                    fillOpacity: 0.8,
-                    strokeColor: 'white',
-                    strokeWeight: 1,
+                  position={[record.latitude, record.longitude]}
+                  eventHandlers={{
+                    click: () => {
+                      setSelectedRecord(record);
+                    },
                   }}
+                  icon={createColorIcon(getChartColor(index))}
                 />
               ) : null
             )
           )}
           {selectedRecord && selectedRecord.latitude && selectedRecord.longitude && (
-             <InfoWindowF
-                position={{ lat: selectedRecord.latitude, lng: selectedRecord.longitude }}
-                onCloseClick={() => setSelectedRecord(null)}
+             <Popup
+                position={[selectedRecord.latitude, selectedRecord.longitude]}
+                onClose={() => setSelectedRecord(null)}
               >
                 <div className="p-1">
                   <p className="font-bold">{selectedRecord.name}</p>
                   <p className="text-xs text-muted-foreground">{selectedRecord.address}</p>
                 </div>
-              </InfoWindowF>
+              </Popup>
           )}
-        </GoogleMap>
+        </MapContainer>
         {!isLoading && clusters.length === 0 && (
-          <div className="absolute inset-0 flex items-center justify-center p-4 bg-black/30 rounded-md z-10 pointer-events-none">
+          <div className="absolute inset-0 flex items-center justify-center p-4 bg-black/30 rounded-md z-[1000] pointer-events-none">
             <div className="text-center bg-background/80 backdrop-blur-sm text-foreground p-4 rounded-lg border">
               <Info className="mx-auto h-8 w-8 text-primary mb-2" />
               <h3 className="font-bold text-lg">Cluster Visualization</h3>

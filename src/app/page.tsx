@@ -9,9 +9,19 @@ import type { Cluster, HealthRecord } from '@/lib/types';
 import AppLayout from '@/components/layout/app-layout';
 import { mockHealthRecords } from '@/lib/mock-data';
 import { ClusterMap } from '@/components/dashboard/cluster-map';
+import dynamic from 'next/dynamic';
 
 const CLUSTERS_STORAGE_KEY = 'health_clusters';
 const RECORDS_STORAGE_KEY = 'health_records';
+
+const DynamicClusterMap = dynamic(
+  () => import('@/components/dashboard/cluster-map').then((mod) => mod.ClusterMap),
+  { 
+    ssr: false,
+    loading: () => <div className="lg:col-span-4 h-[500px] w-full bg-muted animate-pulse rounded-lg" />
+  }
+);
+
 
 export default function DashboardPage() {
   const [clusters, setClusters] = useState<Cluster[]>([]);
@@ -76,7 +86,7 @@ export default function DashboardPage() {
           />
           <div className="grid grid-cols-1 lg:grid-cols-7 gap-4">
             <div className="lg:col-span-4 h-[500px]">
-              <ClusterMap isLoading={isLoading} clusters={clusters} />
+              <DynamicClusterMap isLoading={isLoading} clusters={clusters} />
             </div>
             <div className="lg:col-span-3">
               <TrendAnalysis clusters={clusters} />

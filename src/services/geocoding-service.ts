@@ -3,77 +3,61 @@
 
 import { z } from 'zod';
 
-const GoogleGeocodeResponseSchema = z.object({
-    results: z.array(z.object({
-        geometry: z.object({
-            location: z.object({
-                lat: z.number(),
-                lng: z.number(),
-            }),
-        }),
-        formatted_address: z.string(),
-    })),
-    status: z.string(),
-    error_message: z.string().optional(),
-});
+const NominatimResponseSchema = z.array(z.object({
+    lat: z.string(),
+    lon: z.string(),
+    display_name: z.string(),
+}));
 
 
 /**
- * Geocodes an address string using the Google Geocoding API.
+ * Geocodes an address string using the free Nominatim (OpenStreetMap) API.
  * @param address The address to geocode.
  * @returns A promise that resolves to an object with lat and lng, or null if not found.
- * @throws {Error} If the API key is invalid or there's a critical API error.
+ * @throws {Error} If there's a critical API error.
  */
 export async function geocodeAddress(address: string): Promise<{ lat: number; lng: number } | null> {
-    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
-    if (!apiKey) {
-        console.error("Google Maps API key is not configured.");
-        throw new Error("Google Maps API key is not configured. Please set NEXT_PUBLIC_GOOGLE_MAPS_API_KEY in your .env file.");
-    }
-
+    
     const query = new URLSearchParams({
-        address: address,
-        key: apiKey,
+        q: address,
+        format: 'json',
+        limit: '1'
     });
     
-    const url = `https://maps.googleapis.com/maps/api/geocode/json?${query.toString()}`;
+    const url = `https://nominatim.openstreetmap.org/search?${query.toString()}`;
 
     try {
-        const response = await fetch(url);
-        const data = await response.json();
-        
-        const validatedData = GoogleGeocodeResponseSchema.safeParse(data);
+        const response = await fetch(url, {
+            headers: {
+                'User-Agent': 'BarangayHealthInsights/1.0 (https://your-app-url.com; your-contact-email@example.com)'
+            }
+        });
 
-        if (!validatedData.success) {
-            console.error('Failed to parse Google Geocoding API response:', validatedData.error);
-            // Don't throw here, might be a temporary issue. Return null.
+        if (!response.ok) {
+            console.error(`Nominatim API returned status: ${response.status}`);
+            // Don't throw for server errors, just return null as it might be temporary.
             return null;
         }
 
-        if (validatedData.data.status !== 'OK') {
-             console.error(`Geocoding API returned status: ${validatedData.data.status}. Error: ${validatedData.data.error_message}`);
-             // If the error is due to the key or permissions, we should stop and throw an error.
-             if (['REQUEST_DENIED', 'INVALID_REQUEST'].includes(validatedData.data.status) && validatedData.data.error_message?.includes('API key')) {
-                throw new Error(`Google Geocoding API Error: ${validatedData.data.error_message}. Please check your API key and permissions.`);
-             }
-             return null; // For other non-OK statuses like ZERO_RESULTS, just return null.
+        const data = await response.json();
+        
+        const validatedData = NominatimResponseSchema.safeParse(data);
+
+        if (!validatedData.success) {
+            console.error('Failed to parse Nominatim API response:', validatedData.error);
+            return null;
         }
 
-        if (validatedData.data.results.length > 0) {
-            const location = validatedData.data.results[0].geometry.location;
-            return { lat: location.lat, lng: location.lng };
+        if (validatedData.data.length > 0) {
+            const location = validatedData.data[0];
+            return { lat: parseFloat(location.lat), lng: parseFloat(location.lon) };
         }
         
         return null; // No results found
     } catch (error) {
         console.error('Error during geocoding fetch:', error);
-        // Re-throw the error if it's one of our critical, identified issues.
-        if (error instanceof Error) {
-            throw error;
-        }
         // For unexpected fetch errors, we can choose to throw or return null.
-        // Throwing is safer to halt the process.
+        // Throwing is safer to halt the process if it's a network-level issue.
         throw new Error('An unexpected error occurred during geocoding.');
     }
 }
-
