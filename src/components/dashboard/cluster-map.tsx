@@ -80,8 +80,34 @@ const MapUpdater = ({ clusters }: { clusters: Cluster[] }) => {
 };
 
 
-export function ClusterMap({ isLoading, clusters }: { isLoading: boolean, clusters: Cluster[] }) {
+const CLUSTERS_STORAGE_KEY = 'health_clusters';
+
+export function ClusterMap({ setIsLoading }: { setIsLoading: (isLoading: boolean) => void; }) {
+  const [clusters, setClusters] = useState<Cluster[]>([]);
   const [selectedRecord, setSelectedRecord] = useState<HealthRecord | null>(null);
+
+  useEffect(() => {
+    try {
+      const savedClusters = localStorage.getItem(CLUSTERS_STORAGE_KEY);
+      if (savedClusters) {
+        setClusters(JSON.parse(savedClusters));
+      }
+    } catch (error) {
+        console.error("Failed to load clusters from localStorage", error);
+    }
+    setIsLoading(false);
+
+    const handleStorageChange = () => {
+        const savedClusters = localStorage.getItem(CLUSTERS_STORAGE_KEY);
+        setClusters(savedClusters ? JSON.parse(savedClusters) : []);
+    };
+    window.addEventListener('storage', handleStorageChange);
+
+    return () => {
+        window.removeEventListener('storage', handleStorageChange);
+    };
+
+  }, [setIsLoading]);
 
   return (
     <Card className="h-full flex flex-col">
@@ -89,62 +115,56 @@ export function ClusterMap({ isLoading, clusters }: { isLoading: boolean, cluste
         <CardTitle className="font-headline">Barangay Cluster Visualization</CardTitle>
       </CardHeader>
       <CardContent className="flex-1 p-0">
-        <div style={{ position: 'relative', height: '100%', width: '100%' }}>
-          {isLoading && (
-             <div className="absolute inset-0 flex items-center justify-center bg-background/80 z-[1001]">
-                <Skeleton className="w-full h-full" />
-            </div>
-          )}
-          <MapContainer
-            center={mapCenter}
-            zoom={11}
-            style={{ height: '100%', width: '100%', borderRadius: 'var(--radius)', opacity: isLoading ? 0.5 : 1 }}
-            scrollWheelZoom={true}
-          >
-            <TileLayer
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            />
-            <MapUpdater clusters={clusters} />
+        <MapContainer
+          center={mapCenter}
+          zoom={11}
+          style={{ height: '100%', width: '100%', borderRadius: 'var(--radius)' }}
+          scrollWheelZoom={true}
+        >
+          <TileLayer
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          />
+          <MapUpdater clusters={clusters} />
 
-            {clusters.map((cluster, index) =>
-              cluster.records.map(record =>
-                record.latitude && record.longitude ? (
-                  <Marker
-                    key={record.id}
-                    position={[record.latitude, record.longitude]}
-                    eventHandlers={{
-                      click: () => {
-                        setSelectedRecord(record);
-                      },
-                    }}
-                    icon={createColorIcon(getChartColor(index))}
-                  />
-                ) : null
-              )
-            )}
-            {selectedRecord && selectedRecord.latitude && selectedRecord.longitude && (
-               <Popup
-                  position={[selectedRecord.latitude, selectedRecord.longitude]}
-                  onClose={() => setSelectedRecord(null)}
-                >
-                  <div className="p-1">
-                    <p className="font-bold">{selectedRecord.name}</p>
-                    <p className="text-xs text-muted-foreground">{selectedRecord.address}</p>
-                  </div>
-                </Popup>
-            )}
-          </MapContainer>
-          {!isLoading && clusters.length === 0 && (
+          {clusters.map((cluster, index) =>
+            cluster.records.map(record =>
+              record.latitude && record.longitude ? (
+                <Marker
+                  key={record.id}
+                  position={[record.latitude, record.longitude]}
+                  eventHandlers={{
+                    click: () => {
+                      setSelectedRecord(record);
+                    },
+                  }}
+                  icon={createColorIcon(getChartColor(index))}
+                />
+              ) : null
+            )
+          )}
+          {selectedRecord && selectedRecord.latitude && selectedRecord.longitude && (
+              <Popup
+                position={[selectedRecord.latitude, selectedRecord.longitude]}
+                onClose={() => setSelectedRecord(null)}
+              >
+                <div className="p-1">
+                  <p className="font-bold">{selectedRecord.name}</p>
+                  <p className="text-xs text-muted-foreground">{selectedRecord.address}</p>
+                </div>
+              </Popup>
+          )}
+
+          {clusters.length === 0 && (
             <div className="absolute inset-0 flex items-center justify-center p-4 bg-black/30 rounded-md z-[1000] pointer-events-none">
-              <div className="text-center bg-background/80 backdrop-blur-sm text-foreground p-4 rounded-lg border">
+                <div className="text-center bg-background/80 backdrop-blur-sm text-foreground p-4 rounded-lg border">
                 <Info className="mx-auto h-8 w-8 text-primary mb-2" />
                 <h3 className="font-bold text-lg">Cluster Visualization</h3>
                 <p className="text-sm text-muted-foreground">Run analysis to see cluster locations on the map.</p>
-              </div>
+                </div>
             </div>
           )}
-        </div>
+        </MapContainer>
       </CardContent>
     </Card>
   );

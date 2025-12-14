@@ -1,5 +1,6 @@
 
 'use client';
+import { useEffect, useState } from 'react';
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -9,9 +10,10 @@ import type { Cluster } from '@/lib/types';
 const diseaseIndicators = ['Hypertension', 'Diabetes', 'Asthma'];
 const vaccinationIndicators = ['Vaccinated', 'Partially Vaccinated', 'Not Vaccinated'];
 
+const CLUSTERS_STORAGE_KEY = 'health_clusters';
+
 interface ClusterChartsProps {
     isLoading: boolean;
-    clusters: Cluster[];
 }
 
 const getMostPrevalentCondition = (cluster: Cluster) => {
@@ -28,7 +30,30 @@ const getMostPrevalentCondition = (cluster: Cluster) => {
 };
 
 
-export function ClusterCharts({ isLoading, clusters }: ClusterChartsProps) {
+export function ClusterCharts({ isLoading }: ClusterChartsProps) {
+  const [clusters, setClusters] = useState<Cluster[]>([]);
+  
+  useEffect(() => {
+    const fetchClusters = () => {
+        try {
+            const savedClusters = localStorage.getItem(CLUSTERS_STORAGE_KEY);
+            setClusters(savedClusters ? JSON.parse(savedClusters) : []);
+        } catch (error) {
+            console.error("Failed to load clusters from localStorage", error);
+            setClusters([]);
+        }
+    };
+    fetchClusters();
+
+    const handleStorageChange = () => fetchClusters();
+    window.addEventListener('storage', handleStorageChange);
+
+    return () => {
+        window.removeEventListener('storage', handleStorageChange);
+    };
+
+  }, []);
+
   const diseaseData = clusters.map(cluster => {
     const data: { [key: string]: any } = { name: cluster.name.split(':')[0] };
     diseaseIndicators.forEach(indicator => {

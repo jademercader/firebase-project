@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -10,15 +10,36 @@ import { LineChart, ThumbsUp } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { Cluster } from '@/lib/types';
 
-interface TrendAnalysisProps {
-    clusters: Cluster[];
-}
+const CLUSTERS_STORAGE_KEY = 'health_clusters';
 
-export function TrendAnalysis({ clusters }: TrendAnalysisProps) {
+export function TrendAnalysis() {
+  const [clusters, setClusters] = useState<Cluster[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<string>('');
   const [timePeriod, setTimePeriod] = useState('monthly');
   const { toast } = useToast();
+
+  useEffect(() => {
+    const fetchClusters = () => {
+        try {
+            const savedClusters = localStorage.getItem(CLUSTERS_STORAGE_KEY);
+            setClusters(savedClusters ? JSON.parse(savedClusters) : []);
+        } catch (error) {
+            console.error("Failed to load clusters from localStorage", error);
+            setClusters([]);
+        }
+    };
+    fetchClusters();
+
+    const handleStorageChange = () => fetchClusters();
+    window.addEventListener('storage', handleStorageChange);
+
+    return () => {
+        window.removeEventListener('storage', handleStorageChange);
+    };
+
+  }, []);
+
 
   const handleAnalyzeTrends = async () => {
     if (clusters.length === 0) {

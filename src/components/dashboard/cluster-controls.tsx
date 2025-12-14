@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
@@ -11,24 +11,44 @@ import { useToast } from '@/hooks/use-toast';
 import { runClusterAnalysis } from '@/app/actions';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { Database } from 'lucide-react';
-import type { Cluster, HealthRecord } from '@/lib/types';
+import type { HealthRecord } from '@/lib/types';
+import { mockHealthRecords } from '@/lib/mock-data';
 
+const CLUSTERS_STORAGE_KEY = 'health_clusters';
+const RECORDS_STORAGE_KEY = 'health_records';
 
-interface ClusterControlsProps {
-    onAnalysisStart: () => void;
-    onAnalysisComplete: (clusters: Cluster[]) => void;
-    onAnalysisFail: () => void;
-    healthRecords: HealthRecord[];
-    isUsingUploadedData: boolean;
-}
-
-export function ClusterControls({ onAnalysisStart, onAnalysisComplete, onAnalysisFail, healthRecords, isUsingUploadedData }: ClusterControlsProps) {
+export function ClusterControls() {
   const [numClusters, setNumClusters] = useState(3);
   const [selectedIndicators, setSelectedIndicators] = useState<string[]>(
     healthIndicators.map(i => i.id)
   );
   const [isAnalysisRunning, setIsAnalysisRunning] = useState(false);
+  const [healthRecords, setHealthRecords] = useState<HealthRecord[]>([]);
+  const [isUsingUploadedData, setIsUsingUploadedData] = useState(false);
   const { toast } = useToast();
+
+  useEffect(() => {
+    try {
+        const savedRecords = localStorage.getItem(RECORDS_STORAGE_KEY);
+        if (savedRecords) {
+            const parsedRecords = JSON.parse(savedRecords);
+            if (parsedRecords.length > 0) {
+                setHealthRecords(parsedRecords);
+                setIsUsingUploadedData(true);
+            } else {
+                setHealthRecords(mockHealthRecords);
+                setIsUsingUploadedData(false);
+            }
+        } else {
+            setHealthRecords(mockHealthRecords);
+            setIsUsingUploadedData(false);
+        }
+    } catch (error) {
+        console.error("Failed to load records from localStorage", error);
+        setHealthRecords(mockHealthRecords);
+        setIsUsingUploadedData(false);
+    }
+  }, []);
 
   const handleIndicatorChange = (indicatorId: string, checked: boolean) => {
     setSelectedIndicators(prev => 
@@ -38,7 +58,6 @@ export function ClusterControls({ onAnalysisStart, onAnalysisComplete, onAnalysi
 
   const handleRunAnalysis = async () => {
       setIsAnalysisRunning(true);
-      onAnalysisStart();
       
       const result = await runClusterAnalysis({
           healthRecordsData: JSON.stringify(healthRecords),
@@ -47,13 +66,18 @@ export function ClusterControls({ onAnalysisStart, onAnalysisComplete, onAnalysi
       });
 
       if (result.success && result.data?.clusters) {
-          onAnalysisComplete(result.data.clusters);
+          localStorage.setItem(CLUSTERS_STORAGE_KEY, JSON.stringify(result.data.clusters));
           toast({
               title: "Analysis Complete",
-              description: `${result.data.clusters.length} clusters have been identified.`
-          })
+              description: `${result.data.clusters.length} clusters have been identified. Map and charts updating...`
+          });
+          // Trigger a storage event that other components can listen to
+          window.dispatchEvent(new Event('storage'));
+          // A reload can also work as a robust way to sync all components
+          // window.location.reload(); 
       } else {
-          onAnalysisFail();
+          localStorage.removeItem(CLUSTERS_STORAGE_KEY);
+          window.dispatchEvent(new Event('storage'));
           toast({
               variant: "destructive",
               title: "Analysis Failed",
@@ -94,7 +118,6 @@ export function ClusterControls({ onAnalysisStart, onAnalysisComplete, onAnalysi
                             id={indicator.id} 
                             checked={selectedIndicators.includes(indicator.id)}
                             onCheckedChange={(checked) => handleIndicatorChange(indicator.id, !!checked)}
-                            disabled={!isUsingUploadedData}
                         />
                         <label
                             htmlFor={indicator.id}
@@ -115,11 +138,10 @@ export function ClusterControls({ onAnalysisStart, onAnalysisComplete, onAnalysi
               step={1}
               value={[numClusters]}
               onValueChange={(value) => setNumClusters(value[0])}
-              disabled={!isUsingUploadedData}
             />
             <p className="text-xs text-muted-foreground">Use the elbow method or domain knowledge to select the optimal number.</p>
         </div>
-         <Button onClick={handleRunAnalysis} disabled={isAnalysisRunning || !isUsingUploadedData}>
+         <Button onClick={handleRunAnalysis} disabled={isAnalysisRunning}>
           <PlayCircle className="mr-2 h-4 w-4" />
           {isAnalysisRunning ? 'Analyzing...' : 'Run Cluster Analysis'}
         </Button>
