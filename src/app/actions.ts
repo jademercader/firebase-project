@@ -83,10 +83,12 @@ export async function runClusterAnalysis(input: PerformClusterAnalysisInput) {
                         if (coords) {
                             record.latitude = coords.lat;
                             record.longitude = coords.lng;
+                        } else {
+                             console.warn(`Geocoding failed for address: "${record.address}". Record will not appear on the map.`);
                         }
                     } catch (error: any) {
-                        // If geocoding fails due to a critical error (like a bad API key), stop and return the error.
-                         return { success: false, error: `Geocoding failed: ${error.message}` };
+                        // Log a warning instead of stopping the entire process for one failed address.
+                        console.warn(`Geocoding failed for address: "${record.address}". Error: ${error.message}`);
                     }
                 }
             }
