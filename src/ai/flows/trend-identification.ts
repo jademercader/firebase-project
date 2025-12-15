@@ -31,7 +31,7 @@ const prompt = ai.definePrompt({
   name: 'trendIdentificationPrompt',
   input: {schema: TrendIdentificationInputSchema},
   output: {schema: TrendIdentificationOutputSchema},
-  model: 'googleai/gemini-1.5-flash-latest',
+  model: 'googleai/gemini-1.5-flash',
   prompt: `You are an expert in public health data analysis. Your task is to analyze the provided cluster data over time and identify significant trends and anomalies for each cluster, focusing on the specified health indicators.
 
 Cluster Data: {{{clusterData}}}
