@@ -52,7 +52,7 @@ Health Indicators:
 Number of Clusters:
 {{{numClusters}}}
 
-Return the grouping of records based on similarity.`,
+Return the grouping of records based on similarity. Ensure the response is purely structured data as per the schema.`,
 });
 
 const performClusterAnalysisFlow = ai.defineFlow(

@@ -22,7 +22,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 const defaultUser: User = { name: 'Health Admin', email: 'admin@barangay.gov' };
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  // Always logged in as Health Admin
+  // Always logged in as Health Admin to bypass login/signup wall
   const [user] = useState<User | null>(defaultUser);
 
   return (

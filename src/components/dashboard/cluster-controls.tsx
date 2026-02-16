@@ -6,12 +6,11 @@ import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
-import { PlayCircle, Info } from 'lucide-react';
+import { PlayCircle, Info, Database } from 'lucide-react';
 import { healthIndicators } from '@/lib/mock-data';
 import { useToast } from '@/hooks/use-toast';
 import { runClusterAnalysis } from '@/app/actions';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
-import { Database } from 'lucide-react';
 import type { HealthRecord } from '@/lib/types';
 import { mockHealthRecords } from '@/lib/mock-data';
 import { useMounted } from '@/hooks/use-mounted';
@@ -84,7 +83,7 @@ export function ClusterControls() {
           toast({
               variant: "destructive",
               title: "Analysis Failed",
-              description: result.error || "Could not run cluster analysis.",
+              description: result.error || "Could not run cluster analysis. Ensure your API key is valid.",
           });
       }
 

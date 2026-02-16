@@ -34,7 +34,7 @@ Cluster Data: {{{clusterData}}}
 Health Indicators: {{{healthIndicators}}}
 Time Period: {{{timePeriod}}}
 
-Provide a concise summary of findings.`,
+Provide a concise summary of findings. Avoid conversational filler.`,
 });
 
 const identifyTrendsFlow = ai.defineFlow(
