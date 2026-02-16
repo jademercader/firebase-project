@@ -5,7 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
-import { PlayCircle } from 'lucide-react';
+import { PlayCircle, Info } from 'lucide-react';
 import { healthIndicators } from '@/lib/mock-data';
 import { useToast } from '@/hooks/use-toast';
 import { runClusterAnalysis } from '@/app/actions';
@@ -16,6 +16,7 @@ import { mockHealthRecords } from '@/lib/mock-data';
 import { useMounted } from '@/hooks/use-mounted';
 
 const CLUSTERS_STORAGE_KEY = 'health_clusters';
+const ANALYSIS_STORAGE_KEY = 'analysis_result';
 const RECORDS_STORAGE_KEY = 'health_records';
 
 export function ClusterControls() {
@@ -67,16 +68,17 @@ export function ClusterControls() {
           numClusters: numClusters,
       });
 
-      if (result.success && result.data?.clusters) {
+      if (result.success && result.data) {
+          localStorage.setItem(ANALYSIS_STORAGE_KEY, JSON.stringify(result.data));
           localStorage.setItem(CLUSTERS_STORAGE_KEY, JSON.stringify(result.data.clusters));
           toast({
-              title: "Analysis Complete",
-              description: `${result.data.clusters.length} clusters have been identified. The dashboard will now update.`
+              title: "K-Means Analysis Complete",
+              description: `Successfully identified ${result.data.clusters.length} population segments with an average silhouette score of ${result.data.globalValidation.avgSilhouetteScore.toFixed(3)}.`
           });
-          window.dispatchEvent(new StorageEvent('storage', { key: CLUSTERS_STORAGE_KEY }));
+          window.dispatchEvent(new StorageEvent('storage', { key: ANALYSIS_STORAGE_KEY }));
       } else {
-          localStorage.removeItem(CLUSTERS_STORAGE_KEY);
-          window.dispatchEvent(new StorageEvent('storage', { key: CLUSTERS_STORAGE_KEY }));
+          localStorage.removeItem(ANALYSIS_STORAGE_KEY);
+          window.dispatchEvent(new StorageEvent('storage', { key: ANALYSIS_STORAGE_KEY }));
           toast({
               variant: "destructive",
               title: "Analysis Failed",
@@ -104,25 +106,29 @@ export function ClusterControls() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="font-headline">Cluster Analysis Tool</CardTitle>
+        <CardTitle className="font-headline">Objective-Based Clustering Tool</CardTitle>
         <CardDescription>
-          Configure the parameters below to analyze the health data and identify distinct population clusters.
+          Apply the K-Means algorithm to consolidate health records and identify distinct Barangay segments based on health similarities.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         <Alert className={isUsingUploadedData ? 'border-primary/50 text-primary' : ''}>
           <Database className="h-4 w-4" />
           <AlertTitle className="font-bold">
-            {isUsingUploadedData ? 'Using Uploaded Data' : 'Using Mock Data'}
+            {isUsingUploadedData ? 'Consolidated Data Source Active' : 'Mock Data in Use'}
           </AlertTitle>
           <AlertDescription>
             {isUsingUploadedData
-              ? `Analysis will run on the ${healthRecords.length} records you uploaded.`
-              : 'Please go to the Upload Data page to use your own file. Analysis is currently running on mock data.'}
+              ? `Currently processing ${healthRecords.length} consolidated records from the barangay repository.`
+              : 'Using mock records. Upload a CSV to fulfill Objective 1.'}
           </AlertDescription>
         </Alert>
+
         <div className="space-y-4">
-            <Label>Select Health Indicators for Clustering</Label>
+            <Label className="flex items-center gap-2">
+              Select Health Indicator Parameters
+              <Info className="w-3 h-3 text-muted-foreground" />
+            </Label>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {healthIndicators.map((indicator) => (
                     <div key={indicator.id} className="flex items-center space-x-2">
@@ -142,20 +148,20 @@ export function ClusterControls() {
             </div>
         </div>
         <div className="space-y-4">
-            <Label htmlFor="clusters">Number of Clusters: {numClusters}</Label>
+            <Label htmlFor="clusters">Number of Clusters (k): {numClusters}</Label>
             <Slider
               id="clusters"
               min={2}
-              max={10}
+              max={8}
               step={1}
               value={[numClusters]}
               onValueChange={(value) => setNumClusters(value[0])}
             />
-            <p className="text-xs text-muted-foreground">Use the elbow method or domain knowledge to select the optimal number.</p>
+            <p className="text-[10px] text-muted-foreground italic">Optimized cluster count helps maximize the silhouette score for higher validation accuracy.</p>
         </div>
-         <Button onClick={handleRunAnalysis} disabled={isAnalysisRunning}>
+         <Button onClick={handleRunAnalysis} disabled={isAnalysisRunning} className="w-full md:w-auto">
           <PlayCircle className="mr-2 h-4 w-4" />
-          {isAnalysisRunning ? 'Analyzing...' : 'Run Cluster Analysis'}
+          {isAnalysisRunning ? 'Processing K-Means Algorithm...' : 'Execute Clustering Analysis'}
         </Button>
       </CardContent>
     </Card>

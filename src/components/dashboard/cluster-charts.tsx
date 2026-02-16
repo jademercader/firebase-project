@@ -1,16 +1,17 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
+import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Users, Stethoscope } from 'lucide-react';
-import type { Cluster } from '@/lib/types';
+import { Users, Stethoscope, ShieldCheck, Zap } from 'lucide-react';
+import type { Cluster, AnalysisResult } from '@/lib/types';
 import { useMounted } from '@/hooks/use-mounted';
 
 const diseaseIndicators = ['Hypertension', 'Diabetes', 'Asthma'];
 const vaccinationIndicators = ['Vaccinated', 'Partially Vaccinated', 'Not Vaccinated'];
 
 const CLUSTERS_STORAGE_KEY = 'health_clusters';
+const ANALYSIS_STORAGE_KEY = 'analysis_result';
 
 const getMostPrevalentCondition = (cluster: Cluster) => {
     let maxCount = 0;
@@ -25,21 +26,31 @@ const getMostPrevalentCondition = (cluster: Cluster) => {
     return mostPrevalent;
 };
 
-
 export function ClusterCharts() {
   const mounted = useMounted();
-  const [clusters, setClusters] = useState<Cluster[]>([]);
+  const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   
   useEffect(() => {
     const fetchClusters = () => {
         setIsLoading(true);
         try {
-            const savedClusters = localStorage.getItem(CLUSTERS_STORAGE_KEY);
-            setClusters(savedClusters ? JSON.parse(savedClusters) : []);
+            const savedResult = localStorage.getItem(ANALYSIS_STORAGE_KEY);
+            if (savedResult) {
+              setAnalysisResult(JSON.parse(savedResult));
+            } else {
+              // Fallback for legacy data
+              const savedClusters = localStorage.getItem(CLUSTERS_STORAGE_KEY);
+              if (savedClusters) {
+                setAnalysisResult({
+                  clusters: JSON.parse(savedClusters),
+                  globalValidation: { avgSilhouetteScore: 0, totalWCSS: 0 }
+                });
+              }
+            }
         } catch (error) {
-            console.error("Failed to load clusters from localStorage", error);
-            setClusters([]);
+            console.error("Failed to load analysis from localStorage", error);
+            setAnalysisResult(null);
         } finally {
             setIsLoading(false);
         }
@@ -47,7 +58,7 @@ export function ClusterCharts() {
     fetchClusters();
 
     const handleStorageChange = (event: StorageEvent) => {
-      if (event.key === CLUSTERS_STORAGE_KEY || event.key === null) {
+      if (event.key === ANALYSIS_STORAGE_KEY || event.key === CLUSTERS_STORAGE_KEY || event.key === null) {
         fetchClusters();
       }
     };
@@ -59,6 +70,13 @@ export function ClusterCharts() {
 
   }, []);
 
+  if (!mounted) {
+    return <Skeleton className="w-full h-[400px] rounded-lg" />;
+  }
+
+  const clusters = analysisResult?.clusters || [];
+  const globalValidation = analysisResult?.globalValidation;
+
   const diseaseData = clusters.map(cluster => {
     const data: { [key: string]: any } = { name: cluster.name.split(':')[0] };
     diseaseIndicators.forEach(indicator => {
@@ -67,17 +85,11 @@ export function ClusterCharts() {
     return data;
   });
 
-  const vaccinationData = clusters.map(cluster => {
-    const data: { [key: string]: any } = { name: cluster.name.split(':')[0] };
-    vaccinationIndicators.forEach(indicator => {
-      data[indicator] = cluster.healthMetrics[indicator] || 0;
-    });
-    return data;
-  });
-
-  if (!mounted) {
-    return <Skeleton className="w-full h-[400px] rounded-lg" />;
-  }
+  const validationData = clusters.map(cluster => ({
+    name: cluster.name.split(':')[0],
+    'Silhouette Score': (cluster.validation?.silhouetteScore || 0).toFixed(3),
+    'Cohesion (WCSS)': (cluster.validation?.cohesion || 0).toFixed(2),
+  }));
 
   const renderContent = () => {
     if (isLoading) {
@@ -91,19 +103,20 @@ export function ClusterCharts() {
       );
     }
     return (
-        <div className="space-y-4">
+        <div className="space-y-6">
             <div className={`grid gap-4 md:grid-cols-2 lg:grid-cols-${clusters.length > 3 ? 4 : 3}`}>
                 {clusters.map((cluster) => (
-                    <Card key={cluster.id}>
+                    <Card key={cluster.id} className="border-l-4" style={{ borderLeftColor: `hsl(var(--chart-${(cluster.id % 5) + 1}))` }}>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                             <CardTitle className="text-sm font-medium">{cluster.name}</CardTitle>
                             <Users className="h-4 w-4 text-muted-foreground" />
                         </CardHeader>
                         <CardContent>
                             <div className="text-2xl font-bold">{cluster.records.length} Records</div>
-                            <p className="text-xs text-muted-foreground">
-                               Avg. Age: {cluster.demographics.averageAge.toFixed(1)}
-                            </p>
+                            <div className="flex flex-col gap-1 mt-2">
+                              <p className="text-xs text-muted-foreground">Avg. Age: {cluster.demographics.averageAge.toFixed(1)}</p>
+                              <p className="text-xs text-muted-foreground font-semibold">Silhouette: {(cluster.validation?.silhouetteScore || 0).toFixed(3)}</p>
+                            </div>
                              <div className="flex items-center pt-2">
                                 <Stethoscope className="w-4 h-4 mr-2 text-muted-foreground"/>
                                 <p className="text-xs text-muted-foreground">
@@ -114,11 +127,55 @@ export function ClusterCharts() {
                     </Card>
                 ))}
             </div>
+
+            <div className="grid gap-4 md:grid-cols-3">
+                <Card className="md:col-span-1">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <ShieldCheck className="w-5 h-5 text-primary" />
+                          Validation Matrix
+                        </CardTitle>
+                        <CardDescription>Evaluation of clustering effectiveness using K-Means metrics.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <div className="p-3 bg-secondary/30 rounded-lg border">
+                          <p className="text-sm font-medium">Avg. Silhouette Score</p>
+                          <p className="text-3xl font-bold text-primary">{(globalValidation?.avgSilhouetteScore || 0).toFixed(4)}</p>
+                          <p className="text-[10px] text-muted-foreground mt-1">Range: -1 to 1 (higher is better). 1 indicates highly distinct clusters.</p>
+                        </div>
+                        <div className="p-3 bg-secondary/30 rounded-lg border">
+                          <p className="text-sm font-medium">Total WCSS (Cohesion)</p>
+                          <p className="text-3xl font-bold">{(globalValidation?.totalWCSS || 0).toFixed(2)}</p>
+                          <p className="text-[10px] text-muted-foreground mt-1">Measures compactness. Lower values indicate points are closer to centroids.</p>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <Card className="md:col-span-2">
+                    <CardHeader>
+                        <CardTitle>Cluster Distance Metrics</CardTitle>
+                        <CardDescription>Comparative validation results for each identified cluster.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="h-[300px]">
+                        <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={validationData}>
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis dataKey="name" fontSize={12} tickLine={false} axisLine={false} />
+                            <YAxis fontSize={12} tickLine={false} axisLine={false} />
+                            <Tooltip />
+                            <Legend />
+                            <Bar dataKey="Silhouette Score" fill="hsl(var(--chart-1))" radius={[4, 4, 0, 0]} />
+                        </BarChart>
+                        </ResponsiveContainer>
+                    </CardContent>
+                </Card>
+            </div>
+
             <div className="grid gap-4 md:grid-cols-2">
                 <Card>
                     <CardHeader>
-                        <CardTitle>Disease Prevalence per Cluster</CardTitle>
-                        <CardDescription>Distribution of common diseases across clusters.</CardDescription>
+                        <CardTitle>Disease Prevalence Distribution</CardTitle>
+                        <CardDescription>Breakdown of health indicators across clusters.</CardDescription>
                     </CardHeader>
                     <CardContent className="h-[300px]">
                         <ResponsiveContainer width="100%" height="100%">
@@ -128,31 +185,33 @@ export function ClusterCharts() {
                             <YAxis fontSize={12} tickLine={false} axisLine={false} />
                             <Tooltip />
                             <Legend />
-                            <Bar dataKey="Hypertension" name="Hypertension Cases" stackId="a" fill="hsl(var(--chart-1))" />
-                            <Bar dataKey="Diabetes" name="Diabetes Cases" stackId="a" fill="hsl(var(--chart-2))" />
-                            <Bar dataKey="Asthma" name="Asthma Cases" stackId="a" fill="hsl(var(--chart-3))" />
+                            <Bar dataKey="Hypertension" stackId="a" fill="hsl(var(--chart-1))" />
+                            <Bar dataKey="Diabetes" stackId="a" fill="hsl(var(--chart-2))" />
+                            <Bar dataKey="Asthma" stackId="a" fill="hsl(var(--chart-3))" />
                         </BarChart>
                         </ResponsiveContainer>
                     </CardContent>
                 </Card>
                 <Card>
                     <CardHeader>
-                        <CardTitle>Vaccination Rates per Cluster</CardTitle>
-                        <CardDescription>Comparison of vaccination statuses.</CardDescription>
+                        <CardTitle>Cluster Profile Analysis</CardTitle>
+                        <CardDescription>Radar view of cluster characteristics (Normalized Age, Cohesion, Size).</CardDescription>
                     </CardHeader>
                     <CardContent className="h-[300px]">
-                    <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={vaccinationData}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="name" fontSize={12} tickLine={false} axisLine={false}/>
-                        <YAxis fontSize={12} tickLine={false} axisLine={false}/>
-                        <Tooltip />
-                        <Legend />
-                        <Bar dataKey="Vaccinated" stackId="a" fill="hsl(var(--chart-1))" />
-                        <Bar dataKey="Partially Vaccinated" stackId="a" fill="hsl(var(--chart-4))" />
-                        <Bar dataKey="Not Vaccinated" stackId="a" fill="hsl(var(--chart-5))" />
-                        </BarChart>
-                    </ResponsiveContainer>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <RadarChart cx="50%" cy="50%" outerRadius="80%" data={clusters.map(c => ({
+                          name: c.name.split(':')[0],
+                          Age: c.demographics.averageAge / 10,
+                          Silhouette: (c.validation?.silhouetteScore || 0) * 10,
+                          Cohesion: Math.log10(c.validation?.cohesion || 1) * 2
+                        }))}>
+                          <PolarGrid />
+                          <PolarAngleAxis dataKey="name" />
+                          <PolarRadiusAxis angle={30} domain={[0, 10]} />
+                          <Radar name="Cluster Strength" dataKey="Silhouette" stroke="hsl(var(--primary))" fill="hsl(var(--primary))" fillOpacity={0.6} />
+                          <Tooltip />
+                        </RadarChart>
+                      </ResponsiveContainer>
                     </CardContent>
                 </Card>
             </div>
@@ -160,10 +219,9 @@ export function ClusterCharts() {
     );
   };
 
-
   return (
     <div className="space-y-4">
-        <h3 className="text-2xl font-bold tracking-tight font-headline">Cluster-Specific Metrics</h3>
+        <h3 className="text-2xl font-bold tracking-tight font-headline">Statistical Results & Evaluation</h3>
         {renderContent()}
     </div>
   );

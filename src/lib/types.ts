@@ -19,6 +19,12 @@ export type DataError = {
   suggestedFix?: string | number;
 };
 
+export type ValidationMetrics = {
+  silhouetteScore: number;
+  cohesion: number; // Within-cluster sum of squares
+  separation: number; // Between-cluster sum of squares
+};
+
 export type Cluster = {
   id: number;
   name: string;
@@ -29,6 +35,16 @@ export type Cluster = {
   };
   healthMetrics: {
     [indicator: string]: number;
+  };
+  validation?: ValidationMetrics;
+  centroid?: { [key: string]: number };
+};
+
+export type AnalysisResult = {
+  clusters: Cluster[];
+  globalValidation: {
+    avgSilhouetteScore: number;
+    totalWCSS: number;
   };
 };
 

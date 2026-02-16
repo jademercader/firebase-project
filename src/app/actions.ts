@@ -52,7 +52,8 @@ export async function runClusterAnalysis(input: PerformClusterAnalysisInput) {
              return { success: false, error: 'AI did not return valid cluster data.' };
         }
         
-        let detailedClusters = calculateClusterMetrics(aiResult.clusters, healthRecords);
+        const analysisResult = calculateClusterMetrics(aiResult.clusters, healthRecords);
+        const detailedClusters = analysisResult.clusters;
 
         // --- Geocoding Step ---
         for (const cluster of detailedClusters) {
@@ -63,18 +64,15 @@ export async function runClusterAnalysis(input: PerformClusterAnalysisInput) {
                         if (coords) {
                             record.latitude = coords.lat;
                             record.longitude = coords.lng;
-                        } else {
-                             console.warn(`Geocoding failed for address: "${record.address}". Record will not appear on the map.`);
                         }
                     } catch (error: any) {
-                        // Log a warning instead of stopping the entire process for one failed address.
-                        console.warn(`Geocoding failed for address: "${record.address}". Error: ${error.message}`);
+                        console.warn(`Geocoding failed for address: "${record.address}"`);
                     }
                 }
             }
         }
 
-        return { success: true, data: { clusters: detailedClusters } };
+        return { success: true, data: analysisResult };
     } catch (error: any) {
         console.error('Error in runClusterAnalysis:', error);
         return { success: false, error: error.message || 'Failed to run cluster analysis.' };

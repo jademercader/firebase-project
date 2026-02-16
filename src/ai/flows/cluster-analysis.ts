@@ -1,6 +1,6 @@
 'use server';
 /**
- * @fileOverview Performs cluster analysis on Barangay health records.
+ * @fileOverview Performs K-Means based cluster analysis on Barangay health records.
  *
  * - performClusterAnalysis - A function that handles the cluster analysis process.
  * - PerformClusterAnalysisInput - The input type for the performClusterAnalysis function.
@@ -44,15 +44,15 @@ const prompt = ai.definePrompt({
   input: {schema: PerformClusterAnalysisInputSchema},
   output: {schema: PerformClusterAnalysisOutputSchema},
   model: 'googleai/gemini-1.5-flash',
-  prompt: `You are a public health data scientist. Your task is to perform a cluster analysis on the provided health records.
+  prompt: `You are a public health data scientist. Your task is to perform a population grouping analysis consistent with the K-Means clustering algorithm.
 
 Instructions:
-1.  Analyze the health records provided in the \`healthRecordsData\` JSON string. Each record in this data has a unique 'id' field.
-2.  Use the specified \`healthIndicators\` to group the records into distinct clusters.
-3.  Create exactly \`numClusters\` clusters.
-4.  For each cluster, provide a descriptive name based on the shared characteristics of its members.
-5.  For each cluster, you MUST provide an array of the 'id' strings from the original records that belong to that cluster.
-6.  CRITICAL: Your output MUST be a valid JSON object that conforms to the specified output schema. Do not include any other text, explanations, or markdown.
+1.  Analyze the provided \`healthRecordsData\`. Each record has a unique 'id'.
+2.  Using the specified \`healthIndicators\` (e.g., age, gender, vaccination status), identify patterns of similarity.
+3.  Simulate a K-Means approach: find natural centroids and group records into exactly \`numClusters\` distinct clusters.
+4.  Ensure clusters are mutually exclusive (each record belongs to exactly one cluster).
+5.  Provide a descriptive name for each cluster that captures its demographic or health profile.
+6.  Return the results as a JSON array of clusters, each containing the name and the IDs of the records.
 
 Health Records Data:
 {{{healthRecordsData}}}
