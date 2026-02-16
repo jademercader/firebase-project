@@ -21,24 +21,19 @@ const PerformClusterAnalysisInputSchema = z.object({
 
 export async function getTrendAnalysis(input: TrendIdentificationInput) {
     const validatedInput = TrendIdentificationInputSchema.safeParse(input);
-    if (!validatedInput.success) {
-        return { success: false, error: 'Invalid input.' };
-    }
+    if (!validatedInput.success) return { success: false, error: 'Invalid input.' };
 
     try {
         const result = await identifyTrends(validatedInput.data);
         return { success: true, data: result };
     } catch (error) {
-        console.error(error);
         return { success: false, error: 'Failed to get trend analysis.' };
     }
 }
 
 export async function runClusterAnalysis(input: PerformClusterAnalysisInput) {
     const validatedInput = PerformClusterAnalysisInputSchema.safeParse(input);
-    if (!validatedInput.success) {
-        return { success: false, error: 'Invalid input.' };
-    }
+    if (!validatedInput.success) return { success: false, error: 'Invalid input.' };
 
     try {
         const healthRecords: HealthRecord[] = JSON.parse(validatedInput.data.healthRecordsData);
@@ -49,15 +44,12 @@ export async function runClusterAnalysis(input: PerformClusterAnalysisInput) {
             numClusters: validatedInput.data.numClusters
         });
         
-        if (!aiResult || !aiResult.clusters) {
-             return { success: false, error: 'AI did not return valid cluster data.' };
-        }
+        if (!aiResult?.clusters) return { success: false, error: 'AI analysis failed.' };
         
         const analysisResult = calculateClusterMetrics(aiResult.clusters, healthRecords);
-        const detailedClusters = analysisResult.clusters;
 
-        // --- Geocoding Step ---
-        for (const cluster of detailedClusters) {
+        // Attempt geocoding but don't fail if individual addresses fail
+        for (const cluster of analysisResult.clusters) {
             for (const record of cluster.records) {
                 if (record.address && (!record.latitude || !record.longitude)) {
                     try {
@@ -66,8 +58,8 @@ export async function runClusterAnalysis(input: PerformClusterAnalysisInput) {
                             record.latitude = coords.lat;
                             record.longitude = coords.lng;
                         }
-                    } catch (error: any) {
-                        console.warn(`Geocoding failed for address: "${record.address}"`);
+                    } catch (e) {
+                        console.warn('Geocoding failed for', record.address);
                     }
                 }
             }
@@ -75,7 +67,6 @@ export async function runClusterAnalysis(input: PerformClusterAnalysisInput) {
 
         return { success: true, data: analysisResult };
     } catch (error: any) {
-        console.error('Error in runClusterAnalysis:', error);
-        return { success: false, error: error.message || 'Failed to run cluster analysis.' };
+        return { success: false, error: error.message || 'Analysis failed.' };
     }
 }

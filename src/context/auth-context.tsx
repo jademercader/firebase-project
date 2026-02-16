@@ -19,11 +19,9 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Static administrator user
 const defaultUser: User = { name: 'Health Admin', email: 'admin@barangay.gov' };
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  // Always authenticated as the default admin user
   const [user] = useState<User | null>(defaultUser);
 
   return (

@@ -2,10 +2,6 @@
 'use server';
 /**
  * @fileOverview Performs K-Means based cluster analysis on Barangay health records.
- *
- * - performClusterAnalysis - A function that handles the cluster analysis process.
- * - PerformClusterAnalysisInput - The input type for the performClusterAnalysis function.
- * - PerformClusterAnalysisOutput - The return type for the performClusterAnalysis function.
  */
 
 import {ai} from '@/ai/genkit';
@@ -14,7 +10,7 @@ import {z} from 'zod';
 const PerformClusterAnalysisInputSchema = z.object({
   healthRecordsData: z
     .string()
-    .describe('A JSON string of simplified Barangay health records, each containing at least an `id` and the health indicators to be used for clustering.'),
+    .describe('A JSON string of simplified Barangay health records.'),
   healthIndicators: z
     .array(z.string())
     .describe('A list of health indicators to consider for clustering.'),
@@ -25,14 +21,14 @@ const PerformClusterAnalysisInputSchema = z.object({
 export type PerformClusterAnalysisInput = z.infer<typeof PerformClusterAnalysisInputSchema>;
 
 const ClusterResultSchema = z.object({
-    clusterName: z.string().describe("A descriptive name for the cluster (e.g., 'Elderly with Chronic Illness', 'Young & Healthy')."),
-    recordIds: z.array(z.string()).describe("An array of the 'id' strings from the original records that belong to this cluster.")
+    clusterName: z.string().describe("A descriptive name for the cluster."),
+    recordIds: z.array(z.string()).describe("An array of the 'id' strings.")
 });
 
 const PerformClusterAnalysisOutputSchema = z.object({
   clusters: z
     .array(ClusterResultSchema)
-    .describe('An array of identified clusters, each containing a name and the IDs of the records within it.'),
+    .describe('An array of identified clusters.'),
 });
 export type PerformClusterAnalysisOutput = z.infer<typeof PerformClusterAnalysisOutputSchema>;
 
@@ -45,33 +41,16 @@ const prompt = ai.definePrompt({
   input: {schema: PerformClusterAnalysisInputSchema},
   output: {schema: PerformClusterAnalysisOutputSchema},
   model: 'googleai/gemini-1.5-flash',
-  prompt: `You are a public health data scientist. Your task is to perform a population grouping analysis consistent with the K-Means clustering algorithm.
-
-Instructions:
-1.  Analyze the provided \`healthRecordsData\`. Each record has a unique 'id'.
-2.  Using the specified \`healthIndicators\` (e.g., age, gender, vaccination status), identify patterns of similarity.
-3.  Simulate a K-Means approach: find natural centroids and group records into exactly \`numClusters\` distinct clusters.
-4.  Ensure clusters are mutually exclusive (each record belongs to exactly one cluster).
-5.  Provide a descriptive name for each cluster that captures its demographic or health profile.
-6.  Return the results as a JSON array of clusters, each containing the name and the IDs of the records.
+  prompt: `You are a public health data scientist. Perform population grouping analysis consistent with the K-Means clustering algorithm.
 
 Health Records Data:
 {{{healthRecordsData}}}
 
-Health Indicators for Clustering:
+Health Indicators:
 {{#each healthIndicators}}- {{{this}}}{{/each}}
 
 Number of Clusters:
-{{{numClusters}}}
-`,
-  config: {
-    safetySettings: [
-      {
-        category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
-        threshold: 'BLOCK_NONE',
-      },
-    ],
-  },
+{{{numClusters}}}`,
 });
 
 const performClusterAnalysisFlow = ai.defineFlow(

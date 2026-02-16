@@ -1,26 +1,21 @@
 
 'use server';
-
 /**
- * @fileOverview Identifies significant trends or anomalies in cluster data over time for each cluster.
- *
- * - identifyTrends - A function that handles the trend identification process.
- * - TrendIdentificationInput - The input type for the identifyTrends function.
- * - TrendIdentificationOutput - The return type for the identifyTrends function.
+ * @fileOverview Identifies significant trends or anomalies in cluster data.
  */
 
 import {ai} from '@/ai/genkit';
 import {z} from 'zod';
 
 const TrendIdentificationInputSchema = z.object({
-  clusterData: z.string().describe('The cluster data as a JSON string, including historical data.'),
-  healthIndicators: z.string().describe('A comma-separated list of health indicators to analyze.'),
-  timePeriod: z.string().describe('The time period over which to analyze trends (e.g., monthly, yearly).'),
+  clusterData: z.string().describe('The cluster data as a JSON string.'),
+  healthIndicators: z.string().describe('Health indicators to analyze.'),
+  timePeriod: z.string().describe('The time period for analysis.'),
 });
 export type TrendIdentificationInput = z.infer<typeof TrendIdentificationInputSchema>;
 
 const TrendIdentificationOutputSchema = z.object({
-  trends: z.string().describe('A summary of the identified trends and anomalies for each cluster.'),
+  trends: z.string().describe('A summary of identified trends.'),
 });
 export type TrendIdentificationOutput = z.infer<typeof TrendIdentificationOutputSchema>;
 
@@ -33,21 +28,13 @@ const prompt = ai.definePrompt({
   input: {schema: TrendIdentificationInputSchema},
   output: {schema: TrendIdentificationOutputSchema},
   model: 'googleai/gemini-1.5-flash',
-  prompt: `You are an expert in public health data analysis. Your task is to analyze the provided cluster data over time and identify significant trends and anomalies for each cluster, focusing on the specified health indicators.
+  prompt: `You are an expert in public health data analysis. Analyze the following cluster data and identify trends.
 
 Cluster Data: {{{clusterData}}}
 Health Indicators: {{{healthIndicators}}}
 Time Period: {{{timePeriod}}}
 
-Provide a concise summary of the identified trends and anomalies for each cluster. CRITICAL: Your output must be only the summary text, with no conversational text or markdown formatting.`,
-  config: {
-    safetySettings: [
-      {
-        category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
-        threshold: 'BLOCK_NONE',
-      },
-    ],
-  },
+Provide a concise summary of findings.`,
 });
 
 const identifyTrendsFlow = ai.defineFlow(
