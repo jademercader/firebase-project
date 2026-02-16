@@ -1,3 +1,4 @@
+
 'use client';
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -15,9 +16,9 @@ import type { HealthRecord } from '@/lib/types';
 import { mockHealthRecords } from '@/lib/mock-data';
 import { useMounted } from '@/hooks/use-mounted';
 
-const CLUSTERS_STORAGE_KEY = 'health_clusters';
 const ANALYSIS_STORAGE_KEY = 'analysis_result';
 const RECORDS_STORAGE_KEY = 'health_records';
+const CLUSTERS_STORAGE_KEY = 'health_clusters';
 
 export function ClusterControls() {
   const mounted = useMounted();
@@ -31,6 +32,7 @@ export function ClusterControls() {
   const { toast } = useToast();
 
   useEffect(() => {
+    if (!mounted) return;
     try {
         const savedRecords = localStorage.getItem(RECORDS_STORAGE_KEY);
         if (savedRecords) {
@@ -51,7 +53,7 @@ export function ClusterControls() {
         setHealthRecords(mockHealthRecords);
         setIsUsingUploadedData(false);
     }
-  }, []);
+  }, [mounted]);
 
   const handleIndicatorChange = (indicatorId: string, checked: boolean) => {
     setSelectedIndicators(prev => 

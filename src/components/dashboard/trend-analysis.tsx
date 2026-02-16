@@ -1,3 +1,4 @@
+
 'use client';
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -22,6 +23,7 @@ export function TrendAnalysis() {
   const { toast } = useToast();
 
   useEffect(() => {
+    if (!mounted) return;
     const fetchClusters = () => {
         try {
             const savedClusters = localStorage.getItem(CLUSTERS_STORAGE_KEY);
@@ -40,7 +42,7 @@ export function TrendAnalysis() {
         window.removeEventListener('storage', handleStorageChange);
     };
 
-  }, []);
+  }, [mounted]);
 
 
   const handleAnalyzeTrends = async () => {
