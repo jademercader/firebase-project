@@ -48,7 +48,6 @@ export async function runClusterAnalysis(input: PerformClusterAnalysisInput) {
         
         const analysisResult = calculateClusterMetrics(aiResult.clusters, healthRecords);
 
-        // Attempt geocoding but don't fail if individual addresses fail
         for (const cluster of analysisResult.clusters) {
             for (const record of cluster.records) {
                 if (record.address && (!record.latitude || !record.longitude)) {
