@@ -1,7 +1,7 @@
 
 'use server';
 /**
- * @fileOverview Performs K-Means based cluster analysis on Barangay health records.
+ * @fileOverview Performs population grouping analysis on Barangay health records.
  */
 
 import {ai} from '@/ai/genkit';

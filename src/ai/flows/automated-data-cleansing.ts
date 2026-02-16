@@ -2,10 +2,6 @@
 'use server';
 /**
  * @fileOverview An AI agent that identifies and flags potential errors in uploaded Barangay health records.
- *
- * - identifyDataErrors - A function that handles the identification of data errors.
- * - IdentifyDataErrorsInput - The input type for the identifyDataErrors function.
- * - IdentifyDataErrorsOutput - The return type for the identifyDataErrors function.
  */
 
 import {ai} from '@/ai/genkit';
@@ -35,7 +31,7 @@ const prompt = ai.definePrompt({
   name: 'identifyDataErrorsPrompt',
   input: {schema: IdentifyDataErrorsInputSchema},
   output: {schema: IdentifyDataErrorsOutputSchema},
-  model: 'googleai/gemini-1.5-flash-latest',
+  model: 'googleai/gemini-1.5-flash',
   prompt: `You are a data quality expert. Review the following Barangay health records data and identify any potential errors, inconsistencies, or missing values. 
   
 Your output should be a detailed report of your findings. CRITICAL: Your output must be only the report text, with no conversational text or markdown formatting.

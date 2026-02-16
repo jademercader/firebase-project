@@ -109,7 +109,7 @@ export function ClusterControls() {
       <CardHeader>
         <CardTitle className="font-headline">Objective-Based Clustering Tool</CardTitle>
         <CardDescription>
-          Apply the K-Means algorithm to consolidate health records and identify distinct Barangay segments based on health similarities.
+          Apply the K-Means algorithm to identify distinct Barangay segments based on health similarities.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -120,7 +120,7 @@ export function ClusterControls() {
           </AlertTitle>
           <AlertDescription>
             {isUsingUploadedData
-              ? `Currently processing ${healthRecords.length} consolidated records from the barangay repository.`
+              ? `Currently processing ${healthRecords.length} consolidated records.`
               : 'Using mock records. Upload a CSV to fulfill Objective 1.'}
           </AlertDescription>
         </Alert>
@@ -158,11 +158,11 @@ export function ClusterControls() {
               value={[numClusters]}
               onValueChange={(value) => setNumClusters(value[0])}
             />
-            <p className="text-[10px] text-muted-foreground italic">Optimized cluster count helps maximize the silhouette score for higher validation accuracy.</p>
+            <p className="text-[10px] text-muted-foreground italic">Optimizing cluster count maximizes validation accuracy.</p>
         </div>
          <Button onClick={handleRunAnalysis} disabled={isAnalysisRunning} className="w-full md:w-auto" suppressHydrationWarning>
           <PlayCircle className="mr-2 h-4 w-4" />
-          {isAnalysisRunning ? 'Processing K-Means Algorithm...' : 'Execute Clustering Analysis'}
+          {isAnalysisRunning ? 'Processing Algorithm...' : 'Execute Clustering Analysis'}
         </Button>
       </CardContent>
     </Card>
