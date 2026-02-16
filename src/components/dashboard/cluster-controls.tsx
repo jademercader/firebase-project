@@ -161,7 +161,7 @@ export function ClusterControls() {
             />
             <p className="text-[10px] text-muted-foreground italic">Optimized cluster count helps maximize the silhouette score for higher validation accuracy.</p>
         </div>
-         <Button onClick={handleRunAnalysis} disabled={isAnalysisRunning} className="w-full md:w-auto">
+         <Button onClick={handleRunAnalysis} disabled={isAnalysisRunning} className="w-full md:w-auto" suppressHydrationWarning>
           <PlayCircle className="mr-2 h-4 w-4" />
           {isAnalysisRunning ? 'Processing K-Means Algorithm...' : 'Execute Clustering Analysis'}
         </Button>

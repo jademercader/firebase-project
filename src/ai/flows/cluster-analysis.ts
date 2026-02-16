@@ -50,7 +50,9 @@ Health Indicators:
 {{#each healthIndicators}}- {{{this}}}{{/each}}
 
 Number of Clusters:
-{{{numClusters}}}`,
+{{{numClusters}}}
+
+Return the grouping of records based on similarity.`,
 });
 
 const performClusterAnalysisFlow = ai.defineFlow(

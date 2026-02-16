@@ -22,6 +22,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 const defaultUser: User = { name: 'Health Admin', email: 'admin@barangay.gov' };
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  // Always logged in as Health Admin
   const [user] = useState<User | null>(defaultUser);
 
   return (
