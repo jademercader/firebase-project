@@ -1,3 +1,4 @@
+
 'use server';
 import { identifyTrends, TrendIdentificationInput } from '@/ai/flows/trend-identification';
 import { performClusterAnalysis, PerformClusterAnalysisInput } from '@/ai/flows/cluster-analysis';

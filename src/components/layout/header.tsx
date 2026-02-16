@@ -1,3 +1,4 @@
+
 'use client';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -39,13 +40,16 @@ export function Header() {
               <DropdownMenuContent className="w-56" align="end" forceMount>
                 <DropdownMenuLabel className="font-normal">
                   <div className="flex flex-col space-y-1">
-                    <p className="text-sm font-medium leading-none">{user?.name ?? 'Admin User'}</p>
+                    <p className="text-sm font-medium leading-none">{user?.name ?? 'Health Admin'}</p>
                     <p className="text-xs leading-none text-muted-foreground">
                       {user?.email ?? 'admin@barangay.gov'}
                     </p>
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
+                <DropdownMenuItem>
+                  Profile
+                </DropdownMenuItem>
                 <DropdownMenuItem>
                   Settings
                 </DropdownMenuItem>
