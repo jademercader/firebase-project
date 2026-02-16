@@ -3,7 +3,6 @@ import { useState } from 'react';
 import Papa from 'papaparse';
 import { FileUploader } from '@/components/upload/file-uploader';
 import { DataTable } from '@/components/upload/data-table';
-import { CleansingSuggestions } from '@/components/upload/cleansing-suggestions';
 import { HealthRecord } from '@/lib/types';
 import AppLayout from '@/components/layout/app-layout';
 import { useToast } from '@/hooks/use-toast';
@@ -114,20 +113,15 @@ export default function UploadPage() {
     <AppLayout>
         <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
         <div className="flex items-center justify-between space-y-2">
-            <h2 className="text-3xl font-bold tracking-tight font-headline">Data Upload & Cleansing</h2>
+            <h2 className="text-3xl font-bold tracking-tight font-headline">Data Upload</h2>
         </div>
-        <div className="grid gap-8 lg:grid-cols-3">
-            <div className="lg:col-span-2 space-y-6">
+        <div className="space-y-6">
             <FileUploader 
               onFileSelected={handleFileSelected} 
               onSaveData={handleSaveData} 
               hasRecords={records.length > 0}
             />
             <DataTable records={records} />
-            </div>
-            <div className="lg:col-span-1">
-            <CleansingSuggestions records={records} />
-            </div>
         </div>
         </div>
     </AppLayout>
