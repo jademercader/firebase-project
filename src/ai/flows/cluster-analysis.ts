@@ -40,7 +40,7 @@ const prompt = ai.definePrompt({
   name: 'performClusterAnalysisPrompt',
   input: {schema: PerformClusterAnalysisInputSchema},
   output: {schema: PerformClusterAnalysisOutputSchema},
-  model: 'googleai/gemini-1.5-flash',
+  model: 'googleai/gemini-1.5-flash-latest',
   prompt: `You are a public health data scientist. Perform population grouping analysis consistent with the K-Means clustering algorithm.
 
 Health Records Data:
@@ -55,7 +55,7 @@ Number of Clusters:
 Return the grouping of records based on similarity. Ensure the response is purely structured data as per the schema.`,
 });
 
-const performClusterAnalysisFlow = ai.defineFlow(
+const diagnosePlantFlow = ai.defineFlow(
   {
     name: 'performClusterAnalysisFlow',
     inputSchema: PerformClusterAnalysisInputSchema,
@@ -66,3 +66,5 @@ const performClusterAnalysisFlow = ai.defineFlow(
     return output!;
   }
 );
+
+const performClusterAnalysisFlow = diagnosePlantFlow;

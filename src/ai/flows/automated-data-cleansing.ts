@@ -35,7 +35,7 @@ const prompt = ai.definePrompt({
   name: 'identifyDataErrorsPrompt',
   input: {schema: IdentifyDataErrorsInputSchema},
   output: {schema: IdentifyDataErrorsOutputSchema},
-  model: 'googleai/gemini-1.5-flash',
+  model: 'googleai/gemini-1.5-flash-latest',
   prompt: `You are a data quality expert. Review the following Barangay health records data and identify any potential errors, inconsistencies, or missing values. 
   
 Your output should be a detailed report of your findings. CRITICAL: Your output must be only the report text, with no conversational text or markdown formatting.
