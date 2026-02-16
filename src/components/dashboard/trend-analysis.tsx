@@ -9,10 +9,12 @@ import { useToast } from '@/hooks/use-toast';
 import { LineChart, ThumbsUp } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { Cluster } from '@/lib/types';
+import { useMounted } from '@/hooks/use-mounted';
 
 const CLUSTERS_STORAGE_KEY = 'health_clusters';
 
 export function TrendAnalysis() {
+  const mounted = useMounted();
   const [clusters, setClusters] = useState<Cluster[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<string>('');
@@ -69,6 +71,10 @@ export function TrendAnalysis() {
     }
     setIsLoading(false);
   };
+
+  if (!mounted) {
+    return <Skeleton className="h-full w-full rounded-lg" />;
+  }
 
   return (
     <Card className="h-full flex flex-col">

@@ -5,15 +5,12 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Skeleton } from '@/components/ui/skeleton';
 import { Users, Stethoscope } from 'lucide-react';
 import type { Cluster } from '@/lib/types';
+import { useMounted } from '@/hooks/use-mounted';
 
 const diseaseIndicators = ['Hypertension', 'Diabetes', 'Asthma'];
 const vaccinationIndicators = ['Vaccinated', 'Partially Vaccinated', 'Not Vaccinated'];
 
 const CLUSTERS_STORAGE_KEY = 'health_clusters';
-
-interface ClusterChartsProps {
-    isLoading: boolean;
-}
 
 const getMostPrevalentCondition = (cluster: Cluster) => {
     let maxCount = 0;
@@ -30,6 +27,7 @@ const getMostPrevalentCondition = (cluster: Cluster) => {
 
 
 export function ClusterCharts() {
+  const mounted = useMounted();
   const [clusters, setClusters] = useState<Cluster[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   
@@ -76,6 +74,10 @@ export function ClusterCharts() {
     });
     return data;
   });
+
+  if (!mounted) {
+    return <Skeleton className="w-full h-[400px] rounded-lg" />;
+  }
 
   const renderContent = () => {
     if (isLoading) {

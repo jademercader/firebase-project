@@ -13,11 +13,13 @@ import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { Database } from 'lucide-react';
 import type { HealthRecord } from '@/lib/types';
 import { mockHealthRecords } from '@/lib/mock-data';
+import { useMounted } from '@/hooks/use-mounted';
 
 const CLUSTERS_STORAGE_KEY = 'health_clusters';
 const RECORDS_STORAGE_KEY = 'health_records';
 
 export function ClusterControls() {
+  const mounted = useMounted();
   const [numClusters, setNumClusters] = useState(3);
   const [selectedIndicators, setSelectedIndicators] = useState<string[]>(
     healthIndicators.map(i => i.id)
@@ -71,11 +73,9 @@ export function ClusterControls() {
               title: "Analysis Complete",
               description: `${result.data.clusters.length} clusters have been identified. The dashboard will now update.`
           });
-          // Dispatch a storage event to notify other components like the map.
           window.dispatchEvent(new StorageEvent('storage', { key: CLUSTERS_STORAGE_KEY }));
       } else {
           localStorage.removeItem(CLUSTERS_STORAGE_KEY);
-          // Dispatch a storage event to clear the map and charts.
           window.dispatchEvent(new StorageEvent('storage', { key: CLUSTERS_STORAGE_KEY }));
           toast({
               variant: "destructive",
@@ -87,6 +87,19 @@ export function ClusterControls() {
       setIsAnalysisRunning(false);
   };
 
+  if (!mounted) {
+    return (
+      <Card className="opacity-50">
+        <CardHeader>
+          <CardTitle className="font-headline">Cluster Analysis Tool</CardTitle>
+          <CardDescription>Loading configuration...</CardDescription>
+        </CardHeader>
+        <CardContent className="h-48 flex items-center justify-center">
+          <p className="text-sm text-muted-foreground">Initializing...</p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card>
