@@ -50,7 +50,7 @@ export function TrendAnalysis() {
         toast({
             variant: 'destructive',
             title: 'No Clusters Found',
-            description: 'Please run the cluster analysis first to generate clusters.',
+            description: 'Please run the cluster analysis first.',
         });
         return;
     }
@@ -68,15 +68,13 @@ export function TrendAnalysis() {
       toast({
         variant: 'destructive',
         title: 'Analysis Failed',
-        description: result.error || 'Could not analyze trends. Please try again.',
+        description: result.error || 'Could not analyze trends.',
       });
     }
     setIsLoading(false);
   };
 
-  if (!mounted) {
-    return <Skeleton className="h-full w-full rounded-lg" />;
-  }
+  if (!mounted) return null;
 
   return (
     <Card className="h-full flex flex-col">

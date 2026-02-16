@@ -74,7 +74,7 @@ export function ClusterControls() {
           localStorage.setItem(CLUSTERS_STORAGE_KEY, JSON.stringify(result.data.clusters));
           toast({
               title: "K-Means Analysis Complete",
-              description: `Successfully identified ${result.data.clusters.length} population segments with an average silhouette score of ${result.data.globalValidation.avgSilhouetteScore.toFixed(3)}.`
+              description: `Successfully identified ${result.data.clusters.length} population segments.`
           });
           window.dispatchEvent(new StorageEvent('storage', { key: ANALYSIS_STORAGE_KEY }));
       } else {
@@ -83,26 +83,14 @@ export function ClusterControls() {
           toast({
               variant: "destructive",
               title: "Analysis Failed",
-              description: result.error || "Could not run cluster analysis. Ensure your API key is valid.",
+              description: result.error || "Could not run cluster analysis.",
           });
       }
 
       setIsAnalysisRunning(false);
   };
 
-  if (!mounted) {
-    return (
-      <Card className="opacity-50">
-        <CardHeader>
-          <CardTitle className="font-headline">Cluster Analysis Tool</CardTitle>
-          <CardDescription>Loading configuration...</CardDescription>
-        </CardHeader>
-        <CardContent className="h-48 flex items-center justify-center">
-          <p className="text-sm text-muted-foreground">Initializing...</p>
-        </CardContent>
-      </Card>
-    );
-  }
+  if (!mounted) return null;
 
   return (
     <Card>
