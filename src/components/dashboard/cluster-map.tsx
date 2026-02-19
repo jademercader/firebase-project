@@ -5,7 +5,7 @@ import 'leaflet/dist/leaflet.css';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '../ui/skeleton';
-import { MapPin, Layers } from 'lucide-react';
+import { MapPin, Layers, Crosshair } from 'lucide-react';
 import type { Cluster } from '@/lib/types';
 import { useMounted } from '@/hooks/use-mounted';
 
@@ -51,6 +51,7 @@ export function ClusterMap() {
   const [clusters, setClusters] = useState<Cluster[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Initialize Map
   useEffect(() => {
     if (mapRef.current && !mapInstanceRef.current && mounted) {
       const map = L.map(mapRef.current, {
@@ -75,6 +76,7 @@ export function ClusterMap() {
     };
   }, [mounted]);
 
+  // Handle Cluster Data Updates
   useEffect(() => {
     const map = mapInstanceRef.current;
     const markerLayer = markerLayerRef.current;
@@ -89,6 +91,7 @@ export function ClusterMap() {
       clusters.forEach((cluster, index) => {
         const color = getChartColor(index);
         
+        // Plot individual patient records
         cluster.records.forEach(record => {
           if (record.latitude !== undefined && record.longitude !== undefined) {
             const point: L.LatLngTuple = [record.latitude, record.longitude];
@@ -96,18 +99,20 @@ export function ClusterMap() {
             L.marker(point, { icon: createRecordIcon(color) })
               .addTo(markerLayer)
               .bindPopup(`
-                <div class="p-2 min-w-[150px]">
+                <div class="p-2 min-w-[160px]">
                     <p class="font-bold border-b pb-1 mb-2 text-primary">${record.name}</p>
                     <div class="space-y-1 text-xs">
                         <p><strong>Cluster:</strong> <span style="color: ${color}">${cluster.name.split(':')[0]}</span></p>
+                        <p><strong>Age:</strong> ${record.age}</p>
                         <p><strong>Health:</strong> ${record.disease}</p>
-                        <p class="text-[10px] text-muted-foreground mt-1 italic">${record.address}</p>
+                        <p class="text-[10px] text-muted-foreground mt-2 italic">${record.address}</p>
                     </div>
                 </div>
               `);
           }
         });
 
+        // Plot Cluster Centroid (Hotspot)
         if (cluster.centroid?.latitude !== undefined && cluster.centroid?.longitude !== undefined) {
             const center: L.LatLngTuple = [cluster.centroid.latitude as number, cluster.centroid.longitude as number];
             allPoints.push(center);
@@ -117,11 +122,12 @@ export function ClusterMap() {
             })
               .addTo(centroidLayer)
               .bindPopup(`
-                <div class="p-2 text-center bg-secondary/10 rounded-lg border border-primary/20">
-                    <p class="font-bold text-sm" style="color: ${color}">${cluster.name}</p>
-                    <div class="mt-2 text-[10px]">
+                <div class="p-2 text-center bg-secondary/20 rounded-lg border border-primary/20">
+                    <p class="font-bold text-sm" style="color: ${color}">${cluster.name.split(':')[0]}</p>
+                    <p class="text-[10px] font-medium">${cluster.name.split(':')[1]}</p>
+                    <div class="mt-2 text-[10px] border-t pt-1">
                         <p>Population Center</p>
-                        <p>${cluster.records.length} records</p>
+                        <p>${cluster.records.length} records mapped</p>
                     </div>
                 </div>
               `);
@@ -129,16 +135,20 @@ export function ClusterMap() {
       });
     }
 
+    // Auto-fit bounds to see all data
     if (allPoints.length > 0) {
       try {
         const bounds = L.latLngBounds(allPoints);
-        map.fitBounds(bounds, { padding: [60, 60], animate: true });
+        map.fitBounds(bounds, { padding: [50, 50], animate: true });
       } catch (e) {
         console.error("Failed to fit map bounds", e);
       }
+    } else {
+        map.setView(mapCenter, 13);
     }
   }, [clusters]);
 
+  // Listen for analysis events
   useEffect(() => {
     if (!mounted) return;
     const fetchClusters = () => {
@@ -152,11 +162,14 @@ export function ClusterMap() {
         setIsLoading(false);
       }
     };
+    
     fetchClusters();
+
     window.addEventListener('storage', (e) => {
       if (e.key === CLUSTERS_STORAGE_KEY) fetchClusters();
     });
     window.addEventListener('analysis-updated', fetchClusters);
+    
     return () => {
         window.removeEventListener('analysis-updated', fetchClusters);
     };
@@ -165,17 +178,23 @@ export function ClusterMap() {
   if (!mounted) return <Skeleton className="h-full w-full rounded-lg" />;
 
   return (
-    <Card className="h-full flex flex-col overflow-hidden relative">
+    <Card className="h-full flex flex-col overflow-hidden relative border-primary/20 shadow-xl">
       <CardHeader className="py-3 px-4 flex flex-row items-center justify-between shrink-0 bg-background/95 backdrop-blur z-[1001] border-b">
         <div className="flex items-center gap-2">
             <Layers className="w-4 h-4 text-primary" />
-            <CardTitle className="font-headline text-lg">Calbayog Spatial Analysis</CardTitle>
+            <CardTitle className="font-headline text-lg">Calbayog Spatial Distribution</CardTitle>
+        </div>
+        <div className="flex items-center gap-2 text-[10px] text-muted-foreground bg-secondary/30 px-2 py-1 rounded">
+            <Crosshair className="w-3 h-3" />
+            <span>K-Means Segments</span>
         </div>
       </CardHeader>
       <CardContent className="flex-1 p-0 relative min-h-0">
         <div ref={mapRef} style={{ height: '100%', width: '100%' }}></div>
+        
+        {/* Map Legend Overlay */}
         {clusters.length > 0 && (
-            <div className="absolute bottom-4 right-4 z-[1000] bg-background/90 backdrop-blur-md p-3 rounded-lg border shadow-lg max-w-[200px]">
+            <div className="absolute bottom-4 right-4 z-[1000] bg-background/90 backdrop-blur-md p-3 rounded-lg border shadow-lg max-w-[180px]">
                 <h4 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-2 border-b pb-1">Cluster Legend</h4>
                 <div className="space-y-2">
                     {clusters.map((c, i) => (
@@ -183,10 +202,20 @@ export function ClusterMap() {
                             <div className="w-3 h-3 rounded-full mt-0.5 shrink-0" style={{ backgroundColor: getChartColor(i) }} />
                             <div className="flex flex-col">
                                 <span className="text-[10px] font-bold leading-none">{c.name.split(':')[0]}</span>
-                                <span className="text-[9px] text-muted-foreground">{c.records.length} patients</span>
+                                <span className="text-[8px] text-muted-foreground leading-tight">{c.name.split(':')[1]}</span>
                             </div>
                         </div>
                     ))}
+                </div>
+            </div>
+        )}
+
+        {/* Empty State Overlay */}
+        {!isLoading && clusters.length === 0 && (
+            <div className="absolute inset-0 z-[1000] flex items-center justify-center bg-background/20 backdrop-blur-[2px]">
+                <div className="bg-background/90 p-4 rounded-lg shadow-xl border text-center">
+                    <p className="text-sm font-medium text-muted-foreground">No analysis data visualized.</p>
+                    <p className="text-[10px]">Run the clustering engine to plot segments.</p>
                 </div>
             </div>
         )}
