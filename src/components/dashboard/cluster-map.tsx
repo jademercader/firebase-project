@@ -5,38 +5,15 @@ import 'leaflet/dist/leaflet.css';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '../ui/skeleton';
-import { Info, MapPin, Layers } from 'lucide-react';
+import { MapPin, Layers } from 'lucide-react';
 import type { Cluster } from '@/lib/types';
 import { useMounted } from '@/hooks/use-mounted';
-import { cn } from '@/lib/utils';
 
-// Leaflet icon fix for default markers
-const DefaultIcon = L.icon({
-  iconUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png',
-  iconRetinaUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon-2x.png',
-  shadowUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png',
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  tooltipAnchor: [16, -28],
-  shadowSize: [41, 41],
-});
-L.Marker.prototype.options.icon = DefaultIcon;
+const mapCenter: L.LatLngTuple = [12.0674, 124.5950]; // Calbayog City Default
 
-const mapCenter: L.LatLngTuple = [14.5995, 120.9842]; // Manila default
-
-// High-contrast colors for distinct cluster visualization
 const chartColors = [
-  '#2563eb', // Blue
-  '#f97316', // Orange
-  '#16a34a', // Green
-  '#9333ea', // Purple
-  '#e11d48', // Red
-  '#0891b2', // Cyan
-  '#ea580c', // Dark Orange
-  '#4f46e5', // Indigo
-  '#be185d', // Pink
-  '#15803d', // Dark Green
+  '#2563eb', '#f97316', '#16a34a', '#9333ea', '#e11d48',
+  '#0891b2', '#ea580c', '#4f46e5', '#be185d', '#15803d',
 ];
 
 const getChartColor = (index: number) => chartColors[index % chartColors.length];
@@ -74,7 +51,6 @@ export function ClusterMap() {
   const [clusters, setClusters] = useState<Cluster[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Initialize Map Instance
   useEffect(() => {
     if (mapRef.current && !mapInstanceRef.current && mounted) {
       const map = L.map(mapRef.current, {
@@ -83,7 +59,6 @@ export function ClusterMap() {
       }).setView(mapCenter, 13);
       
       mapInstanceRef.current = map;
-
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; OpenStreetMap contributors'
       }).addTo(map);
@@ -100,7 +75,6 @@ export function ClusterMap() {
     };
   }, [mounted]);
 
-  // Handle Data Updates on Map
   useEffect(() => {
     const map = mapInstanceRef.current;
     const markerLayer = markerLayerRef.current;
@@ -115,7 +89,6 @@ export function ClusterMap() {
       clusters.forEach((cluster, index) => {
         const color = getChartColor(index);
         
-        // Render individual records as colored dots
         cluster.records.forEach(record => {
           if (record.latitude !== undefined && record.longitude !== undefined) {
             const point: L.LatLngTuple = [record.latitude, record.longitude];
@@ -127,7 +100,6 @@ export function ClusterMap() {
                     <p class="font-bold border-b pb-1 mb-2 text-primary">${record.name}</p>
                     <div class="space-y-1 text-xs">
                         <p><strong>Cluster:</strong> <span style="color: ${color}">${cluster.name.split(':')[0]}</span></p>
-                        <p><strong>Age:</strong> ${record.age}</p>
                         <p><strong>Health:</strong> ${record.disease}</p>
                         <p class="text-[10px] text-muted-foreground mt-1 italic">${record.address}</p>
                     </div>
@@ -136,7 +108,6 @@ export function ClusterMap() {
           }
         });
 
-        // Render cluster hotspot (centroid)
         if (cluster.centroid?.latitude !== undefined && cluster.centroid?.longitude !== undefined) {
             const center: L.LatLngTuple = [cluster.centroid.latitude as number, cluster.centroid.longitude as number];
             allPoints.push(center);
@@ -148,10 +119,9 @@ export function ClusterMap() {
               .bindPopup(`
                 <div class="p-2 text-center bg-secondary/10 rounded-lg border border-primary/20">
                     <p class="font-bold text-sm" style="color: ${color}">${cluster.name}</p>
-                    <div class="mt-2 text-[10px] space-y-1">
-                        <p class="uppercase font-semibold tracking-widest text-primary">Population Center</p>
-                        <p>${cluster.records.length} records in this segment</p>
-                        <p>Avg. Age: ${cluster.demographics.averageAge.toFixed(1)}</p>
+                    <div class="mt-2 text-[10px]">
+                        <p>Population Center</p>
+                        <p>${cluster.records.length} records</p>
                     </div>
                 </div>
               `);
@@ -159,51 +129,35 @@ export function ClusterMap() {
       });
     }
 
-    // Adjust Map View to Fit All Clusters
     if (allPoints.length > 0) {
       try {
         const bounds = L.latLngBounds(allPoints);
-        map.fitBounds(bounds, { padding: [60, 60], animate: true, maxZoom: 16 });
+        map.fitBounds(bounds, { padding: [60, 60], animate: true });
       } catch (e) {
         console.error("Failed to fit map bounds", e);
       }
     }
   }, [clusters]);
 
-  // Synchronize with Analysis Engine
   useEffect(() => {
     if (!mounted) return;
     const fetchClusters = () => {
       setIsLoading(true);
       try {
         const savedClusters = localStorage.getItem(CLUSTERS_STORAGE_KEY);
-        if (savedClusters) {
-          const parsed = JSON.parse(savedClusters);
-          setClusters(parsed);
-        } else {
-          setClusters([]);
-        }
+        setClusters(savedClusters ? JSON.parse(savedClusters) : []);
       } catch (error) {
-        console.error("Error fetching clusters for map", error);
         setClusters([]);
       } finally {
         setIsLoading(false);
       }
     };
-
     fetchClusters();
-
-    const handleStorageChange = (event: StorageEvent) => {
-      if (event.key === CLUSTERS_STORAGE_KEY || event.key === null) {
-        fetchClusters();
-      }
-    };
-
-    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('storage', (e) => {
+      if (e.key === CLUSTERS_STORAGE_KEY) fetchClusters();
+    });
     window.addEventListener('analysis-updated', fetchClusters);
-
     return () => {
-        window.removeEventListener('storage', handleStorageChange);
         window.removeEventListener('analysis-updated', fetchClusters);
     };
   }, [mounted]);
@@ -215,23 +169,11 @@ export function ClusterMap() {
       <CardHeader className="py-3 px-4 flex flex-row items-center justify-between shrink-0 bg-background/95 backdrop-blur z-[1001] border-b">
         <div className="flex items-center gap-2">
             <Layers className="w-4 h-4 text-primary" />
-            <CardTitle className="font-headline text-lg">Cluster Spatial Analysis</CardTitle>
-        </div>
-        <div className="flex items-center gap-2 text-[10px] text-muted-foreground uppercase tracking-widest">
-            <div className="flex items-center gap-1">
-                <div className="w-2 h-2 rounded-full bg-primary" />
-                Records
-            </div>
-            <div className="flex items-center gap-1">
-                <MapPin className="w-2 h-2 text-primary" />
-                Centroids
-            </div>
+            <CardTitle className="font-headline text-lg">Calbayog Spatial Analysis</CardTitle>
         </div>
       </CardHeader>
       <CardContent className="flex-1 p-0 relative min-h-0">
         <div ref={mapRef} style={{ height: '100%', width: '100%' }}></div>
-        
-        {/* Real-time Map Legend */}
         {clusters.length > 0 && (
             <div className="absolute bottom-4 right-4 z-[1000] bg-background/90 backdrop-blur-md p-3 rounded-lg border shadow-lg max-w-[200px]">
                 <h4 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-2 border-b pb-1">Cluster Legend</h4>
@@ -247,33 +189,6 @@ export function ClusterMap() {
                     ))}
                 </div>
             </div>
-        )}
-
-        {isLoading && (
-          <div className="absolute inset-0 z-[2000] flex items-center justify-center bg-background/50 backdrop-blur-sm">
-            <div className="flex flex-col items-center gap-2">
-                <Skeleton className="h-8 w-48 mb-2" />
-                <p className="text-xs text-muted-foreground animate-pulse">Syncing Spatial Layers...</p>
-            </div>
-          </div>
-        )}
-        
-        {!isLoading && clusters.length === 0 && (
-          <div className="absolute inset-0 flex items-center justify-center p-4 bg-black/5 z-[1000]">
-            <div className="text-center bg-background/95 p-8 rounded-2xl border shadow-2xl max-w-sm">
-              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                <MapPin className="h-8 w-8 text-primary" />
-              </div>
-              <h3 className="font-bold text-xl mb-2">Awaiting Spatial Analysis</h3>
-              <p className="text-sm text-muted-foreground mb-6">Execute the local K-Means analysis on the dashboard to visualize population hotspots and cluster distributions.</p>
-              <div className="flex flex-col gap-2">
-                 <div className="h-1.5 w-full bg-secondary rounded-full overflow-hidden">
-                    <div className="h-full bg-primary/30 w-1/3 animate-progress-flow" />
-                 </div>
-                 <p className="text-[10px] text-muted-foreground italic uppercase">Engine Ready</p>
-              </div>
-            </div>
-          </div>
         )}
       </CardContent>
     </Card>
