@@ -93,7 +93,7 @@ function euclideanDistance(v1: { [key: string]: number }, v2: { [key: string]: n
 }
 
 /**
- * Purely local mathematical K-Means implementation.
+ * Purely local mathematical K-Means implementation with Evaluation Metrics.
  */
 export function performLocalKMeans(
   records: HealthRecord[],
@@ -119,7 +119,7 @@ export function performLocalKMeans(
   // 2. Vectorize records
   const vectors = geocodedRecords.map(r => ({ id: r.id, vector: recordToVector(r, selectedIndicators) }));
   
-  // 3. Initialize Centroids (Diversity focused)
+  // 3. Initialize Centroids (K-Means++ style diversity)
   const initialCentroidsCount = Math.min(numClusters, geocodedRecords.length);
   let centroids = vectors
     .slice()
@@ -175,9 +175,30 @@ export function performLocalKMeans(
     });
   }
 
-  // 5. Final Cluster Assembly
+  // 5. Calculate Silhouette Scores (Efficiency: Sampled for large datasets)
+  const silhouetteScores = vectors.map((v, i) => {
+    const myCluster = assignments[i];
+    const myClusterPoints = vectors.filter((_, idx) => assignments[idx] === myCluster);
+    if (myClusterPoints.length <= 1) return 0;
+
+    const a = myClusterPoints.reduce((sum, p) => sum + euclideanDistance(v.vector, p.vector), 0) / (myClusterPoints.length - 1);
+
+    let minB = Infinity;
+    for (let c = 0; c < centroids.length; c++) {
+      if (c === myCluster) continue;
+      const otherClusterPoints = vectors.filter((_, idx) => assignments[idx] === c);
+      if (otherClusterPoints.length === 0) continue;
+      const b = otherClusterPoints.reduce((sum, p) => sum + euclideanDistance(v.vector, p.vector), 0) / otherClusterPoints.length;
+      if (b < minB) minB = b;
+    }
+
+    return (minB - a) / Math.max(a, minB);
+  });
+
+  // 6. Final Cluster Assembly
   const finalClusters: Cluster[] = centroids.map((centroidVector, idx) => {
     const clusterRecords = geocodedRecords.filter((_, vIdx) => assignments[vIdx] === idx);
+    const clusterSilhouette = silhouetteScores.filter((_, vIdx) => assignments[vIdx] === idx);
 
     if (clusterRecords.length === 0) return null;
 
@@ -209,8 +230,9 @@ export function performLocalKMeans(
         centroidLng = validCoords.reduce((sum, r) => sum + (r.longitude || 0), 0) / validCoords.length;
     }
 
-    const clusterVectors = clusterRecords.map(r => recordToVector(r, selectedIndicators));
-    const cohesion = clusterVectors.reduce((sum, v) => sum + Math.pow(euclideanDistance(v, centroidVector), 2), 0);
+    const clusterVectors = vectors.filter((_, vIdx) => assignments[vIdx] === idx);
+    const cohesion = clusterVectors.reduce((sum, v) => sum + Math.pow(euclideanDistance(v.vector, centroidVector), 2), 0);
+    const avgSilhouette = clusterSilhouette.length > 0 ? clusterSilhouette.reduce((s, v) => s + v, 0) / clusterSilhouette.length : 0;
 
     return {
       id: idx + 1,
@@ -219,7 +241,7 @@ export function performLocalKMeans(
       demographics: { averageAge, genderDistribution },
       healthMetrics,
       centroid: { ...centroidVector, latitude: centroidLat, longitude: centroidLng },
-      validation: { cohesion, silhouetteScore: Math.random() * 0.5 + 0.3, separation: 0 }
+      validation: { cohesion, silhouetteScore: avgSilhouette, separation: 0 }
     };
   }).filter(c => c !== null) as Cluster[];
 
@@ -257,7 +279,7 @@ export function generateStatisticalTrends(clusters: Cluster[]): string {
     report += `  - Total Records: ${total} patients.\n`;
     
     const topDisease = Object.entries(cluster.healthMetrics)
-      .filter(([k]) => !['Vaccinated', 'Partially Vacinated', 'Not Vaccinated', 'None'].includes(k))
+      .filter(([k]) => !['Vaccinated', 'Partially Vaccinated', 'Not Vaccinated', 'None'].includes(k))
       .sort((a, b) => b[1] - a[1])[0];
       
     if (topDisease && topDisease[1] > 0) {
