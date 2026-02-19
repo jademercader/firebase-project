@@ -7,20 +7,19 @@ import { Users, Stethoscope, ShieldCheck } from 'lucide-react';
 import type { Cluster, AnalysisResult } from '@/lib/types';
 import { useMounted } from '@/hooks/use-mounted';
 
-const diseaseIndicators = ['Hypertension', 'Diabetes', 'Asthma'];
 const ANALYSIS_STORAGE_KEY = 'analysis_result';
 const CLUSTERS_STORAGE_KEY = 'health_clusters';
+const VAX_KEYS = ['Vaccinated', 'Partially Vaccinated', 'Not Vaccinated'];
 
 const getMostPrevalentCondition = (cluster: Cluster) => {
     let maxCount = 0;
     let mostPrevalent = 'None';
-    for (const indicator of diseaseIndicators) {
-        const count = cluster.healthMetrics[indicator] || 0;
-        if (count > maxCount) {
+    Object.entries(cluster.healthMetrics).forEach(([key, count]) => {
+        if (!VAX_KEYS.includes(key) && count > maxCount) {
             maxCount = count;
-            mostPrevalent = indicator;
+            mostPrevalent = key;
         }
-    }
+    });
     return mostPrevalent;
 };
 
@@ -78,10 +77,21 @@ export function ClusterCharts() {
   const clusters = analysisResult?.clusters || [];
   const globalValidation = analysisResult?.globalValidation;
 
+  // Dynamically extract all diseases found in the analysis metrics
+  const allDiseasesSet = new Set<string>();
+  clusters.forEach(c => {
+    Object.keys(c.healthMetrics).forEach(k => {
+      if (!VAX_KEYS.includes(k) && k !== 'None') {
+        allDiseasesSet.add(k);
+      }
+    });
+  });
+  const detectedDiseases = Array.from(allDiseasesSet);
+
   const diseaseData = clusters.map(cluster => {
     const data: { [key: string]: any } = { name: cluster.name.split(':')[0] };
-    diseaseIndicators.forEach(indicator => {
-      data[indicator] = cluster.healthMetrics[indicator] || 0;
+    detectedDiseases.forEach(d => {
+      data[d] = cluster.healthMetrics[d] || 0;
     });
     return data;
   });
@@ -185,9 +195,14 @@ export function ClusterCharts() {
                             <YAxis fontSize={12} tickLine={false} axisLine={false} />
                             <Tooltip />
                             <Legend />
-                            <Bar dataKey="Hypertension" stackId="a" fill="hsl(var(--chart-1))" />
-                            <Bar dataKey="Diabetes" stackId="a" fill="hsl(var(--chart-2))" />
-                            <Bar dataKey="Asthma" stackId="a" fill="hsl(var(--chart-3))" />
+                            {detectedDiseases.map((disease, idx) => (
+                              <Bar 
+                                key={disease} 
+                                dataKey={disease} 
+                                stackId="a" 
+                                fill={`hsl(var(--chart-${(idx % 5) + 1}))`} 
+                              />
+                            ))}
                         </BarChart>
                         </ResponsiveContainer>
                     </CardContent>

@@ -72,8 +72,10 @@ function recordToVector(record: HealthRecord, indicators: string[]): { [key: str
       vector[indicator] = (map[String(value)] ?? 0) / (max || 1);
     } else if (typeof value === 'number') {
       vector[indicator] = value / 100;
+    } else if (indicator === 'disease') {
+      // Dynamic binary indicator for diseases
+      vector['disease_present'] = value && value !== 'None' ? 1 : 0;
     } else {
-      // Binary indicator for specific diseases or flags
       vector[indicator] = value && value !== 'None' ? 1 : 0;
     }
   });
@@ -235,7 +237,7 @@ function getClusterFocusLabel(metrics: Record<string, number>, avgAge: number): 
   if (avgAge < 15) return "Pediatric Priority";
   
   const diseases = Object.entries(metrics)
-    .filter(([k]) => !['Vaccinated', 'Partially Vaccinated', 'Not Vaccinated'].includes(k))
+    .filter(([k]) => !['Vaccinated', 'Partially Vaccinated', 'Not Vaccinated', 'None'].includes(k))
     .sort((a, b) => b[1] - a[1]);
     
   if (diseases.length > 0 && diseases[0][1] > 0) return `${diseases[0][0]} Group`;
@@ -255,7 +257,7 @@ export function generateStatisticalTrends(clusters: Cluster[]): string {
     report += `  - Total Records: ${total} patients.\n`;
     
     const topDisease = Object.entries(cluster.healthMetrics)
-      .filter(([k]) => !['Vaccinated', 'Partially Vaccinated', 'Not Vaccinated'].includes(k))
+      .filter(([k]) => !['Vaccinated', 'Partially Vacinated', 'Not Vaccinated', 'None'].includes(k))
       .sort((a, b) => b[1] - a[1])[0];
       
     if (topDisease && topDisease[1] > 0) {
