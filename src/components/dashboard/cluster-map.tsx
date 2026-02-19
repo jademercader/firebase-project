@@ -135,7 +135,7 @@ export function ClusterMap() {
       });
     }
 
-    // Auto-fit bounds to see all data
+    // Auto-fit bounds to see all data, ensuring no clusters are missed
     if (allPoints.length > 0) {
       try {
         const bounds = L.latLngBounds(allPoints);
@@ -165,6 +165,7 @@ export function ClusterMap() {
     
     fetchClusters();
 
+    // Standardized synchronization events
     window.addEventListener('storage', (e) => {
       if (e.key === CLUSTERS_STORAGE_KEY) fetchClusters();
     });

@@ -2,6 +2,7 @@ import type { HealthRecord, Cluster, AnalysisResult } from '@/lib/types';
 
 /**
  * Local Barangay Coordinate Map for Calbayog City.
+ * Expanded with more barangays to ensure mapping success across diverse datasets.
  */
 const CALBAYOG_BRGY_COORDS: Record<string, { lat: number, lng: number }> = {
   'Obrero': { lat: 12.0667, lng: 124.5917 },
@@ -24,12 +25,22 @@ const CALBAYOG_BRGY_COORDS: Record<string, { lat: number, lng: number }> = {
   'Anislag': { lat: 12.0250, lng: 124.6333 },
   'Danao': { lat: 12.0333, lng: 124.6500 },
   'San Isidro': { lat: 12.0833, lng: 124.5500 },
+  'Balud': { lat: 12.0645, lng: 124.5875 },
+  'Rawis': { lat: 12.0690, lng: 124.5980 },
+  'Bagacay': { lat: 12.0780, lng: 124.6050 },
+  'Carayman': { lat: 12.0450, lng: 124.6150 },
+  'Palo': { lat: 12.0900, lng: 124.6200 },
+  'Tinambacan': { lat: 12.1600, lng: 124.5000 },
+  'Malajog': { lat: 12.1750, lng: 124.4850 },
+  'Mabini': { lat: 12.1200, lng: 124.5400 },
+  'Maguinoo': { lat: 12.1450, lng: 124.5200 },
+  'Banjao': { lat: 12.1050, lng: 124.5850 },
 };
 
 /**
  * Adds a small random jitter to coordinates to prevent perfect overlap on the map.
  */
-function addJitter(val: number, amount: number = 0.002) {
+function addJitter(val: number, amount: number = 0.003) {
   return val + (Math.random() - 0.5) * amount;
 }
 
@@ -49,11 +60,11 @@ function getCoordinatesFromAddress(address: string) {
 function recordToVector(record: HealthRecord, indicators: string[]): { [key: string]: number } {
   const vector: { [key: string]: number } = {};
   
-  // High weight for spatial clustering
-  const SPATIAL_WEIGHT = 4.0;
+  // High weight for spatial clustering to ensure geographic grouping
+  const SPATIAL_WEIGHT = 5.0;
 
   if (record.latitude !== undefined && record.longitude !== undefined) {
-    // Normalize coordinates around Calbayog center
+    // Normalize coordinates around Calbayog center for vector analysis
     vector['latitude'] = ((record.latitude - 12.0) * 10) * SPATIAL_WEIGHT;
     vector['longitude'] = ((record.longitude - 124.0) * 10) * SPATIAL_WEIGHT;
   }
@@ -91,7 +102,7 @@ function euclideanDistance(v1: { [key: string]: number }, v2: { [key: string]: n
 }
 
 /**
- * Core Local K-Means Algorithm
+ * Core Local K-Means Algorithm with K-Means++ Initialization
  */
 export function performLocalKMeans(
   records: HealthRecord[],
@@ -111,19 +122,42 @@ export function performLocalKMeans(
         longitude: addJitter(coords.lng) 
       };
     }
-    return r;
+    // Fallback to a default if no address match (prevent unmappable records)
+    return {
+        ...r,
+        latitude: addJitter(12.0674),
+        longitude: addJitter(124.5950)
+    };
   });
 
   // 2. Vectorization
   const vectors = geocodedRecords.map(r => ({ id: r.id, vector: recordToVector(r, selectedIndicators) }));
   
-  // 3. Initialization (Spread out starting points)
+  // 3. K-Means++ Initialization
   const initialCentroidsCount = Math.min(numClusters, geocodedRecords.length);
-  let centroids = vectors
-    .slice()
-    .sort(() => 0.5 - Math.random())
-    .slice(0, initialCentroidsCount)
-    .map(v => ({ ...v.vector }));
+  let centroids: { [key: string]: number }[] = [];
+  
+  // Pick first centroid randomly
+  centroids.push({ ...vectors[Math.floor(Math.random() * vectors.length)].vector });
+  
+  // Pick remaining centroids based on distance to ensure spread
+  while (centroids.length < initialCentroidsCount) {
+      let maxDist = -1;
+      let bestIdx = 0;
+      
+      for (let i = 0; i < vectors.length; i++) {
+          let minDistToCentroid = Infinity;
+          for (const c of centroids) {
+              const dist = euclideanDistance(vectors[i].vector, c);
+              if (dist < minDistToCentroid) minDistToCentroid = dist;
+          }
+          if (minDistToCentroid > maxDist) {
+              maxDist = minDistToCentroid;
+              bestIdx = i;
+          }
+      }
+      centroids.push({ ...vectors[bestIdx].vector });
+  }
 
   let assignments: number[] = new Array(vectors.length).fill(-1);
   let changed = true;
