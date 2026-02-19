@@ -4,6 +4,7 @@ import type { HealthRecord } from '@/lib/types';
 
 /**
  * Server action to generate statistical trends from cluster data locally.
+ * Removed all AI dependencies.
  */
 export async function getTrendAnalysis(input: { clusterData: string }) {
     try {
@@ -11,23 +12,23 @@ export async function getTrendAnalysis(input: { clusterData: string }) {
         const trends = generateStatisticalTrends(clusters);
         return { success: true, data: { trends } };
     } catch (error) {
-        return { success: false, error: 'Failed to generate statistical trends.' };
+        return { success: false, error: 'Failed to generate local statistical trends.' };
     }
 }
 
 /**
  * Server action to execute the K-Means clustering algorithm locally.
- * Removed geocoding loop to prevent server action timeouts and "unexpected response" errors.
+ * Objective 2: Implementation of mathematical grouping.
  */
 export async function runClusterAnalysis(input: { healthRecordsData: string, numClusters: number }) {
     try {
         const healthRecords: HealthRecord[] = JSON.parse(input.healthRecordsData);
         
-        // Execute local K-Means algorithm (Purely mathematical, no external API calls)
+        // Execute pure local mathematical K-Means (No AI, No external API)
         const analysisResult = performLocalKMeans(healthRecords, input.numClusters);
 
         return { success: true, data: analysisResult };
     } catch (error: any) {
-        return { success: false, error: error.message || 'Analysis failed.' };
+        return { success: false, error: error.message || 'Local analysis failed.' };
     }
 }

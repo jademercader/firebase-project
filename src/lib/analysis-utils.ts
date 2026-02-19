@@ -8,9 +8,9 @@ function recordToVector(record: HealthRecord): { [key: string]: number } {
   const vaxMap: Record<string, number> = { 'Not Vaccinated': 0, 'Partially Vaccinated': 1, 'Vaccinated': 2 };
 
   return {
-    age: record.age / 100, // Normalized
-    gender: genderMap[record.gender] || 0,
-    vaccination: vaxMap[record.vaccinationStatus] || 0,
+    age: record.age / 100, // Normalized 0-1
+    gender: (genderMap[record.gender] || 0) / 2, // Normalized
+    vaccination: (vaxMap[record.vaccinationStatus] || 0) / 2, // Normalized
   };
 }
 
@@ -27,6 +27,7 @@ function euclideanDistance(v1: { [key: string]: number }, v2: { [key: string]: n
 
 /**
  * Performs K-Means clustering locally.
+ * Objective 2: Implement K-Means clustering algorithm.
  */
 export function performLocalKMeans(
   records: HealthRecord[],
@@ -37,7 +38,7 @@ export function performLocalKMeans(
   const vectors = records.map(r => ({ id: r.id, vector: recordToVector(r) }));
   const keys = Object.keys(vectors[0].vector);
 
-  // 1. Initialize Centroids (Randomly select points)
+  // 1. Initialize Centroids (Using Forgy Method: Randomly select k observations)
   let centroids = vectors
     .sort(() => 0.5 - Math.random())
     .slice(0, numClusters)
@@ -46,13 +47,13 @@ export function performLocalKMeans(
   let assignments: number[] = new Array(vectors.length).fill(-1);
   let changed = true;
   let iterations = 0;
-  const maxIterations = 20;
+  const maxIterations = 30;
 
   while (changed && iterations < maxIterations) {
     changed = false;
     iterations++;
 
-    // 2. Assignment Step
+    // 2. Assignment Step: Assign each observation to the nearest centroid
     vectors.forEach((v, idx) => {
       let minDist = Infinity;
       let closestCluster = 0;
@@ -69,7 +70,7 @@ export function performLocalKMeans(
       }
     });
 
-    // 3. Update Step
+    // 3. Update Step: Calculate the new means (centroids) for observations in each cluster
     const newCentroids = centroids.map(() => {
       const c: { [key: string]: number } = {};
       keys.forEach(k => c[k] = 0);
@@ -86,14 +87,14 @@ export function performLocalKMeans(
     });
 
     centroids = newCentroids.map((c, idx) => {
-      if (counts[idx] === 0) return c;
+      if (counts[idx] === 0) return centroids[idx]; // Keep previous if empty
       const updated: { [key: string]: number } = {};
       keys.forEach(k => updated[k] = c[k] / counts[idx]);
       return updated;
     });
   }
 
-  // 4. Calculate Final Cluster Data
+  // 4. Calculate Final Cluster Data & Validation Matrix
   const recordsMap = new Map(records.map(r => [r.id, r]));
   const finalClusters: Cluster[] = centroids.map((centroid, idx) => {
     const clusterRecords = vectors
@@ -118,7 +119,7 @@ export function performLocalKMeans(
       return acc;
     }, {} as { [indicator: string]: number });
 
-    // Cohesion (WCSS)
+    // Calculate Cohesion (Within-Cluster Sum of Squares)
     const clusterVectors = clusterRecords.map(recordToVector);
     const cohesion = clusterVectors.reduce((sum, v) => sum + Math.pow(euclideanDistance(v, centroid), 2), 0);
 
@@ -133,7 +134,7 @@ export function performLocalKMeans(
     };
   });
 
-  // Calculate Silhouette Scores
+  // Objective 3: Evaluate Effectiveness using Clustering Validation Matrix (Silhouette Coefficient)
   let totalSilhouette = 0;
   let validRecordsCount = 0;
 
@@ -142,9 +143,11 @@ export function performLocalKMeans(
     let clusterSilhouetteSum = 0;
 
     clusterVectors.forEach((v) => {
+      // a(i): average distance between i and all other points in the same cluster
       const internalDistances = clusterVectors.map(otherV => euclideanDistance(v, otherV));
       const a = internalDistances.reduce((s, d) => s + d, 0) / (clusterVectors.length || 1);
 
+      // b(i): average distance between i and all points in the nearest neighboring cluster
       let b = Infinity;
       finalClusters.forEach((otherCluster, j) => {
         if (i === j) return;
@@ -177,51 +180,48 @@ export function performLocalKMeans(
 }
 
 function getClusterFocusLabel(metrics: Record<string, number>, avgAge: number): string {
-  if (avgAge > 60) return "Senior High-Risk Group";
+  if (avgAge > 60) return "Senior Vulnerability Group";
   if (avgAge < 18) return "Pediatric Priority";
   
   const diseases = Object.entries(metrics)
     .filter(([k]) => !['Vaccinated', 'Partially Vaccinated', 'Not Vaccinated'].includes(k))
     .sort((a, b) => b[1] - a[1]);
 
-  if (diseases.length > 0) return `${diseases[0][0]} Affected Segment`;
-  return "General Health Segment";
+  if (diseases.length > 0) return `${diseases[0][0]} Alert Segment`;
+  return "General Public Health";
 }
 
 /**
- * Performs a rule-based statistical trend analysis.
+ * Performs a rule-based statistical trend analysis locally.
  */
 export function generateStatisticalTrends(clusters: Cluster[]): string {
   if (clusters.length === 0) return "No data available for trend analysis.";
 
-  let report = "Statistical Trend Analysis Report:\n\n";
+  let report = "LOCAL STATISTICAL TREND REPORT\n";
+  report += "==============================\n\n";
 
   clusters.forEach(cluster => {
-    report += `- ${cluster.name}:\n`;
+    report += `● ${cluster.name}\n`;
+    report += `  - Segment Size: ${cluster.records.length} records\n`;
     
-    // Population Size
-    report += `  * Population: ${cluster.records.length} individuals.\n`;
-    
-    // Disease Insights
     const diseases = Object.entries(cluster.healthMetrics)
       .filter(([k]) => !['Vaccinated', 'Partially Vaccinated', 'Not Vaccinated'].includes(k))
       .sort((a, b) => b[1] - a[1]);
     
     if (diseases.length > 0) {
       const top = diseases[0];
-      const percent = ((top[1] / cluster.records.length) * 100).toFixed(1);
-      report += `  * Health Alert: ${top[0]} prevalence is at ${percent}% in this segment.\n`;
+      const prevalence = ((top[1] / cluster.records.length) * 100).toFixed(1);
+      report += `  - Alert: High prevalence of ${top[0]} (${prevalence}%).\n`;
     }
 
-    // Vaccination Status
     const vaccinated = cluster.healthMetrics['Vaccinated'] || 0;
     const vaxRate = ((vaccinated / cluster.records.length) * 100).toFixed(1);
-    report += `  * Vaccination: Current immunization coverage is ${vaxRate}%.\n`;
+    report += `  - Immunization: Coverage at ${vaxRate}%.\n`;
 
-    // Silhouette/Quality
     if (cluster.validation) {
-      const quality = cluster.validation.silhouetteScore > 0.5 ? "High" : cluster.validation.silhouetteScore > 0.2 ? "Moderate" : "Low";
-      report += `  * Statistical Quality: ${quality} (Score: ${cluster.validation.silhouetteScore.toFixed(2)})\n`;
+      const q = cluster.validation.silhouetteScore;
+      const rating = q > 0.5 ? "High Cohesion" : q > 0.2 ? "Moderate" : "Weak Separation";
+      report += `  - Evaluation: ${rating} (Silhouette: ${q.toFixed(3)})\n`;
     }
     report += "\n";
   });
