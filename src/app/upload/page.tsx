@@ -17,7 +17,7 @@ const getRowValue = (row: any, keys: string[]): string => {
 };
 
 const isRowEmpty = (row: any): boolean => {
-  return Object.values(row).every(val => val === '' || val === null);
+  return Object.values(row).every(val => val === '' || val === null || val === undefined);
 }
 
 export default function UploadPage() {
@@ -28,15 +28,18 @@ export default function UploadPage() {
     if (file) {
       Papa.parse(file, {
         header: true,
-        skipEmptyLines: true,
+        skipEmptyLines: 'greedy', // More aggressive in skipping empty lines
+        transformHeader: (header) => header.trim(), // Remove whitespace from headers
         complete: (results) => {
-          if (results.errors.length) {
+          // Filter out "Too many fields" errors which are often harmless trailing commas
+          const criticalErrors = results.errors.filter(e => e.code !== 'TooManyFields' && e.code !== 'UndetectableDelimiter');
+          
+          if (criticalErrors.length > 0) {
             toast({
               variant: 'destructive',
-              title: 'File Parsing Failed',
-              description: results.errors.map(e => e.message).join(', '),
+              title: 'File Parsing Warning',
+              description: `Encountered some issues, but attempting to load ${results.data.length} records.`,
             });
-            return;
           }
           
           const parsedRecords = results.data
@@ -45,9 +48,8 @@ export default function UploadPage() {
                 const ageString = getRowValue(row, ['age', 'Age']);
                 const age = ageString ? parseInt(ageString, 10) : 0;
                 const gender = getRowValue(row, ['gender', 'Gender']) as HealthRecord['gender'] || 'Other';
-                const vaccinationStatus = getRowValue(row, ['vaccinationStatus', 'Vaccination Status']) as HealthRecord['vaccinationStatus'] || 'Not Vaccinated';
+                const vaccinationStatus = getRowValue(row, ['vaccinationStatus', 'Vaccination Status', 'Vaccination']) as HealthRecord['vaccinationStatus'] || 'Not Vaccinated';
                 
-                // Parse Latitude and Longitude from CSV columns
                 const latStr = getRowValue(row, ['latitude', 'lat', 'Latitude', 'Lat']);
                 const lngStr = getRowValue(row, ['longitude', 'long', 'lng', 'Longitude', 'Lng', 'Long']);
 
@@ -68,7 +70,7 @@ export default function UploadPage() {
           setRecords(parsedRecords);
           toast({
             title: 'File Parsed Successfully',
-            description: `${parsedRecords.length} records loaded. Map coordinates detected where available.`,
+            description: `${parsedRecords.length} records loaded. Address-based mapping ready.`,
           });
         },
       });
@@ -80,7 +82,7 @@ export default function UploadPage() {
     localStorage.setItem('health_records', JSON.stringify(records));
      toast({
         title: 'Data Saved Successfully!',
-        description: 'Navigate to the dashboard to run the spatial grouping analysis.',
+        description: 'Analysis engine is now using your uploaded dataset.',
       });
   }
 
