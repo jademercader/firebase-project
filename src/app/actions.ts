@@ -4,7 +4,6 @@ import type { HealthRecord } from '@/lib/types';
 
 /**
  * Server action to generate statistical trends from cluster data locally.
- * Removed all AI dependencies.
  */
 export async function getTrendAnalysis(input: { clusterData: string }) {
     try {
@@ -18,14 +17,22 @@ export async function getTrendAnalysis(input: { clusterData: string }) {
 
 /**
  * Server action to execute the K-Means clustering algorithm locally.
- * Objective 2: Implementation of mathematical grouping.
+ * Enhanced to support dynamic indicators.
  */
-export async function runClusterAnalysis(input: { healthRecordsData: string, numClusters: number }) {
+export async function runClusterAnalysis(input: { 
+    healthRecordsData: string, 
+    numClusters: number,
+    selectedIndicators?: string[]
+}) {
     try {
         const healthRecords: HealthRecord[] = JSON.parse(input.healthRecordsData);
         
-        // Execute pure local mathematical K-Means (No AI, No external API)
-        const analysisResult = performLocalKMeans(healthRecords, input.numClusters);
+        // Execute pure local mathematical K-Means
+        const analysisResult = performLocalKMeans(
+            healthRecords, 
+            input.numClusters, 
+            input.selectedIndicators
+        );
 
         return { success: true, data: analysisResult };
     } catch (error: any) {

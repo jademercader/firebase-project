@@ -1,4 +1,3 @@
-
 'use client';
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -22,9 +21,9 @@ const CLUSTERS_STORAGE_KEY = 'health_clusters';
 export function ClusterControls() {
   const mounted = useMounted();
   const [numClusters, setNumClusters] = useState(3);
-  const [selectedIndicators, setSelectedIndicators] = useState<string[]>(
-    healthIndicators.map(i => i.id)
-  );
+  const [selectedIndicators, setSelectedIndicators] = useState<string[]>([
+    'age', 'gender', 'vaccinationStatus'
+  ]);
   const [isAnalysisRunning, setIsAnalysisRunning] = useState(false);
   const [healthRecords, setHealthRecords] = useState<HealthRecord[]>([]);
   const [isUsingUploadedData, setIsUsingUploadedData] = useState(false);
@@ -54,25 +53,45 @@ export function ClusterControls() {
   }, [mounted]);
 
   const handleIndicatorChange = (indicatorId: string, checked: boolean) => {
+    // Map UI indicators to record properties
+    const indicatorMap: Record<string, string> = {
+        'averageAge': 'age',
+        'genderDistribution': 'gender',
+        'vaccinationRates': 'vaccinationStatus',
+        'diseasePrevalence': 'disease'
+    };
+    
+    const propName = indicatorMap[indicatorId] || indicatorId;
+
     setSelectedIndicators(prev => 
-      checked ? [...prev, indicatorId] : prev.filter(id => id !== indicatorId)
+      checked ? [...prev, propName] : prev.filter(id => id !== propName)
     );
   };
 
   const handleRunAnalysis = async () => {
+      if (healthRecords.length === 0) {
+        toast({
+            variant: "destructive",
+            title: "No Data",
+            description: "Please upload a CSV file or ensure mock data is available."
+        });
+        return;
+      }
+
       setIsAnalysisRunning(true);
       
       const result = await runClusterAnalysis({
           healthRecordsData: JSON.stringify(healthRecords),
           numClusters: numClusters,
+          selectedIndicators: selectedIndicators
       });
 
       if (result.success && result.data) {
           localStorage.setItem(ANALYSIS_STORAGE_KEY, JSON.stringify(result.data));
           localStorage.setItem(CLUSTERS_STORAGE_KEY, JSON.stringify(result.data.clusters));
           toast({
-              title: "K-Means Analysis Complete",
-              description: `Successfully identified ${result.data.clusters.length} population segments locally.`
+              title: "Analysis Complete",
+              description: `Processed ${healthRecords.length} records into ${result.data.clusters.length} segments.`
           });
           window.dispatchEvent(new StorageEvent('storage', { key: ANALYSIS_STORAGE_KEY }));
       } else {
@@ -91,62 +110,72 @@ export function ClusterControls() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="font-headline">Local K-Means Clustering Tool</CardTitle>
+        <CardTitle className="font-headline">Scalable K-Means Clustering Engine</CardTitle>
         <CardDescription>
-          Identify distinct Barangay segments based on health similarities using a local clustering algorithm.
+          Identify population segments based on uploaded dataset health markers.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         <Alert className={isUsingUploadedData ? 'border-primary/50 text-primary' : ''}>
           <Database className="h-4 w-4" />
           <AlertTitle className="font-bold">
-            {isUsingUploadedData ? 'Consolidated Data Source Active' : 'Mock Data in Use'}
+            {isUsingUploadedData ? 'Dataset Source: Uploaded CSV' : 'Dataset Source: Mock Data'}
           </AlertTitle>
           <AlertDescription>
             {isUsingUploadedData
-              ? `Processing ${healthRecords.length} records locally.`
-              : 'Using mock records. Upload a CSV to use custom data.'}
+              ? `Ready to analyze ${healthRecords.length} records from your file.`
+              : 'Using demonstration records. Upload a CSV to process larger datasets.'}
           </AlertDescription>
         </Alert>
 
         <div className="space-y-4">
             <Label className="flex items-center gap-2">
-              Select Parameters for Euclidean Distance
+              Select Analysis Dimensions (Euclidean Distance)
               <Info className="w-3 h-3 text-muted-foreground" />
             </Label>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {healthIndicators.map((indicator) => (
-                    <div key={indicator.id} className="flex items-center space-x-2">
-                        <Checkbox 
-                            id={indicator.id} 
-                            checked={selectedIndicators.includes(indicator.id)}
-                            onCheckedChange={(checked) => handleIndicatorChange(indicator.id, !!checked)}
-                        />
-                        <label
-                            htmlFor={indicator.id}
-                            className="text-sm font-medium leading-none"
-                        >
-                            {indicator.name}
-                        </label>
-                    </div>
-                ))}
+                {healthIndicators.map((indicator) => {
+                    const indicatorMap: Record<string, string> = {
+                        'averageAge': 'age',
+                        'genderDistribution': 'gender',
+                        'vaccinationRates': 'vaccinationStatus',
+                        'diseasePrevalence': 'disease'
+                    };
+                    const propName = indicatorMap[indicator.id] || indicator.id;
+                    
+                    return (
+                        <div key={indicator.id} className="flex items-center space-x-2">
+                            <Checkbox 
+                                id={indicator.id} 
+                                checked={selectedIndicators.includes(propName)}
+                                onCheckedChange={(checked) => handleIndicatorChange(indicator.id, !!checked)}
+                            />
+                            <label
+                                htmlFor={indicator.id}
+                                className="text-sm font-medium leading-none"
+                            >
+                                {indicator.name}
+                            </label>
+                        </div>
+                    );
+                })}
             </div>
         </div>
         <div className="space-y-4">
-            <Label htmlFor="clusters">Number of Clusters (k): {numClusters}</Label>
+            <Label htmlFor="clusters">Number of Segments (k): {numClusters}</Label>
             <Slider
               id="clusters"
               min={2}
-              max={8}
+              max={10}
               step={1}
               value={[numClusters]}
               onValueChange={(value) => setNumClusters(value[0])}
             />
-            <p className="text-[10px] text-muted-foreground italic">Optimal cluster selection improves segment cohesion.</p>
+            <p className="text-[10px] text-muted-foreground italic">Higher 'k' values increase segment specificity but may reduce cohesion.</p>
         </div>
          <Button onClick={handleRunAnalysis} disabled={isAnalysisRunning} className="w-full md:w-auto" suppressHydrationWarning>
           <PlayCircle className="mr-2 h-4 w-4" />
-          {isAnalysisRunning ? 'Computing...' : 'Execute Local Analysis'}
+          {isAnalysisRunning ? 'Processing Dataset...' : 'Execute Local Analysis'}
         </Button>
       </CardContent>
     </Card>
