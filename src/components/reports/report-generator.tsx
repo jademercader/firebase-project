@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -25,7 +26,6 @@ export function ReportGenerator() {
   useEffect(() => {
     setGeneratedDate(new Date().toLocaleDateString());
     
-    // Load clusters from localStorage
     try {
       const savedClustersRaw = localStorage.getItem(CLUSTERS_STORAGE_KEY);
       if (savedClustersRaw) {
@@ -40,7 +40,7 @@ export function ReportGenerator() {
         }
       }
     } catch (error) {
-        console.error("Failed to load or parse clusters from localStorage", error);
+        // Silent catch
     }
   }, []);
 
@@ -68,23 +68,22 @@ export function ReportGenerator() {
     }
     setIsTrendLoading(true);
     setTrendAnalysisResult('');
-    const input = {
-      clusterData: JSON.stringify([selectedCluster]), // Analyze only the selected cluster
-      healthIndicators: Object.keys(selectedCluster.healthMetrics).join(', '),
-      timePeriod: 'yearly',
-    };
-    const result = await getTrendAnalysis(input);
+    
+    const result = await getTrendAnalysis({
+      clusterData: JSON.stringify([selectedCluster]),
+    });
+
     if (result.success && result.data) {
       setTrendAnalysisResult(result.data.trends);
        toast({
-        title: 'Analysis Complete',
-        description: 'Trends for the selected cluster have been generated.',
+        title: 'Report Updated',
+        description: 'Statistical trends have been computed locally.',
       });
     } else {
       toast({
         variant: 'destructive',
-        title: 'Trend Analysis Failed',
-        description: result.error || 'Could not analyze trends for the report.',
+        title: 'Analysis Failed',
+        description: result.error || 'Could not compute trends.',
       });
     }
     setIsTrendLoading(false);
@@ -97,7 +96,7 @@ export function ReportGenerator() {
         <CardHeader className="flex-row items-center justify-between print:hidden">
           <div>
             <CardTitle className="font-headline">Report Configuration</CardTitle>
-            <CardDescription>Select a cluster to generate a detailed report.</CardDescription>
+            <CardDescription>Select a cluster to generate a statistical health report.</CardDescription>
           </div>
            <Button onClick={handlePrint} disabled={!selectedCluster}>
             <Printer className="mr-2 h-4 w-4" />
@@ -127,7 +126,7 @@ export function ReportGenerator() {
                     </div>
                     <Button onClick={handleAnalyzeTrends} disabled={isTrendLoading || !selectedCluster}>
                         <LineChart className="mr-2 h-4 w-4" />
-                        {isTrendLoading ? 'Analyzing...' : 'Analyze Trends for Report'}
+                        {isTrendLoading ? 'Computing...' : 'Generate Statistical Report'}
                     </Button>
                 </div>
             ) : null}
@@ -137,17 +136,17 @@ export function ReportGenerator() {
       {clusters.length > 0 && selectedCluster ? (
         <Card id="report-content">
           <CardHeader>
-            <CardTitle className="text-2xl font-headline">{selectedCluster.name} - Health Report</CardTitle>
-            <CardDescription>Generated on: {generatedDate}</CardDescription>
+            <CardTitle className="text-2xl font-headline">{selectedCluster.name} - Statistical Summary</CardTitle>
+            <CardDescription>Computed on: {generatedDate}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             <div>
-              <h3 className="font-semibold text-lg font-headline">Cluster Demographics</h3>
+              <h3 className="font-semibold text-lg font-headline underline">1. Population Demographics</h3>
               <ul className="list-disc list-inside text-muted-foreground mt-2 space-y-1">
-                <li><span className='font-medium text-foreground'>Total Population:</span> {selectedCluster.records.length} individuals</li>
+                <li><span className='font-medium text-foreground'>Total Records:</span> {selectedCluster.records.length}</li>
                 <li><span className='font-medium text-foreground'>Average Age:</span> {selectedCluster.demographics.averageAge.toFixed(1)} years</li>
                 <li>
-                  <span className='font-medium text-foreground'>Gender Distribution:</span>{' '}
+                  <span className='font-medium text-foreground'>Gender Split:</span>{' '}
                   {Object.entries(selectedCluster.demographics.genderDistribution)
                     .map(([g, c]) => `${g}: ${c}`)
                     .join(', ')}
@@ -155,26 +154,26 @@ export function ReportGenerator() {
               </ul>
             </div>
             <div>
-              <h3 className="font-semibold text-lg font-headline">Health Indicator Analysis</h3>
-              <ul className="list-disc list-inside text-muted-foreground mt-2 space-y-1">
-                {Object.keys(selectedCluster.healthMetrics).length > 0 ? Object.entries(selectedCluster.healthMetrics).map(([indicator, value]) => (
-                  <li key={indicator}>
-                    <span className='font-medium text-foreground'>{indicator}:</span> {value} {typeof value === 'number' ? 'cases/status' : ''}
-                  </li>
-                )) : (
-                    <li>No specific health metrics were analyzed for this cluster.</li>
-                )}
-              </ul>
+              <h3 className="font-semibold text-lg font-headline underline">2. Health Indicator Distribution</h3>
+              <div className="mt-2 grid grid-cols-1 md:grid-cols-2 gap-2">
+                {Object.entries(selectedCluster.healthMetrics).map(([indicator, value]) => (
+                  <div key={indicator} className="p-2 border rounded bg-secondary/20">
+                    <span className='font-medium text-foreground'>{indicator}:</span> {value}
+                  </div>
+                ))}
+              </div>
             </div>
             <div>
-              <h3 className="font-semibold text-lg font-headline">Recent Trends & Anomalies</h3>
-              <p className="text-muted-foreground mt-2 whitespace-pre-wrap leading-relaxed">
-                {isTrendLoading ? 'Generating trend analysis...' : trendAnalysisResult || 'Click "Analyze Trends for Report" to generate insights for this cluster.'}
-              </p>
+              <h3 className="font-semibold text-lg font-headline underline">3. Statistical Trends & Quality</h3>
+              <div className="bg-secondary/10 p-4 rounded-md border mt-2">
+                <p className="text-muted-foreground whitespace-pre-wrap leading-relaxed italic">
+                    {isTrendLoading ? 'Computing trends...' : trendAnalysisResult || 'Click "Generate Statistical Report" to see local analysis.'}
+                </p>
+              </div>
             </div>
           </CardContent>
           <CardFooter>
-            <p className="text-xs text-muted-foreground">This is an auto-generated report by Barangay Health Insights. For official use only.</p>
+            <p className="text-xs text-muted-foreground">Generated via local K-Means analysis. Official health insights engine.</p>
           </CardFooter>
         </Card>
       ) : (
@@ -184,7 +183,7 @@ export function ReportGenerator() {
                     <FileWarning className='w-16 h-16 text-primary/20' />
                     <div>
                         <h3 className='font-bold text-lg text-foreground'>No Analysis Data Found</h3>
-                        <p className='mt-1'>To generate a new report, please go to the dashboard and run a cluster analysis first.</p>
+                        <p className='mt-1'>To generate a report, please run the cluster analysis on the dashboard first.</p>
                     </div>
                      <Button asChild>
                         <Link href="/">Go to Dashboard</Link>

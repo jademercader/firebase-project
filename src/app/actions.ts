@@ -1,8 +1,6 @@
 
 'use server';
-import { identifyTrends, TrendIdentificationInput } from '@/ai/flows/trend-identification';
-import { performClusterAnalysis, PerformClusterAnalysisInput } from '@/ai/flows/cluster-analysis';
-import { calculateClusterMetrics } from '@/lib/analysis-utils';
+import { performLocalKMeans, generateStatisticalTrends } from '@/lib/analysis-utils';
 import { z } from 'zod';
 import type { HealthRecord } from '@/lib/types';
 import { geocodeAddress } from '@/services/geocoding-service';
@@ -19,35 +17,24 @@ const PerformClusterAnalysisInputSchema = z.object({
     numClusters: z.number(),
 });
 
-export async function getTrendAnalysis(input: TrendIdentificationInput) {
-    const validatedInput = TrendIdentificationInputSchema.safeParse(input);
-    if (!validatedInput.success) return { success: false, error: 'Invalid input.' };
-
+export async function getTrendAnalysis(input: { clusterData: string }) {
     try {
-        const result = await identifyTrends(validatedInput.data);
-        return { success: true, data: result };
+        const clusters = JSON.parse(input.clusterData);
+        const trends = generateStatisticalTrends(clusters);
+        return { success: true, data: { trends } };
     } catch (error) {
-        return { success: false, error: 'Failed to get trend analysis.' };
+        return { success: false, error: 'Failed to generate statistical trends.' };
     }
 }
 
-export async function runClusterAnalysis(input: PerformClusterAnalysisInput) {
-    const validatedInput = PerformClusterAnalysisInputSchema.safeParse(input);
-    if (!validatedInput.success) return { success: false, error: 'Invalid input.' };
-
+export async function runClusterAnalysis(input: { healthRecordsData: string, numClusters: number }) {
     try {
-        const healthRecords: HealthRecord[] = JSON.parse(validatedInput.data.healthRecordsData);
+        const healthRecords: HealthRecord[] = JSON.parse(input.healthRecordsData);
         
-        const aiResult = await performClusterAnalysis({
-            healthRecordsData: JSON.stringify(healthRecords.map(({ id, age, gender, disease, vaccinationStatus }) => ({ id, age, gender, disease, vaccinationStatus }))),
-            healthIndicators: validatedInput.data.healthIndicators,
-            numClusters: validatedInput.data.numClusters
-        });
-        
-        if (!aiResult?.clusters) return { success: false, error: 'AI analysis failed.' };
-        
-        const analysisResult = calculateClusterMetrics(aiResult.clusters, healthRecords);
+        // Execute local K-Means algorithm
+        const analysisResult = performLocalKMeans(healthRecords, input.numClusters);
 
+        // Optional: Geocode addresses for the map
         for (const cluster of analysisResult.clusters) {
             for (const record of cluster.records) {
                 if (record.address && (!record.latitude || !record.longitude)) {
@@ -58,7 +45,7 @@ export async function runClusterAnalysis(input: PerformClusterAnalysisInput) {
                             record.longitude = coords.lng;
                         }
                     } catch (e) {
-                        console.warn('Geocoding failed for', record.address);
+                        // Silent fail for geocoding
                     }
                 }
             }

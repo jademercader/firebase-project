@@ -48,7 +48,6 @@ export function ClusterControls() {
             setIsUsingUploadedData(false);
         }
     } catch (error) {
-        console.error("Failed to load records from localStorage", error);
         setHealthRecords(mockHealthRecords);
         setIsUsingUploadedData(false);
     }
@@ -65,7 +64,6 @@ export function ClusterControls() {
       
       const result = await runClusterAnalysis({
           healthRecordsData: JSON.stringify(healthRecords),
-          healthIndicators: selectedIndicators,
           numClusters: numClusters,
       });
 
@@ -74,12 +72,10 @@ export function ClusterControls() {
           localStorage.setItem(CLUSTERS_STORAGE_KEY, JSON.stringify(result.data.clusters));
           toast({
               title: "K-Means Analysis Complete",
-              description: `Successfully identified ${result.data.clusters.length} population segments.`
+              description: `Successfully identified ${result.data.clusters.length} population segments locally.`
           });
           window.dispatchEvent(new StorageEvent('storage', { key: ANALYSIS_STORAGE_KEY }));
       } else {
-          localStorage.removeItem(ANALYSIS_STORAGE_KEY);
-          window.dispatchEvent(new StorageEvent('storage', { key: ANALYSIS_STORAGE_KEY }));
           toast({
               variant: "destructive",
               title: "Analysis Failed",
@@ -95,9 +91,9 @@ export function ClusterControls() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="font-headline">Objective-Based Clustering Tool</CardTitle>
+        <CardTitle className="font-headline">Local K-Means Clustering Tool</CardTitle>
         <CardDescription>
-          Apply the K-Means algorithm to identify distinct Barangay segments based on health similarities.
+          Identify distinct Barangay segments based on health similarities using a local clustering algorithm.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -108,14 +104,14 @@ export function ClusterControls() {
           </AlertTitle>
           <AlertDescription>
             {isUsingUploadedData
-              ? `Currently processing ${healthRecords.length} consolidated records.`
-              : 'Using mock records. Upload a CSV to fulfill Objective 1.'}
+              ? `Processing ${healthRecords.length} records locally.`
+              : 'Using mock records. Upload a CSV to use custom data.'}
           </AlertDescription>
         </Alert>
 
         <div className="space-y-4">
             <Label className="flex items-center gap-2">
-              Select Health Indicator Parameters
+              Select Parameters for Euclidean Distance
               <Info className="w-3 h-3 text-muted-foreground" />
             </Label>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -128,7 +124,7 @@ export function ClusterControls() {
                         />
                         <label
                             htmlFor={indicator.id}
-                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                            className="text-sm font-medium leading-none"
                         >
                             {indicator.name}
                         </label>
@@ -146,11 +142,11 @@ export function ClusterControls() {
               value={[numClusters]}
               onValueChange={(value) => setNumClusters(value[0])}
             />
-            <p className="text-[10px] text-muted-foreground italic">Optimizing cluster count maximizes validation accuracy.</p>
+            <p className="text-[10px] text-muted-foreground italic">Optimal cluster selection improves segment cohesion.</p>
         </div>
          <Button onClick={handleRunAnalysis} disabled={isAnalysisRunning} className="w-full md:w-auto" suppressHydrationWarning>
           <PlayCircle className="mr-2 h-4 w-4" />
-          {isAnalysisRunning ? 'Processing Algorithm...' : 'Execute Clustering Analysis'}
+          {isAnalysisRunning ? 'Computing...' : 'Execute Local Analysis'}
         </Button>
       </CardContent>
     </Card>
