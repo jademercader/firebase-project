@@ -3,25 +3,13 @@ import { useEffect, useState } from 'react';
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Users, Stethoscope, ShieldCheck } from 'lucide-react';
+import { Users, AlertTriangle, ShieldAlert, Activity } from 'lucide-react';
 import type { Cluster, AnalysisResult } from '@/lib/types';
 import { useMounted } from '@/hooks/use-mounted';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 
 const ANALYSIS_STORAGE_KEY = 'analysis_result';
-const CLUSTERS_STORAGE_KEY = 'health_clusters';
 const VAX_KEYS = ['Vaccinated', 'Partially Vaccinated', 'Not Vaccinated'];
-
-const getMostPrevalentCondition = (cluster: Cluster) => {
-    let maxCount = 0;
-    let mostPrevalent = 'None';
-    Object.entries(cluster.healthMetrics).forEach(([key, count]) => {
-        if (!VAX_KEYS.includes(key) && count > maxCount) {
-            maxCount = count;
-            mostPrevalent = key;
-        }
-    });
-    return mostPrevalent;
-};
 
 export function ClusterCharts() {
   const mounted = useMounted();
@@ -36,208 +24,140 @@ export function ClusterCharts() {
             const savedResult = localStorage.getItem(ANALYSIS_STORAGE_KEY);
             if (savedResult) {
               setAnalysisResult(JSON.parse(savedResult));
-            } else {
-              const savedClusters = localStorage.getItem(CLUSTERS_STORAGE_KEY);
-              if (savedClusters) {
-                setAnalysisResult({
-                  clusters: JSON.parse(savedClusters),
-                  globalValidation: { avgSilhouetteScore: 0, totalWCSS: 0 }
-                });
-              }
             }
         } catch (error) {
-            console.error("Failed to load analysis from localStorage", error);
             setAnalysisResult(null);
         } finally {
             setIsLoading(false);
         }
     };
     fetchClusters();
-
-    const handleStorageChange = (event: StorageEvent) => {
-      if (event.key === ANALYSIS_STORAGE_KEY || event.key === CLUSTERS_STORAGE_KEY || event.key === null) {
-        fetchClusters();
-      }
-    };
-    
-    window.addEventListener('storage', handleStorageChange);
     window.addEventListener('analysis-updated', fetchClusters);
-
-    return () => {
-        window.removeEventListener('storage', handleStorageChange);
-        window.removeEventListener('analysis-updated', fetchClusters);
-    };
-
+    return () => window.removeEventListener('analysis-updated', fetchClusters);
   }, [mounted]);
 
-  if (!mounted) {
-    return <Skeleton className="w-full h-[400px] rounded-lg" />;
-  }
+  if (!mounted) return <Skeleton className="w-full h-[400px]" />;
 
   const clusters = analysisResult?.clusters || [];
-  const globalValidation = analysisResult?.globalValidation;
 
-  // Dynamically extract all diseases found in the analysis metrics
-  const allDiseasesSet = new Set<string>();
-  clusters.forEach(c => {
-    Object.keys(c.healthMetrics).forEach(k => {
-      if (!VAX_KEYS.includes(k) && k !== 'None') {
-        allDiseasesSet.add(k);
-      }
+  // Identify high risk diseases across all data
+  const riskAnalysis = () => {
+    const diseaseCounts: Record<string, number> = {};
+    let totalPatients = 0;
+    clusters.forEach(c => {
+        totalPatients += c.records.length;
+        Object.entries(c.healthMetrics).forEach(([disease, count]) => {
+            if (!VAX_KEYS.includes(disease)) {
+                diseaseCounts[disease] = (diseaseCounts[disease] || 0) + count;
+            }
+        });
     });
-  });
-  const detectedDiseases = Array.from(allDiseasesSet);
 
-  const diseaseData = clusters.map(cluster => {
-    const data: { [key: string]: any } = { name: cluster.name.split(':')[0] };
-    detectedDiseases.forEach(d => {
-      data[d] = cluster.healthMetrics[d] || 0;
-    });
-    return data;
-  });
-
-  const validationData = clusters.map(cluster => ({
-    name: cluster.name.split(':')[0],
-    'Silhouette Score': (cluster.validation?.silhouetteScore || 0).toFixed(3),
-  }));
-
-  const renderContent = () => {
-    if (isLoading) {
-      return <Skeleton className="w-full h-[300px]" />;
-    }
-    if (clusters.length === 0) {
-      return (
-        <div className="flex items-center justify-center h-[300px]">
-          <p className="text-muted-foreground">Run cluster analysis to see metrics.</p>
-        </div>
-      );
-    }
-    return (
-        <div className="space-y-6">
-            <div className={`grid gap-4 md:grid-cols-2 lg:grid-cols-${clusters.length > 3 ? 4 : 3}`}>
-                {clusters.map((cluster) => (
-                    <Card key={cluster.id} className="border-l-4" style={{ borderLeftColor: `hsl(var(--chart-${(cluster.id % 5) + 1}))` }}>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">{cluster.name}</CardTitle>
-                            <Users className="h-4 w-4 text-muted-foreground" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">{cluster.records.length} Records</div>
-                            <div className="flex flex-col gap-1 mt-2">
-                              <p className="text-xs text-muted-foreground">Avg. Age: {cluster.demographics.averageAge.toFixed(1)}</p>
-                              <p className="text-xs text-muted-foreground font-semibold">Silhouette: {(cluster.validation?.silhouetteScore || 0).toFixed(3)}</p>
-                            </div>
-                             <div className="flex items-center pt-2">
-                                <Stethoscope className="w-4 h-4 mr-2 text-muted-foreground"/>
-                                <p className="text-xs text-muted-foreground">
-                                    Top Condition: {getMostPrevalentCondition(cluster)}
-                                </p>
-                            </div>
-                        </CardContent>
-                    </Card>
-                ))}
-            </div>
-
-            <div className="grid gap-4 md:grid-cols-3">
-                <Card className="md:col-span-1">
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                          <ShieldCheck className="w-5 h-5 text-primary" />
-                          Validation Matrix
-                        </CardTitle>
-                        <CardDescription>Evaluation of clustering effectiveness using K-Means metrics.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <div className="p-3 bg-secondary/30 rounded-lg border">
-                          <p className="text-sm font-medium">Avg. Silhouette Score</p>
-                          <p className="text-3xl font-bold text-primary">{(globalValidation?.avgSilhouetteScore || 0).toFixed(4)}</p>
-                          <p className="text-[10px] text-muted-foreground mt-1">Range: -1 to 1 (higher is better).</p>
-                        </div>
-                        <div className="p-3 bg-secondary/30 rounded-lg border">
-                          <p className="text-sm font-medium">Total WCSS (Cohesion)</p>
-                          <p className="text-3xl font-bold">{(globalValidation?.totalWCSS || 0).toFixed(2)}</p>
-                          <p className="text-[10px] text-muted-foreground mt-1">Measures compactness within clusters.</p>
-                        </div>
-                    </CardContent>
-                </Card>
-
-                <Card className="md:col-span-2">
-                    <CardHeader>
-                        <CardTitle>Cluster Quality Comparison</CardTitle>
-                        <CardDescription>Comparative validation results for each identified cluster.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="h-[300px]">
-                        <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={validationData}>
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis dataKey="name" fontSize={12} tickLine={false} axisLine={false} />
-                            <YAxis fontSize={12} tickLine={false} axisLine={false} />
-                            <Tooltip />
-                            <Legend />
-                            <Bar dataKey="Silhouette Score" fill="hsl(var(--chart-1))" radius={[4, 4, 0, 0]} />
-                        </BarChart>
-                        </ResponsiveContainer>
-                    </CardContent>
-                </Card>
-            </div>
-
-            <div className="grid gap-4 md:grid-cols-2">
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Disease Prevalence Distribution</CardTitle>
-                        <CardDescription>Breakdown of health indicators across clusters.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="h-[300px]">
-                        <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={diseaseData}>
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis dataKey="name" fontSize={12} tickLine={false} axisLine={false} />
-                            <YAxis fontSize={12} tickLine={false} axisLine={false} />
-                            <Tooltip />
-                            <Legend />
-                            {detectedDiseases.map((disease, idx) => (
-                              <Bar 
-                                key={disease} 
-                                dataKey={disease} 
-                                stackId="a" 
-                                fill={`hsl(var(--chart-${(idx % 5) + 1}))`} 
-                              />
-                            ))}
-                        </BarChart>
-                        </ResponsiveContainer>
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Cluster Profile Analysis</CardTitle>
-                        <CardDescription>Radar view of cluster characteristics.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="h-[300px]">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <RadarChart cx="50%" cy="50%" outerRadius="80%" data={clusters.map(c => ({
-                          name: c.name.split(':')[0],
-                          Age: c.demographics.averageAge / 10,
-                          Silhouette: (c.validation?.silhouetteScore || 0) * 10,
-                          Size: Math.log10(c.records.length || 1) * 2
-                        }))}>
-                          <PolarGrid />
-                          <PolarAngleAxis dataKey="name" />
-                          <PolarRadiusAxis angle={30} domain={[0, 10]} />
-                          <Radar name="Cluster Strength" dataKey="Silhouette" stroke="hsl(var(--primary))" fill="hsl(var(--primary))" fillOpacity={0.6} />
-                          <Tooltip />
-                        </RadarChart>
-                      </ResponsiveContainer>
-                    </CardContent>
-                </Card>
-            </div>
-        </div>
-    );
+    return Object.entries(diseaseCounts)
+        .map(([name, count]) => ({
+            name,
+            count,
+            percentage: totalPatients > 0 ? (count / totalPatients) * 100 : 0,
+            riskLevel: (count / totalPatients) > 0.25 ? 'High' : (count / totalPatients) > 0.1 ? 'Moderate' : 'Low'
+        }))
+        .sort((a, b) => b.count - a.count);
   };
 
+  const highRiskData = riskAnalysis();
+
+  if (isLoading) return <Skeleton className="w-full h-[300px]" />;
+  if (clusters.length === 0) return null;
+
   return (
-    <div className="space-y-4">
-        <h3 className="text-2xl font-bold tracking-tight font-headline">Statistical Results & Evaluation</h3>
-        {renderContent()}
+    <div className="space-y-6">
+        <h3 className="text-2xl font-bold tracking-tight font-headline flex items-center gap-2">
+            <Activity className="w-6 h-6 text-primary" />
+            Risk Analysis & Disease Prevalence
+        </h3>
+
+        {highRiskData.some(d => d.riskLevel === 'High') && (
+            <Alert variant="destructive" className="bg-destructive/10 border-destructive">
+                <ShieldAlert className="h-5 w-5" />
+                <AlertTitle className="font-bold">High Risk Condition Detected</AlertTitle>
+                <AlertDescription>
+                    Analysis indicates {highRiskData.filter(d => d.riskLevel === 'High')[0]?.name} is currently a primary high-risk factor across population clusters.
+                </AlertDescription>
+            </Alert>
+        )}
+
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            {clusters.map((cluster) => (
+                <Card key={cluster.id} className="border-l-4" style={{ borderLeftColor: `hsl(var(--chart-${(cluster.id % 5) + 1}))` }}>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-xs font-bold uppercase text-muted-foreground">{cluster.name.split(':')[0]}</CardTitle>
+                        <Users className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-xl font-bold">{cluster.records.length} Patients</div>
+                        <p className="text-xs text-muted-foreground mt-1">
+                            {cluster.name.split(':')[1]?.trim()}
+                        </p>
+                    </CardContent>
+                </Card>
+            ))}
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-3">
+            <Card className="md:col-span-1">
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-lg">
+                        <AlertTriangle className="w-5 h-5 text-destructive" />
+                        Risk Assessment
+                    </CardTitle>
+                    <CardDescription>Condition severity based on cluster density.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    {highRiskData.slice(0, 4).map((risk) => (
+                        <div key={risk.name} className="flex flex-col gap-1 p-3 rounded-lg border bg-secondary/20">
+                            <div className="flex justify-between items-center">
+                                <span className="text-sm font-bold">{risk.name}</span>
+                                <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase ${
+                                    risk.riskLevel === 'High' ? 'bg-destructive text-destructive-foreground' : 
+                                    risk.riskLevel === 'Moderate' ? 'bg-orange-500 text-white' : 'bg-green-600 text-white'
+                                }`}>
+                                    {risk.riskLevel}
+                                </span>
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                                {risk.count} Cases ({risk.percentage.toFixed(1)}% Coverage)
+                            </div>
+                        </div>
+                    ))}
+                </CardContent>
+            </Card>
+
+            <Card className="md:col-span-2">
+                <CardHeader>
+                    <CardTitle>Disease distribution by Segment</CardTitle>
+                    <CardDescription>Comparative analysis of health indicators across clusters.</CardDescription>
+                </CardHeader>
+                <CardContent className="h-[300px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={clusters.map(c => {
+                            const data: any = { name: c.name.split(':')[0] };
+                            Object.entries(c.healthMetrics).forEach(([k, v]) => {
+                                if (!VAX_KEYS.includes(k)) data[k] = v;
+                            });
+                            return data;
+                        })}>
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                            <XAxis dataKey="name" fontSize={12} tickLine={false} axisLine={false} />
+                            <YAxis fontSize={12} tickLine={false} axisLine={false} />
+                            <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} />
+                            <Legend />
+                            {highRiskData.slice(0, 5).map((d, i) => (
+                                <Bar key={d.name} dataKey={d.name} fill={`hsl(var(--chart-${(i % 5) + 1}))`} radius={[4, 4, 0, 0]} />
+                            ))}
+                        </BarChart>
+                    </ResponsiveContainer>
+                </CardContent>
+            </Card>
+        </div>
     </div>
   );
 }
