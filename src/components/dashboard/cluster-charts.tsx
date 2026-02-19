@@ -1,4 +1,3 @@
-
 'use client';
 import { useEffect, useState } from 'react';
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis } from 'recharts';
@@ -61,10 +60,13 @@ export function ClusterCharts() {
         fetchClusters();
       }
     };
+    
     window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('analysis-updated', fetchClusters);
 
     return () => {
         window.removeEventListener('storage', handleStorageChange);
+        window.removeEventListener('analysis-updated', fetchClusters);
     };
 
   }, [mounted]);

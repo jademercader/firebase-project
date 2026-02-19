@@ -1,4 +1,3 @@
-
 'use client';
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -95,7 +94,9 @@ export function ClusterControls() {
               description: `Processed ${healthRecords.length} records into ${result.data.clusters.length} segments.`
           });
 
-          // Dispatch multiple keys to ensure all components update
+          // Dispatch custom event for immediate UI synchronization
+          window.dispatchEvent(new Event('analysis-updated'));
+          // Dispatch storage event for other windows/tabs
           window.dispatchEvent(new StorageEvent('storage', { key: ANALYSIS_STORAGE_KEY }));
           window.dispatchEvent(new StorageEvent('storage', { key: CLUSTERS_STORAGE_KEY }));
       } else {
@@ -114,7 +115,7 @@ export function ClusterControls() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="font-headline">Scalable K-Means Clustering Engine</CardTitle>
+        <CardTitle className="font-headline">Local K-Means Clustering Engine</CardTitle>
         <CardDescription>
           Identify population segments based on uploaded dataset health markers.
         </CardDescription>
@@ -128,7 +129,7 @@ export function ClusterControls() {
           <AlertDescription>
             {isUsingUploadedData
               ? `Ready to analyze ${healthRecords.length} records from your file.`
-              : 'Using demonstration records. Upload a CSV to process larger datasets.'}
+              : 'Using demonstration records. Upload a CSV with "latitude" and "longitude" columns to map your own data.'}
           </AlertDescription>
         </Alert>
 

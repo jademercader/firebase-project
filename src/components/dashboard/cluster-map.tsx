@@ -1,4 +1,3 @@
-
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
@@ -60,6 +59,7 @@ export function ClusterMap() {
   const [clusters, setClusters] = useState<Cluster[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Initialize Map Instance
   useEffect(() => {
     if (mapRef.current && !mapInstanceRef.current && mounted) {
       const map = L.map(mapRef.current).setView(mapCenter, 13);
@@ -81,6 +81,7 @@ export function ClusterMap() {
     };
   }, [mounted]);
 
+  // Handle Data Updates on Map
   useEffect(() => {
     const map = mapInstanceRef.current;
     const markerLayer = markerLayerRef.current;
@@ -106,13 +107,14 @@ export function ClusterMap() {
                 <div class="p-1">
                     <p class="font-bold border-b pb-1 mb-1">${record.name}</p>
                     <p class="text-xs"><strong>Cluster:</strong> ${cluster.name.split(':')[0]}</p>
+                    <p class="text-xs"><strong>Age:</strong> ${record.age}</p>
                     <p class="text-xs"><strong>Address:</strong> ${record.address}</p>
                 </div>
               `);
           }
         });
 
-        // Render Cluster Centroid
+        // Render Cluster Centroid (Hotspot)
         if (cluster.centroid?.latitude !== undefined && cluster.centroid?.longitude !== undefined) {
             const center: L.LatLngTuple = [cluster.centroid.latitude as number, cluster.centroid.longitude as number];
             allPoints.push(center);
@@ -122,22 +124,25 @@ export function ClusterMap() {
                 <div class="p-2 text-center">
                     <p class="font-bold text-sm" style="color: ${color}">${cluster.name}</p>
                     <p class="text-[10px] text-muted-foreground uppercase tracking-widest mt-1">Cluster Center</p>
+                    <p class="text-xs mt-1">Size: ${cluster.records.length} records</p>
                 </div>
               `);
         }
       });
     }
 
+    // Adjust Map View to Fit All Clusters
     if (allPoints.length > 0) {
       try {
         const bounds = L.latLngBounds(allPoints);
-        map.fitBounds(bounds, { padding: [50, 50] });
+        map.fitBounds(bounds, { padding: [50, 50], animate: true });
       } catch (e) {
         console.error("Failed to fit map bounds", e);
       }
     }
   }, [clusters]);
 
+  // Synchronize with Analysis Engine
   useEffect(() => {
     if (!mounted) return;
     const fetchClusters = () => {
@@ -160,13 +165,21 @@ export function ClusterMap() {
 
     fetchClusters();
 
+    // Listen for storage events (other tabs)
     const handleStorageChange = (event: StorageEvent) => {
       if (event.key === CLUSTERS_STORAGE_KEY || event.key === null) {
         fetchClusters();
       }
     };
+
+    // Listen for local analysis updates (same window)
     window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
+    window.addEventListener('analysis-updated', fetchClusters);
+
+    return () => {
+        window.removeEventListener('storage', handleStorageChange);
+        window.removeEventListener('analysis-updated', fetchClusters);
+    };
   }, [mounted]);
 
   if (!mounted) return <Skeleton className="h-full w-full rounded-lg" />;
@@ -174,7 +187,7 @@ export function ClusterMap() {
   return (
     <Card className="h-full flex flex-col overflow-hidden">
       <CardHeader className="py-3 px-4 flex flex-row items-center justify-between shrink-0">
-        <CardTitle className="font-headline text-lg">Spatial Cluster Distribution</CardTitle>
+        <CardTitle className="font-headline text-lg">Spatial Distribution of Clusters</CardTitle>
         <MapPin className="w-4 h-4 text-primary" />
       </CardHeader>
       <CardContent className="flex-1 p-0 relative min-h-0">
@@ -188,8 +201,8 @@ export function ClusterMap() {
           <div className="absolute inset-0 flex items-center justify-center p-4 bg-black/5 z-[1000]">
             <div className="text-center bg-background/90 p-6 rounded-xl border shadow-xl max-w-xs">
               <Info className="mx-auto h-10 w-10 text-primary mb-3" />
-              <h3 className="font-bold text-lg">No Spatial Data</h3>
-              <p className="text-sm text-muted-foreground">Run analysis to plot cluster segments and their centers on the map.</p>
+              <h3 className="font-bold text-lg">No Analysis Data</h3>
+              <p className="text-sm text-muted-foreground">Run the local K-Means analysis on the dashboard to see cluster segments and population centers on the map.</p>
             </div>
           </div>
         )}
