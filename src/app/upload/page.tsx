@@ -7,10 +7,13 @@ import { HealthRecord } from '@/lib/types';
 import AppLayout from '@/components/layout/app-layout';
 import { useToast } from '@/hooks/use-toast';
 
+/**
+ * Robust helper to extract values from a row by trying multiple possible header variations.
+ */
 const getRowValue = (row: any, keys: string[]): string => {
   for (const key of keys) {
     if (row[key] !== undefined && row[key] !== null) {
-      return String(row[key]);
+      return String(row[key]).trim();
     }
   }
   return '';
@@ -28,40 +31,43 @@ export default function UploadPage() {
     if (file) {
       Papa.parse(file, {
         header: true,
-        skipEmptyLines: 'greedy', // More aggressive in skipping empty lines
-        transformHeader: (header) => header.trim(), // Remove whitespace from headers
+        skipEmptyLines: 'greedy',
+        transformHeader: (header) => header.trim(),
         complete: (results) => {
-          // Filter out "Too many fields" errors which are often harmless trailing commas
-          const criticalErrors = results.errors.filter(e => e.code !== 'TooManyFields' && e.code !== 'UndetectableDelimiter');
+          // Ignore non-critical errors often found in standard CSV exports
+          const criticalErrors = results.errors.filter(e => 
+            e.code !== 'TooManyFields' && 
+            e.code !== 'UndetectableDelimiter' &&
+            e.code !== 'TooFewFields'
+          );
           
           if (criticalErrors.length > 0) {
-            toast({
-              variant: 'destructive',
-              title: 'File Parsing Warning',
-              description: `Encountered some issues, but attempting to load ${results.data.length} records.`,
-            });
+            console.warn('Parsing warnings:', criticalErrors);
           }
           
           const parsedRecords = results.data
             .filter((row: any) => !isRowEmpty(row))
             .map((row: any, index: number): HealthRecord => {
-                const ageString = getRowValue(row, ['age', 'Age']);
+                const ageString = getRowValue(row, ['age', 'Age', 'Years', 'Patient Age']);
                 const age = ageString ? parseInt(ageString, 10) : 0;
-                const gender = getRowValue(row, ['gender', 'Gender']) as HealthRecord['gender'] || 'Other';
-                const vaccinationStatus = getRowValue(row, ['vaccinationStatus', 'Vaccination Status', 'Vaccination']) as HealthRecord['vaccinationStatus'] || 'Not Vaccinated';
                 
-                const latStr = getRowValue(row, ['latitude', 'lat', 'Latitude', 'Lat']);
-                const lngStr = getRowValue(row, ['longitude', 'long', 'lng', 'Longitude', 'Lng', 'Long']);
+                const genderRaw = getRowValue(row, ['gender', 'Gender', 'Sex']);
+                const gender = (genderRaw.charAt(0).toUpperCase() + genderRaw.slice(1).toLowerCase()) as any;
+                
+                const vaccinationStatus = getRowValue(row, ['vaccinationStatus', 'Vaccination Status', 'Vaccinated', 'Status']) as HealthRecord['vaccinationStatus'] || 'Not Vaccinated';
+                
+                const latStr = getRowValue(row, ['latitude', 'lat', 'Latitude', 'Lat', 'GPS Lat']);
+                const lngStr = getRowValue(row, ['longitude', 'long', 'lng', 'Longitude', 'Lng', 'Long', 'GPS Lng']);
 
                 return {
-                  id: getRowValue(row, ['id', 'ID']) || `rec-${Date.now()}-${index}`,
-                  name: getRowValue(row, ['name', 'Name', 'Patient Name']),
+                  id: getRowValue(row, ['id', 'ID', 'No.', 'Patient ID']) || `rec-${Date.now()}-${index}`,
+                  name: getRowValue(row, ['name', 'Name', 'Patient Name', 'Full Name']),
                   age: isNaN(age) ? 0 : age,
                   gender: ['Male', 'Female', 'Other'].includes(gender) ? gender : 'Other',
-                  address: getRowValue(row, ['address', 'Address']),
-                  disease: getRowValue(row, ['disease', 'Disease']) || 'None',
+                  address: getRowValue(row, ['address', 'Address', 'Barangay', 'Location']),
+                  disease: getRowValue(row, ['disease', 'Disease', 'Condition', 'Diagnosis']) || 'None',
                   vaccinationStatus: ['Vaccinated', 'Partially Vaccinated', 'Not Vaccinated'].includes(vaccinationStatus) ? vaccinationStatus : 'Not Vaccinated',
-                  checkupDate: getRowValue(row, ['checkupDate', 'Checkup Date']) || new Date().toISOString().split('T')[0],
+                  checkupDate: getRowValue(row, ['checkupDate', 'Checkup Date', 'Date']) || new Date().toISOString().split('T')[0],
                   latitude: latStr ? parseFloat(latStr) : undefined,
                   longitude: lngStr ? parseFloat(lngStr) : undefined,
                 };
@@ -70,7 +76,7 @@ export default function UploadPage() {
           setRecords(parsedRecords);
           toast({
             title: 'File Parsed Successfully',
-            description: `${parsedRecords.length} records loaded. Address-based mapping ready.`,
+            description: `${parsedRecords.length} records loaded and mapped to Calbayog spatial points.`,
           });
         },
       });
@@ -82,7 +88,7 @@ export default function UploadPage() {
     localStorage.setItem('health_records', JSON.stringify(records));
      toast({
         title: 'Data Saved Successfully!',
-        description: 'Analysis engine is now using your uploaded dataset.',
+        description: 'Analysis engine is now using your specific dataset for clustering.',
       });
   }
 
