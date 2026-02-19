@@ -1,3 +1,4 @@
+
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
@@ -9,7 +10,7 @@ import { Info, MapPin } from 'lucide-react';
 import type { Cluster } from '@/lib/types';
 import { useMounted } from '@/hooks/use-mounted';
 
-// Fix for default icon issue with Webpack
+// Leaflet icon fix
 const DefaultIcon = L.icon({
   iconUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png',
   iconRetinaUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon-2x.png',
@@ -94,9 +95,9 @@ export function ClusterMap() {
       clusters.forEach((cluster, index) => {
         const color = getChartColor(index);
         
-        // Render Cluster Records (Dots)
+        // Render Cluster Records
         cluster.records.forEach(record => {
-          if (record.latitude && record.longitude) {
+          if (record.latitude !== undefined && record.longitude !== undefined) {
             const point: L.LatLngTuple = [record.latitude, record.longitude];
             allPoints.push(point);
             L.marker(point, { icon: createRecordIcon(color) })
@@ -111,9 +112,10 @@ export function ClusterMap() {
           }
         });
 
-        // Render Cluster Centroid (The calculated "center" of the grouping)
-        if (cluster.centroid?.latitude && cluster.centroid?.longitude) {
-            const center: L.LatLngTuple = [cluster.centroid.latitude, cluster.centroid.longitude];
+        // Render Cluster Centroid
+        if (cluster.centroid?.latitude !== undefined && cluster.centroid?.longitude !== undefined) {
+            const center: L.LatLngTuple = [cluster.centroid.latitude as number, cluster.centroid.longitude as number];
+            allPoints.push(center);
             L.marker(center, { icon: createCentroidIcon(color), zIndexOffset: 1000 })
               .addTo(centroidLayer)
               .bindPopup(`
@@ -127,7 +129,12 @@ export function ClusterMap() {
     }
 
     if (allPoints.length > 0) {
-      map.fitBounds(L.latLngBounds(allPoints), { padding: [40, 40] });
+      try {
+        const bounds = L.latLngBounds(allPoints);
+        map.fitBounds(bounds, { padding: [50, 50] });
+      } catch (e) {
+        console.error("Failed to fit map bounds", e);
+      }
     }
   }, [clusters]);
 
@@ -137,8 +144,14 @@ export function ClusterMap() {
       setIsLoading(true);
       try {
         const savedClusters = localStorage.getItem(CLUSTERS_STORAGE_KEY);
-        setClusters(savedClusters ? JSON.parse(savedClusters) : []);
+        if (savedClusters) {
+          const parsed = JSON.parse(savedClusters);
+          setClusters(parsed);
+        } else {
+          setClusters([]);
+        }
       } catch (error) {
+        console.error("Error fetching clusters for map", error);
         setClusters([]);
       } finally {
         setIsLoading(false);
@@ -160,11 +173,11 @@ export function ClusterMap() {
 
   return (
     <Card className="h-full flex flex-col overflow-hidden">
-      <CardHeader className="py-3 px-4 flex flex-row items-center justify-between">
+      <CardHeader className="py-3 px-4 flex flex-row items-center justify-between shrink-0">
         <CardTitle className="font-headline text-lg">Spatial Cluster Distribution</CardTitle>
         <MapPin className="w-4 h-4 text-primary" />
       </CardHeader>
-      <CardContent className="flex-1 p-0 relative">
+      <CardContent className="flex-1 p-0 relative min-h-0">
         <div ref={mapRef} style={{ height: '100%', width: '100%' }}></div>
         {isLoading && (
           <div className="absolute inset-0 z-[1000] flex items-center justify-center bg-background/50 backdrop-blur-sm">
@@ -172,7 +185,7 @@ export function ClusterMap() {
           </div>
         )}
         {!isLoading && clusters.length === 0 && (
-          <div className="absolute inset-0 flex items-center justify-center p-4 bg-black/10 z-[1000]">
+          <div className="absolute inset-0 flex items-center justify-center p-4 bg-black/5 z-[1000]">
             <div className="text-center bg-background/90 p-6 rounded-xl border shadow-xl max-w-xs">
               <Info className="mx-auto h-10 w-10 text-primary mb-3" />
               <h3 className="font-bold text-lg">No Spatial Data</h3>

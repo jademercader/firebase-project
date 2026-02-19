@@ -1,3 +1,4 @@
+
 import type { HealthRecord, Cluster, AnalysisResult } from '@/lib/types';
 
 /**
@@ -137,7 +138,7 @@ export function performLocalKMeans(
     }, {} as { [indicator: string]: number });
 
     // Calculate Average Lat/Long for the Cluster Centroid visualization
-    const validCoords = clusterRecords.filter(r => r.latitude && r.longitude);
+    const validCoords = clusterRecords.filter(r => r.latitude !== undefined && r.longitude !== undefined);
     const centroidLat = validCoords.length > 0 ? validCoords.reduce((sum, r) => sum + (r.latitude || 0), 0) / validCoords.length : 14.5995;
     const centroidLng = validCoords.length > 0 ? validCoords.reduce((sum, r) => sum + (r.longitude || 0), 0) / validCoords.length : 120.9842;
 
@@ -222,8 +223,9 @@ export function generateStatisticalTrends(clusters: Cluster[]): string {
       .filter(([k]) => !['Vaccinated', 'Partially Vaccinated', 'Not Vaccinated'].includes(k))
       .sort((a, b) => b[1] - a[1]);
     if (diseases.length > 0) report += `  - Alert: High prevalence of ${diseases[0][0]}.\n`;
+    const totalRecords = cluster.records.length || 1;
     const vaccinated = cluster.healthMetrics['Vaccinated'] || 0;
-    report += `  - Immunization: ${((vaccinated / cluster.records.length) * 100).toFixed(1)}% coverage.\n`;
+    report += `  - Immunization: ${((vaccinated / totalRecords) * 100).toFixed(1)}% coverage.\n`;
     report += "\n";
   });
   return report;

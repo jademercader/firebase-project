@@ -1,3 +1,4 @@
+
 'use client';
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -53,7 +54,6 @@ export function ClusterControls() {
   }, [mounted]);
 
   const handleIndicatorChange = (indicatorId: string, checked: boolean) => {
-    // Map UI indicators to record properties
     const indicatorMap: Record<string, string> = {
         'averageAge': 'age',
         'genderDistribution': 'gender',
@@ -89,11 +89,15 @@ export function ClusterControls() {
       if (result.success && result.data) {
           localStorage.setItem(ANALYSIS_STORAGE_KEY, JSON.stringify(result.data));
           localStorage.setItem(CLUSTERS_STORAGE_KEY, JSON.stringify(result.data.clusters));
+          
           toast({
               title: "Analysis Complete",
               description: `Processed ${healthRecords.length} records into ${result.data.clusters.length} segments.`
           });
+
+          // Dispatch multiple keys to ensure all components update
           window.dispatchEvent(new StorageEvent('storage', { key: ANALYSIS_STORAGE_KEY }));
+          window.dispatchEvent(new StorageEvent('storage', { key: CLUSTERS_STORAGE_KEY }));
       } else {
           toast({
               variant: "destructive",
@@ -173,7 +177,7 @@ export function ClusterControls() {
             />
             <p className="text-[10px] text-muted-foreground italic">Higher 'k' values increase segment specificity but may reduce cohesion.</p>
         </div>
-         <Button onClick={handleRunAnalysis} disabled={isAnalysisRunning} className="w-full md:w-auto" suppressHydrationWarning>
+         <Button onClick={handleRunAnalysis} disabled={isAnalysisRunning} className="w-full md:w-auto">
           <PlayCircle className="mr-2 h-4 w-4" />
           {isAnalysisRunning ? 'Processing Dataset...' : 'Execute Local Analysis'}
         </Button>
