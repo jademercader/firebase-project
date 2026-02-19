@@ -1,4 +1,3 @@
-
 'use client';
 import { useState } from 'react';
 import Papa from 'papaparse';
@@ -47,6 +46,10 @@ export default function UploadPage() {
                 const age = ageString ? parseInt(ageString, 10) : 0;
                 const gender = getRowValue(row, ['gender', 'Gender']) as HealthRecord['gender'] || 'Other';
                 const vaccinationStatus = getRowValue(row, ['vaccinationStatus', 'Vaccination Status']) as HealthRecord['vaccinationStatus'] || 'Not Vaccinated';
+                
+                // Parse Latitude and Longitude from CSV columns
+                const latStr = getRowValue(row, ['latitude', 'lat', 'Latitude', 'Lat']);
+                const lngStr = getRowValue(row, ['longitude', 'long', 'lng', 'Longitude', 'Lng', 'Long']);
 
                 return {
                   id: getRowValue(row, ['id', 'ID']) || `rec-${Date.now()}-${index}`,
@@ -57,13 +60,15 @@ export default function UploadPage() {
                   disease: getRowValue(row, ['disease', 'Disease']) || 'None',
                   vaccinationStatus: ['Vaccinated', 'Partially Vaccinated', 'Not Vaccinated'].includes(vaccinationStatus) ? vaccinationStatus : 'Not Vaccinated',
                   checkupDate: getRowValue(row, ['checkupDate', 'Checkup Date']) || new Date().toISOString().split('T')[0],
+                  latitude: latStr ? parseFloat(latStr) : undefined,
+                  longitude: lngStr ? parseFloat(lngStr) : undefined,
                 };
           });
 
           setRecords(parsedRecords);
           toast({
             title: 'File Parsed Successfully',
-            description: `${parsedRecords.length} records loaded.`,
+            description: `${parsedRecords.length} records loaded. Map coordinates detected where available.`,
           });
         },
       });
@@ -75,7 +80,7 @@ export default function UploadPage() {
     localStorage.setItem('health_records', JSON.stringify(records));
      toast({
         title: 'Data Saved Successfully!',
-        description: 'Navigate to the dashboard to run analysis.',
+        description: 'Navigate to the dashboard to run the spatial grouping analysis.',
       });
   }
 

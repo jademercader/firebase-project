@@ -7,7 +7,6 @@ import type { HealthRecord, Cluster, AnalysisResult } from '@/lib/types';
 function recordToVector(record: HealthRecord, indicators: string[]): { [key: string]: number } {
   const vector: { [key: string]: number } = {};
   
-  // Mapping for common categorical values
   const categoryMap: Record<string, Record<string, number>> = {
     gender: { 'Male': 0, 'Female': 1, 'Other': 2 },
     vaccinationStatus: { 'Not Vaccinated': 0, 'Partially Vaccinated': 1, 'Vaccinated': 2 },
@@ -17,16 +16,14 @@ function recordToVector(record: HealthRecord, indicators: string[]): { [key: str
     const value = record[indicator];
     
     if (indicator === 'age') {
-      vector['age'] = (Number(value) || 0) / 100; // Normalized 0-1
+      vector['age'] = (Number(value) || 0) / 100;
     } else if (categoryMap[indicator]) {
       const map = categoryMap[indicator];
       const max = Object.keys(map).length - 1;
       vector[indicator] = (map[String(value)] ?? 0) / (max || 1);
     } else if (typeof value === 'number') {
-      // Generic numeric normalization (assuming 0-100 range or similar)
       vector[indicator] = value / 100;
     } else {
-      // Binary indicator for specific diseases or presence of strings
       vector[indicator] = value && value !== 'None' ? 1 : 0;
     }
   });
@@ -48,7 +45,7 @@ function euclideanDistance(v1: { [key: string]: number }, v2: { [key: string]: n
 
 /**
  * Performs K-Means clustering locally.
- * Optimized to handle large datasets and dynamic indicators.
+ * Optimized for large datasets and includes centroid location calculation for mapping.
  */
 export function performLocalKMeans(
   records: HealthRecord[],
@@ -60,8 +57,6 @@ export function performLocalKMeans(
   const vectors = records.map(r => ({ id: r.id, vector: recordToVector(r, selectedIndicators) }));
   const keys = selectedIndicators;
 
-  // 1. Initialize Centroids (Forgy Method)
-  // Ensure we don't pick more centroids than available unique records
   const initialCentroidsCount = Math.min(numClusters, records.length);
   let centroids = vectors
     .slice()
@@ -72,13 +67,12 @@ export function performLocalKMeans(
   let assignments: number[] = new Array(vectors.length).fill(-1);
   let changed = true;
   let iterations = 0;
-  const maxIterations = 50; // Increased for better convergence on large data
+  const maxIterations = 100;
 
   while (changed && iterations < maxIterations) {
     changed = false;
     iterations++;
 
-    // 2. Assignment Step
     for (let i = 0; i < vectors.length; i++) {
       let minDist = Infinity;
       let closestCluster = 0;
@@ -95,7 +89,6 @@ export function performLocalKMeans(
       }
     }
 
-    // 3. Update Step
     const newCentroids = centroids.map(() => {
       const c: { [key: string]: number } = {};
       keys.forEach(k => c[k] = 0);
@@ -119,9 +112,8 @@ export function performLocalKMeans(
     });
   }
 
-  // 4. Calculate Final Cluster Data
   const recordsMap = new Map(records.map(r => [r.id, r]));
-  const finalClusters: Cluster[] = centroids.map((centroid, idx) => {
+  const finalClusters: Cluster[] = centroids.map((centroidVector, idx) => {
     const clusterRecords = vectors
       .filter((_, vIdx) => assignments[vIdx] === idx)
       .map(v => recordsMap.get(v.id)!);
@@ -144,8 +136,13 @@ export function performLocalKMeans(
       return acc;
     }, {} as { [indicator: string]: number });
 
+    // Calculate Average Lat/Long for the Cluster Centroid visualization
+    const validCoords = clusterRecords.filter(r => r.latitude && r.longitude);
+    const centroidLat = validCoords.length > 0 ? validCoords.reduce((sum, r) => sum + (r.latitude || 0), 0) / validCoords.length : 14.5995;
+    const centroidLng = validCoords.length > 0 ? validCoords.reduce((sum, r) => sum + (r.longitude || 0), 0) / validCoords.length : 120.9842;
+
     const clusterVectors = clusterRecords.map(r => recordToVector(r, selectedIndicators));
-    const cohesion = clusterVectors.reduce((sum, v) => sum + Math.pow(euclideanDistance(v, centroid), 2), 0);
+    const cohesion = clusterVectors.reduce((sum, v) => sum + Math.pow(euclideanDistance(v, centroidVector), 2), 0);
 
     return {
       id: idx + 1,
@@ -153,21 +150,18 @@ export function performLocalKMeans(
       records: clusterRecords,
       demographics: { averageAge, genderDistribution },
       healthMetrics,
-      centroid,
+      centroid: { ...centroidVector, latitude: centroidLat, longitude: centroidLng },
       validation: { cohesion, silhouetteScore: 0, separation: 0 }
     };
   });
 
-  // 5. Evaluate Effectiveness (Optimized Silhouette Coefficient)
-  // For large datasets, we use sampling to prevent O(N^2) hanging
-  const maxSamples = 1000;
-  const useSampling = records.length > maxSamples;
-  const sampleIndices = useSampling 
-    ? Array.from({ length: maxSamples }, () => Math.floor(Math.random() * records.length))
-    : Array.from({ length: records.length }, (_, i) => i);
-
+  // Simplified Evaluation (Silhouette)
   let totalSilhouette = 0;
   let silhouetteCount = 0;
+  const maxSamples = 500;
+  const sampleIndices = records.length > maxSamples 
+    ? Array.from({ length: maxSamples }, () => Math.floor(Math.random() * records.length))
+    : Array.from({ length: records.length }, (_, i) => i);
 
   const sampledVectors = sampleIndices.map(idx => ({
     vector: vectors[idx].vector,
@@ -176,103 +170,61 @@ export function performLocalKMeans(
 
   sampledVectors.forEach((vObj, i) => {
     const { vector: v, clusterIdx: iCluster } = vObj;
-    
-    // a(i): avg dist to same cluster
-    const sameClusterIndices = sampledVectors
-      .map((other, idx) => other.clusterIdx === iCluster ? idx : -1)
-      .filter(idx => idx !== -1);
-      
-    if (sameClusterIndices.length <= 1) return;
+    const sameCluster = sampledVectors.filter((other, idx) => other.clusterIdx === iCluster && idx !== i);
+    if (sameCluster.length === 0) return;
 
-    const a = sameClusterIndices.reduce((sum, idx) => sum + euclideanDistance(v, sampledVectors[idx].vector), 0) / (sameClusterIndices.length - 1);
-
-    // b(i): avg dist to nearest other cluster
+    const a = sameCluster.reduce((sum, other) => sum + euclideanDistance(v, other.vector), 0) / sameCluster.length;
     let b = Infinity;
-    for (let clusterIdx = 0; clusterIdx < centroids.length; clusterIdx++) {
-      if (clusterIdx === iCluster) continue;
-      
-      const otherClusterVectors = sampledVectors.filter(other => other.clusterIdx === clusterIdx);
-      if (otherClusterVectors.length === 0) continue;
-      
-      const avgDist = otherClusterVectors.reduce((sum, other) => sum + euclideanDistance(v, other.vector), 0) / otherClusterVectors.length;
+    for (let cIdx = 0; cIdx < centroids.length; cIdx++) {
+      if (cIdx === iCluster) continue;
+      const others = sampledVectors.filter(other => other.clusterIdx === cIdx);
+      if (others.length === 0) continue;
+      const avgDist = others.reduce((sum, other) => sum + euclideanDistance(v, other.vector), 0) / others.length;
       if (avgDist < b) b = avgDist;
     }
 
     const s = b === Infinity ? 0 : (b - a) / Math.max(a, b);
     totalSilhouette += s;
     silhouetteCount++;
-    
-    // Assign to individual cluster scores (rough estimate based on samples)
-    if (finalClusters[iCluster].validation) {
-        finalClusters[iCluster].validation!.silhouetteScore += s;
-    }
+    if (finalClusters[iCluster].validation) finalClusters[iCluster].validation!.silhouetteScore += s;
   });
 
-  // Finalize individual silhouette scores
   finalClusters.forEach((c, idx) => {
-      const clusterSampleCount = sampledVectors.filter(v => v.clusterIdx === idx).length;
-      if (c.validation && clusterSampleCount > 0) {
-          c.validation.silhouetteScore /= clusterSampleCount;
-      }
+      const count = sampledVectors.filter(v => v.clusterIdx === idx).length;
+      if (c.validation && count > 0) c.validation.silhouetteScore /= count;
   });
-
-  const totalWCSS = finalClusters.reduce((sum, c) => sum + (c.validation?.cohesion || 0), 0);
 
   return {
     clusters: finalClusters,
     globalValidation: {
       avgSilhouetteScore: silhouetteCount > 0 ? totalSilhouette / silhouetteCount : 0,
-      totalWCSS
+      totalWCSS: finalClusters.reduce((sum, c) => sum + (c.validation?.cohesion || 0), 0)
     }
   };
 }
 
 function getClusterFocusLabel(metrics: Record<string, number>, avgAge: number): string {
-  if (avgAge > 60) return "Senior Vulnerability Group";
-  if (avgAge < 18) return "Pediatric Priority";
-  
+  if (avgAge > 60) return "Senior Priority";
+  if (avgAge < 18) return "Pediatric Segment";
   const diseases = Object.entries(metrics)
     .filter(([k]) => !['Vaccinated', 'Partially Vaccinated', 'Not Vaccinated'].includes(k))
     .sort((a, b) => b[1] - a[1]);
-
-  if (diseases.length > 0) return `${diseases[0][0]} Alert Segment`;
-  return "General Public Health";
+  if (diseases.length > 0) return `${diseases[0][0]} Risk`;
+  return "General Wellness";
 }
 
-/**
- * Performs a rule-based statistical trend analysis locally.
- */
 export function generateStatisticalTrends(clusters: Cluster[]): string {
   if (clusters.length === 0) return "No data available for trend analysis.";
-
-  let report = "LOCAL STATISTICAL TREND REPORT\n";
-  report += "==============================\n\n";
-
+  let report = "LOCAL STATISTICAL TREND REPORT\n==============================\n\n";
   clusters.forEach(cluster => {
-    report += `● ${cluster.name}\n`;
-    report += `  - Segment Size: ${cluster.records.length} records\n`;
-    
+    report += `● ${cluster.name} (${cluster.records.length} records)\n`;
     const diseases = Object.entries(cluster.healthMetrics)
       .filter(([k]) => !['Vaccinated', 'Partially Vaccinated', 'Not Vaccinated'].includes(k))
       .sort((a, b) => b[1] - a[1]);
-    
-    if (diseases.length > 0) {
-      const top = diseases[0];
-      const prevalence = ((top[1] / cluster.records.length) * 100).toFixed(1);
-      report += `  - Alert: High prevalence of ${top[0]} (${prevalence}%).\n`;
-    }
-
+    if (diseases.length > 0) report += `  - Alert: High prevalence of ${diseases[0][0]}.\n`;
     const vaccinated = cluster.healthMetrics['Vaccinated'] || 0;
-    const vaxRate = ((vaccinated / cluster.records.length) * 100).toFixed(1);
-    report += `  - Immunization: Coverage at ${vaxRate}%.\n`;
-
-    if (cluster.validation) {
-      const q = cluster.validation.silhouetteScore;
-      const rating = q > 0.5 ? "High Cohesion" : q > 0.2 ? "Moderate" : "Weak Separation";
-      report += `  - Evaluation: ${rating} (Silhouette: ${q.toFixed(3)})\n`;
-    }
+    report += `  - Immunization: ${((vaccinated / cluster.records.length) * 100).toFixed(1)}% coverage.\n`;
     report += "\n";
   });
-
   return report;
 }
