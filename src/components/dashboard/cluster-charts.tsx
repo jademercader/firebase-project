@@ -113,14 +113,14 @@ export function ClusterCharts() {
   return (
     <div className="space-y-6">
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {/* Evaluation Matrix - Objective 3 */}
+            {/* Evaluation Matrix Card */}
             <Card className="shadow-md border-slate-200 flex flex-col h-full bg-gradient-to-b from-white to-slate-50/30">
                 <CardHeader className="pb-2">
                     <CardTitle className="text-lg font-bold flex items-center gap-2">
                         <Target className="w-5 h-5 text-primary" />
                         Performance Matrix
                     </CardTitle>
-                    <CardDescription className="text-xs">Objective 3: Mathematical effectiveness of the results.</CardDescription>
+                    <CardDescription className="text-xs">Mathematical effectiveness of the grouping results.</CardDescription>
                 </CardHeader>
                 <CardContent className="flex-1 flex flex-col justify-between pt-4">
                     <div className="h-[200px] w-full">
@@ -152,14 +152,14 @@ export function ClusterCharts() {
                 </CardContent>
             </Card>
 
-            {/* Population Distribution - Objective 4 */}
+            {/* Population Distribution Card */}
             <Card className="shadow-md border-slate-200 flex flex-col h-full bg-gradient-to-b from-white to-slate-50/30">
                 <CardHeader className="pb-2">
                     <CardTitle className="text-lg font-bold flex items-center gap-2">
                         <PieChartIcon className="w-5 h-5 text-primary" />
                         Population Split
                     </CardTitle>
-                    <CardDescription className="text-xs">Distribution of patient records across segments.</CardDescription>
+                    <CardDescription className="text-xs">Distribution of records across identified clusters.</CardDescription>
                 </CardHeader>
                 <CardContent className="flex-1 flex flex-col items-center justify-center pt-0">
                     <div className="h-[220px] w-full mt-4">
@@ -193,14 +193,14 @@ export function ClusterCharts() {
                 </CardContent>
             </Card>
 
-            {/* Disease Ranking - Objective 4 */}
+            {/* Disease Ranking Card */}
             <Card className="shadow-md border-slate-200 flex flex-col h-full bg-gradient-to-b from-white to-slate-50/30">
                 <CardHeader className="pb-2">
                     <CardTitle className="text-lg font-bold flex items-center gap-2">
                         <BarChart3 className="w-5 h-5 text-primary" />
                         Risk Prevalence
                     </CardTitle>
-                    <CardDescription className="text-xs">Comparative ranking of health markers.</CardDescription>
+                    <CardDescription className="text-xs">Ranking of primary health markers per segment.</CardDescription>
                 </CardHeader>
                 <CardContent className="flex-1 pt-4">
                     <div className="h-[280px] w-full">
@@ -228,7 +228,7 @@ export function ClusterCharts() {
             </Card>
         </div>
 
-        {/* Indicator Analysis - Objective 4 */}
+        {/* Detailed Indicator Analysis Card */}
         <Card className="shadow-md border-slate-200">
             <CardHeader className="border-b pb-4">
                 <div className="flex items-center justify-between">
@@ -237,7 +237,7 @@ export function ClusterCharts() {
                             <Activity className="w-5 h-5 text-primary" />
                             Detailed Indicator Analysis
                         </CardTitle>
-                        <CardDescription>Cross-segment comparison of consolidated health records.</CardDescription>
+                        <CardDescription>Comparison of consolidated indicators across segments.</CardDescription>
                     </div>
                     <div className="flex gap-4">
                         {clusters.map((c, i) => (

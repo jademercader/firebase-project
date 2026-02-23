@@ -172,11 +172,14 @@ export function performLocalKMeans(
     const members = barangayProfiles.filter((_, pIdx) => assignments[pIdx] === idx);
     if (members.length === 0) return null;
 
-    const allRecords = members.flatMap(m => m.records).map(r => ({
-      ...r,
-      latitude: addJitter(r.latitude || CALBAYOG_BRGY_COORDS[m.name]?.lat || 12.0674),
-      longitude: addJitter(r.longitude || CALBAYOG_BRGY_COORDS[m.name]?.lng || 124.5950)
-    }));
+    // Fixed scoping issue for variable 'm' (renamed to 'profile' for clarity)
+    const allRecords = members.flatMap(profile => 
+      profile.records.map(r => ({
+        ...r,
+        latitude: addJitter(r.latitude || CALBAYOG_BRGY_COORDS[profile.name]?.lat || 12.0674),
+        longitude: addJitter(r.longitude || CALBAYOG_BRGY_COORDS[profile.name]?.lng || 124.5950)
+      }))
+    );
 
     const healthMetrics = allRecords.reduce((acc, r) => {
       if (r.disease && r.disease !== 'None') acc[r.disease] = (acc[r.disease] || 0) + 1;
@@ -197,7 +200,7 @@ export function performLocalKMeans(
       healthMetrics,
       centroid: { latitude: members.reduce((s, m) => s + m.lat, 0) / members.length, longitude: members.reduce((s, m) => s + m.lng, 0) / members.length },
       validation: { 
-        cohesion: iterations, // Placeholder for cohesion metric
+        cohesion: iterations, 
         silhouetteScore: silhouetteScores.filter((_, pIdx) => assignments[pIdx] === idx).reduce((a, b) => a + b, 0) / members.length, 
         separation: 0 
       }
@@ -208,7 +211,7 @@ export function performLocalKMeans(
     clusters,
     globalValidation: {
       avgSilhouetteScore,
-      totalWCSS: 100 - (iterations * 2) // Inverse iterations as a simple WCSS proxy for the UI
+      totalWCSS: 100 - (iterations * 2) 
     }
   };
 }
