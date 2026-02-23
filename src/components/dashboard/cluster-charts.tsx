@@ -1,6 +1,6 @@
 
 'use client';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { 
   Bar, 
   BarChart, 
@@ -140,11 +140,11 @@ export function ClusterCharts() {
                     <CardDescription className="text-xs">Statistical effectiveness of results.</CardDescription>
                 </CardHeader>
                 <CardContent className="flex-1 flex flex-col justify-between pt-4">
-                    <div className="h-[200px] w-full">
+                    <div className="h-[220px] w-full">
                         <ResponsiveContainer width="100%" height="100%">
-                            <RadarChart cx="50%" cy="50%" outerRadius="80%" data={performanceData}>
+                            <RadarChart cx="50%" cy="50%" outerRadius="75%" data={performanceData}>
                                 <PolarGrid stroke="#e2e8f0" />
-                                <PolarAngleAxis dataKey="metric" fontSize={11} tick={{ fill: '#64748b', fontWeight: 600 }} />
+                                <PolarAngleAxis dataKey="metric" fontSize={10} tick={{ fill: '#64748b', fontWeight: 700 }} />
                                 <Radar 
                                     name="Quality" 
                                     dataKey="score" 
@@ -155,7 +155,7 @@ export function ClusterCharts() {
                             </RadarChart>
                         </ResponsiveContainer>
                     </div>
-                    <div className="flex items-center gap-3 bg-white p-3 rounded-xl border border-slate-100 shadow-sm mt-4">
+                    <div className="flex items-center gap-3 bg-white p-3 rounded-xl border border-slate-100 shadow-sm mt-2">
                         <div className="p-2 bg-primary/10 rounded-full">
                             <CheckCircle2 className="w-5 h-5 text-primary" />
                         </div>
@@ -178,7 +178,7 @@ export function ClusterCharts() {
                     <CardDescription className="text-xs">Distribution of identified population groups.</CardDescription>
                 </CardHeader>
                 <CardContent className="flex-1 flex flex-col items-center justify-center pt-0">
-                    <div className="h-[220px] w-full mt-4">
+                    <div className="h-[240px] w-full mt-2">
                         <ResponsiveContainer width="100%" height="100%">
                             <PieChart>
                                 <Pie
@@ -220,7 +220,7 @@ export function ClusterCharts() {
                 <CardContent className="flex-1 pt-4">
                     <div className="h-[280px] w-full">
                         <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={diseaseChartData} layout="vertical" margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                            <BarChart data={diseaseChartData} layout="vertical" margin={{ top: 5, right: 30, left: 10, bottom: 5 }}>
                                 <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#f1f5f9" />
                                 <XAxis type="number" hide />
                                 <YAxis 
@@ -229,8 +229,8 @@ export function ClusterCharts() {
                                     fontSize={10} 
                                     tickLine={false} 
                                     axisLine={false} 
-                                    width={80} 
-                                    tick={{ fill: '#64748b', fontWeight: 600 }}
+                                    width={100} 
+                                    tick={{ fill: '#64748b', fontWeight: 700 }}
                                 />
                                 <Tooltip content={<CustomTooltip />} cursor={{ fill: '#f8fafc' }} />
                                 {clusters.map((c, i) => (
@@ -244,31 +244,31 @@ export function ClusterCharts() {
         </div>
 
         <Card className="shadow-md border-slate-200 overflow-hidden">
-            <CardHeader className="border-b pb-4">
+            <CardHeader className="border-b pb-4 bg-slate-50/50">
                 <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                     <div>
                         <CardTitle className="text-xl font-bold flex items-center gap-2">
                             <Activity className="w-5 h-5 text-primary" />
                             Indicator Analysis Across Clusters
                         </CardTitle>
-                        <CardDescription>Comparative visualization of consolidated markers.</CardDescription>
+                        <CardDescription>Comparative visualization with anti-overlap label protection.</CardDescription>
                     </div>
                     <div className="flex flex-wrap gap-2 md:gap-4 justify-start md:justify-end max-w-full md:max-w-[500px]">
                         {clusters.map((c, i) => (
                             <div key={c.id} className="flex items-center gap-2 shrink-0">
                                 <div className="w-3 h-3 rounded-full" style={{ backgroundColor: CHART_COLORS[i % CHART_COLORS.length] }} />
-                                <span className="text-[9px] font-black uppercase text-slate-400">C{c.id}</span>
+                                <span className="text-[10px] font-black uppercase text-slate-500 bg-white px-2 py-0.5 rounded border border-slate-100 shadow-sm">C{c.id}</span>
                             </div>
                         ))}
                     </div>
                 </div>
             </CardHeader>
             <CardContent className="pt-10">
-                <div className="h-[450px] w-full">
+                <div className="h-[500px] w-full">
                     <ResponsiveContainer width="100%" height="100%">
                         <BarChart 
                             data={diseaseChartData} 
-                            margin={{ top: 20, right: 30, left: 10, bottom: 120 }}
+                            margin={{ top: 20, right: 30, left: 10, bottom: 140 }}
                         >
                             <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#f1f5f9" />
                             <XAxis 
@@ -279,17 +279,17 @@ export function ClusterCharts() {
                                 angle={-45}
                                 textAnchor="end"
                                 interval={0}
-                                height={100}
+                                height={120}
                                 dx={-5}
                                 dy={10}
-                                tick={{ fill: '#475569', fontWeight: 700 }}
+                                tick={{ fill: '#475569', fontWeight: 800 }}
                             />
                             <YAxis 
                                 fontSize={10} 
                                 tickLine={false} 
                                 axisLine={false} 
-                                tick={{ fill: '#94a3b8' }}
-                                label={{ value: 'Reported Cases', angle: -90, position: 'insideLeft', offset: 0, style: { fontSize: 10, fill: '#94a3b8', fontWeight: 700 } }}
+                                tick={{ fill: '#94a3b8', fontWeight: 700 }}
+                                label={{ value: 'REPORTED CASES', angle: -90, position: 'insideLeft', offset: 0, style: { fontSize: 9, fill: '#94a3b8', fontWeight: 900, letterSpacing: '0.1em' } }}
                             />
                             <Tooltip content={<CustomTooltip />} cursor={{ fill: '#f1f5f9', opacity: 0.5 }} />
                             {clusters.map((c, i) => (
@@ -299,7 +299,7 @@ export function ClusterCharts() {
                                     dataKey={`Cluster ${c.id}`} 
                                     fill={CHART_COLORS[i % CHART_COLORS.length]} 
                                     radius={[4, 4, 0, 0]} 
-                                    barSize={clusters.length > 8 ? 8 : clusters.length > 5 ? 12 : 24}
+                                    barSize={clusters.length > 10 ? 6 : clusters.length > 5 ? 12 : 28}
                                 />
                             ))}
                         </BarChart>

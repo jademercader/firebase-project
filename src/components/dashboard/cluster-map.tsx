@@ -204,43 +204,45 @@ export function ClusterMap() {
       <CardContent className="flex-1 p-0 relative">
         <div ref={mapRef} className="absolute inset-0 z-0"></div>
         
-        {/* Toggleable Legend Panel - Moved to Right to avoid zoom controls overlap */}
+        {/* Toggleable Legend Panel - Positioned below the Zoom Controls (top-left) */}
         {clusters.length > 0 && (
           <div className={cn(
-            "absolute top-6 right-6 z-[1000] transition-all duration-300 ease-in-out",
-            isLegendOpen ? "w-[300px]" : "w-10 overflow-hidden"
+            "absolute top-[90px] left-3 z-[1000] transition-all duration-300 ease-in-out",
+            isLegendOpen ? "w-[280px]" : "w-10 overflow-hidden"
           )}>
-            <div className="bg-white/95 backdrop-blur-xl rounded-xl border border-slate-200 shadow-2xl flex flex-col h-full max-h-[500px]">
-              <div className="flex items-center justify-between p-3 border-b shrink-0">
+            <div className="bg-white/95 backdrop-blur-xl rounded-xl border border-slate-200 shadow-2xl flex flex-col h-full max-h-[450px]">
+              <div className="flex items-center justify-between p-2 border-b shrink-0 bg-slate-50/50">
                 <Button 
                   variant="ghost" 
                   size="icon" 
-                  className="h-8 w-8 hover:bg-slate-100 shrink-0"
+                  className="h-8 w-8 hover:bg-slate-200 shrink-0"
                   onClick={() => setIsLegendOpen(!isLegendOpen)}
                 >
-                  {isLegendOpen ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+                  {isLegendOpen ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
                 </Button>
-                <div className={cn("flex items-center gap-2", !isLegendOpen && "hidden")}>
-                   <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Cluster Analysis</span>
-                   <List className="w-4 h-4 text-primary" />
-                </div>
+                {isLegendOpen && (
+                  <div className="flex items-center gap-2 pr-2">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Clusters</span>
+                    <List className="w-3 h-3 text-primary" />
+                  </div>
+                )}
               </div>
               
               {isLegendOpen && (
-                <div className="p-4 space-y-3 overflow-y-auto custom-scrollbar">
+                <div className="p-3 space-y-2 overflow-y-auto custom-scrollbar">
                   {clusters.map((c, i) => (
-                    <div key={c.id} className="flex items-start gap-3 p-2.5 rounded-lg hover:bg-slate-50 transition-colors border border-transparent hover:border-slate-100">
-                      <div className="w-3 h-3 rounded-full mt-1.5 shrink-0" style={{ backgroundColor: getChartColor(i) }} />
+                    <div key={c.id} className="flex items-start gap-3 p-2 rounded-lg hover:bg-slate-100 transition-colors border border-transparent hover:border-slate-200 group">
+                      <div className="w-3 h-3 rounded-full mt-1 shrink-0 shadow-sm" style={{ backgroundColor: getChartColor(i) }} />
                       <div className="flex flex-col min-w-0">
-                        <span className="text-xs font-bold text-slate-900 truncate leading-tight">
+                        <span className="text-[11px] font-bold text-slate-900 truncate leading-tight group-hover:text-primary transition-colors">
                           {c.name.includes(':') ? c.name.split(':')[1].trim() : c.name}
                         </span>
-                        <div className="flex items-center gap-2 mt-1">
-                           <span className="text-[9px] text-slate-500 font-black uppercase bg-slate-100 px-1.5 py-0.5 rounded">
+                        <div className="flex items-center gap-2 mt-0.5">
+                           <span className="text-[9px] text-slate-500 font-black uppercase bg-white px-1 py-0.5 rounded border border-slate-100">
                              C{c.id}
                            </span>
-                           <span className="text-[9px] text-slate-400 font-medium">
-                             {c.records.length} records
+                           <span className="text-[9px] text-slate-400 font-semibold italic">
+                             {c.records.length} patients
                            </span>
                         </div>
                       </div>
