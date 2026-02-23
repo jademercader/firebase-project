@@ -321,10 +321,15 @@ export function ClusterCharts() {
                     </CardTitle>
                     <CardDescription>Granular involvement of all health markers across population clusters.</CardDescription>
                 </CardHeader>
-                <CardContent className="pt-10">
-                    <div className="h-[550px] w-full">
+                <CardContent className="pt-6">
+                    <div className="h-[500px] w-full">
                         <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={diseaseChartData} margin={{ top: 20, right: 30, left: 10, bottom: 160 }}>
+                            <BarChart 
+                              data={diseaseChartData} 
+                              margin={{ top: 20, right: 30, left: 10, bottom: 120 }}
+                              barCategoryGap="20%"
+                              barGap={2}
+                            >
                                 <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#f1f5f9" />
                                 <XAxis 
                                     dataKey="disease" 
@@ -335,8 +340,8 @@ export function ClusterCharts() {
                                     textAnchor="end"
                                     interval={0}
                                     height={140}
-                                    dx={-10}
-                                    dy={10}
+                                    dx={-5}
+                                    dy={5}
                                     tick={{ fill: '#1e293b', fontWeight: 800 }}
                                 />
                                 <YAxis 
@@ -353,7 +358,6 @@ export function ClusterCharts() {
                                         dataKey={`Cluster ${c.id}`} 
                                         fill={CHART_COLORS[i % CHART_COLORS.length]} 
                                         radius={[4, 4, 0, 0]} 
-                                        barSize={Math.max(4, 30 - clusters.length)}
                                     />
                                 ))}
                             </BarChart>
