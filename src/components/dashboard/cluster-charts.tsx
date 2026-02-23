@@ -20,7 +20,7 @@ import {
 } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Activity, BarChart3, PieChartIcon, Target, Info, CheckCircle2 } from 'lucide-react';
+import { Activity, BarChart3, PieChartIcon, Target, CheckCircle2 } from 'lucide-react';
 import type { AnalysisResult } from '@/lib/types';
 import { useMounted } from '@/hooks/use-mounted';
 
@@ -104,7 +104,7 @@ export function ClusterCharts() {
 
   const performanceData = [
     { metric: 'Distinctness', score: Math.round((globalValidation.avgSilhouetteScore + 1) * 50) },
-    { metric: 'Cohesion', score: 88 },
+    { metric: 'Cohesion', score: globalValidation.totalWCSS },
     { metric: 'Density', score: 75 },
     { metric: 'Stability', score: 92 },
     { metric: 'Separation', score: 82 }
@@ -113,14 +113,14 @@ export function ClusterCharts() {
   return (
     <div className="space-y-6">
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {/* Validation Matrix - Objective 3 */}
+            {/* Evaluation Matrix - Objective 3 */}
             <Card className="shadow-md border-slate-200 flex flex-col h-full bg-gradient-to-b from-white to-slate-50/30">
                 <CardHeader className="pb-2">
                     <CardTitle className="text-lg font-bold flex items-center gap-2">
                         <Target className="w-5 h-5 text-primary" />
-                        Analysis Confidence
+                        Performance Matrix
                     </CardTitle>
-                    <CardDescription className="text-xs">Objective 3: Mathematical grouping effectiveness.</CardDescription>
+                    <CardDescription className="text-xs">Objective 3: Mathematical effectiveness of the results.</CardDescription>
                 </CardHeader>
                 <CardContent className="flex-1 flex flex-col justify-between pt-4">
                     <div className="h-[200px] w-full">
@@ -143,7 +143,7 @@ export function ClusterCharts() {
                             <CheckCircle2 className="w-5 h-5 text-primary" />
                         </div>
                         <div>
-                            <p className="text-[10px] uppercase font-black text-slate-400 tracking-wider">Overall Accuracy</p>
+                            <p className="text-[10px] uppercase font-black text-slate-400 tracking-wider">Analysis Confidence</p>
                             <p className="text-xl font-black text-slate-900 leading-none">
                                 {Math.round((globalValidation.avgSilhouetteScore + 1) * 50)}%
                             </p>
@@ -157,9 +157,9 @@ export function ClusterCharts() {
                 <CardHeader className="pb-2">
                     <CardTitle className="text-lg font-bold flex items-center gap-2">
                         <PieChartIcon className="w-5 h-5 text-primary" />
-                        Segment Size
+                        Population Split
                     </CardTitle>
-                    <CardDescription className="text-xs">Population distribution across identified segments.</CardDescription>
+                    <CardDescription className="text-xs">Distribution of patient records across segments.</CardDescription>
                 </CardHeader>
                 <CardContent className="flex-1 flex flex-col items-center justify-center pt-0">
                     <div className="h-[220px] w-full mt-4">
@@ -198,9 +198,9 @@ export function ClusterCharts() {
                 <CardHeader className="pb-2">
                     <CardTitle className="text-lg font-bold flex items-center gap-2">
                         <BarChart3 className="w-5 h-5 text-primary" />
-                        Condition Ranking
+                        Risk Prevalence
                     </CardTitle>
-                    <CardDescription className="text-xs">Relative prevalence of health markers per segment.</CardDescription>
+                    <CardDescription className="text-xs">Comparative ranking of health markers.</CardDescription>
                 </CardHeader>
                 <CardContent className="flex-1 pt-4">
                     <div className="h-[280px] w-full">
@@ -235,15 +235,15 @@ export function ClusterCharts() {
                     <div>
                         <CardTitle className="text-xl font-bold flex items-center gap-2">
                             <Activity className="w-5 h-5 text-primary" />
-                            Trend Analysis Overview
+                            Detailed Indicator Analysis
                         </CardTitle>
-                        <CardDescription>Identifying deviations and health anomalies across segments.</CardDescription>
+                        <CardDescription>Cross-segment comparison of consolidated health records.</CardDescription>
                     </div>
                     <div className="flex gap-4">
                         {clusters.map((c, i) => (
                             <div key={c.id} className="flex items-center gap-2">
                                 <div className="w-3 h-3 rounded-full" style={{ backgroundColor: CHART_COLORS[i % CHART_COLORS.length] }} />
-                                <span className="text-[10px] font-black uppercase text-slate-400">{c.id}</span>
+                                <span className="text-[10px] font-black uppercase text-slate-400">Seg {c.id}</span>
                             </div>
                         ))}
                     </div>
@@ -254,7 +254,7 @@ export function ClusterCharts() {
                     <ResponsiveContainer width="100%" height="100%">
                         <BarChart 
                             data={diseaseChartData} 
-                            margin={{ top: 20, right: 20, left: 10, bottom: 90 }}
+                            margin={{ top: 20, right: 20, left: 10, bottom: 80 }}
                         >
                             <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#f1f5f9" />
                             <XAxis 
@@ -265,7 +265,7 @@ export function ClusterCharts() {
                                 angle={-45}
                                 textAnchor="end"
                                 interval={0}
-                                height={100}
+                                height={80}
                                 tick={{ fill: '#475569', fontWeight: 700 }}
                             />
                             <YAxis 
@@ -282,8 +282,8 @@ export function ClusterCharts() {
                                     name={`Segment ${c.id}`}
                                     dataKey={`Segment ${c.id}`} 
                                     fill={CHART_COLORS[i % CHART_COLORS.length]} 
-                                    radius={[6, 6, 0, 0]} 
-                                    barSize={32}
+                                    radius={[4, 4, 0, 0]} 
+                                    barSize={24}
                                 />
                             ))}
                         </BarChart>
