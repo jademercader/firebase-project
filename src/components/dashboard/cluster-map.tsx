@@ -206,7 +206,7 @@ export function ClusterMap() {
         {/* Collapsible Legend Panel - Positioned below the Zoom Controls (top-left) */}
         {clusters.length > 0 && (
           <div className={cn(
-            "absolute top-[90px] left-3 z-[1000] transition-all duration-300 ease-in-out",
+            "absolute top-[100px] left-3 z-[1000] transition-all duration-300 ease-in-out",
             isLegendOpen ? "w-[280px]" : "w-10 overflow-hidden"
           )}>
             <div className="bg-white/95 backdrop-blur-xl rounded-xl border border-slate-200 shadow-2xl flex flex-col h-full max-h-[450px]">
@@ -221,7 +221,7 @@ export function ClusterMap() {
                 </Button>
                 {isLegendOpen && (
                   <div className="flex items-center gap-2 pr-2">
-                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Clusters</span>
+                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Cluster Analysis</span>
                     <List className="w-3 h-3 text-primary" />
                   </div>
                 )}
