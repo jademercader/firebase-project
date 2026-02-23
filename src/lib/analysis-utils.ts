@@ -2,7 +2,6 @@ import type { HealthRecord, Cluster, AnalysisResult } from '@/lib/types';
 
 /**
  * Enhanced Local Coordinate Map for Calbayog City.
- * Focuses on accurate spatial representation of health data.
  */
 const CALBAYOG_BRGY_COORDS: Record<string, { lat: number, lng: number }> = {
   'Obrero': { lat: 12.0667, lng: 124.5917 },
@@ -53,7 +52,6 @@ function getCoordinatesFromAddress(address: string) {
 function recordToVector(record: HealthRecord, indicators: string[]): { [key: string]: number } {
   const vector: { [key: string]: number } = {};
   
-  // Weights for specific dimensions to ensure balanced clustering
   const SPATIAL_WEIGHT = 4.0;
   const DISEASE_WEIGHT = 2.0;
 
@@ -76,7 +74,6 @@ function recordToVector(record: HealthRecord, indicators: string[]): { [key: str
       const max = Object.keys(map).length - 1;
       vector[indicator] = (map[String(value)] ?? 0) / (max || 1);
     } else if (indicator === 'disease') {
-      // Create a unique dimension for each disease encountered to allow multi-label clustering
       if (value && value !== 'None') {
         vector[`disease_${String(value).toLowerCase().replace(/\s+/g, '_')}`] = 1.0 * DISEASE_WEIGHT;
       }
@@ -96,7 +93,7 @@ function euclideanDistance(v1: { [key: string]: number }, v2: { [key: string]: n
 }
 
 /**
- * Professional K-Means Analysis Implementation
+ * Professional K-Means Analysis Implementation (Objective 2)
  */
 export function performLocalKMeans(
   records: HealthRecord[],
@@ -105,7 +102,7 @@ export function performLocalKMeans(
 ): AnalysisResult {
   if (records.length === 0) return { clusters: [], globalValidation: { avgSilhouetteScore: 0, totalWCSS: 0 } };
 
-  // 1. Geocoding & Pre-processing
+  // 1. Geocoding & Pre-processing (Objective 1)
   const processedRecords = records.map(r => {
     let lat = r.latitude;
     let lng = r.longitude;
@@ -191,7 +188,7 @@ export function performLocalKMeans(
     });
   }
 
-  // 5. Evaluation: Silhouette Scores
+  // 5. Evaluation Matrix: Silhouette Scores & WCSS (Objective 3)
   const silhouetteScores = vectors.map((v, i) => {
     const clusterIdx = assignments[i];
     const sameClusterPoints = vectors.filter((_, idx) => assignments[idx] === clusterIdx && idx !== i);
@@ -209,12 +206,12 @@ export function performLocalKMeans(
     }
 
     if (b === Infinity) return 0;
-    return (b - a) / Math.max(a, b);
+    return (b - a) / Math.max(a, b || 1);
   });
 
   const avgSilhouetteScore = silhouetteScores.reduce((a, b) => a + b, 0) / Math.max(1, silhouetteScores.length);
 
-  // 6. Data Synthesis
+  // 6. Data Synthesis (Objective 4)
   const finalClusters: Cluster[] = centroids.map((centroidVector, idx) => {
     const clusterRecords = processedRecords.filter((_, vIdx) => assignments[vIdx] === idx);
     if (clusterRecords.length === 0) return null;
@@ -268,7 +265,7 @@ function getClusterFocusLabel(metrics: Record<string, number>, avgAge: number): 
   if (avgAge < 12) return "Pediatric Vulnerability";
   
   const diseases = Object.entries(metrics)
-    .filter(([k]) => !['Vaccinated', 'Partially Vaccinated', 'Not Vaccinated'].includes(k))
+    .filter(([k]) => !['Vaccinated', 'Partially Vacinnated', 'Not Vaccinated', 'Partially Vaccinated'].includes(k))
     .sort((a, b) => b[1] - a[1]);
     
   if (diseases.length > 0) return `${diseases[0][0]} Alert`;
@@ -281,14 +278,14 @@ export function generateStatisticalTrends(clusters: Cluster[]): string {
   clusters.forEach(c => {
     const total = c.records.length;
     const risk = Object.entries(c.healthMetrics)
-      .filter(([k]) => !['Vaccinated', 'Partially Vaccinated', 'Not Vaccinated'].includes(k))
+      .filter(([k]) => !['Vaccinated', 'Partially Vacinnated', 'Not Vaccinated', 'Partially Vaccinated'].includes(k))
       .sort((a, b) => b[1] - a[1])[0];
     
     report += `PHASE: ${c.name}\n`;
     report += `> Population Concentration: ${total} patients\n`;
     if (risk) report += `> Primary Clinical Risk: ${risk[0]} (Prevalence: ${Math.round((risk[1]/total)*100)}%)\n`;
     report += `> Mean Demographic Age: ${Math.round(c.demographics.averageAge)} years\n`;
-    report += `> Silhouette Index: ${(c.validation?.silhouetteScore || 0).toFixed(2)}\n\n`;
+    report += `> Silhouette Index: ${(c.validation?.silhouetteScore || 0).toFixed(3)}\n\n`;
   });
   return report;
 }
