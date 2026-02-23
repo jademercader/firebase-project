@@ -51,7 +51,6 @@ export function ClusterMap() {
   const [clusters, setClusters] = useState<Cluster[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Initialize Map
   useEffect(() => {
     if (!mounted || !mapRef.current || mapInstanceRef.current) return;
 
@@ -76,7 +75,6 @@ export function ClusterMap() {
     };
   }, [mounted]);
 
-  // Update Data on Map
   useEffect(() => {
     const map = mapInstanceRef.current;
     const markerLayer = markerLayerRef.current;
@@ -121,7 +119,6 @@ export function ClusterMap() {
     }
   }, [clusters]);
 
-  // Sync with Analysis
   useEffect(() => {
     if (!mounted) return;
     
@@ -158,11 +155,11 @@ export function ClusterMap() {
       <CardHeader className="py-3 px-4 flex flex-row items-center justify-between shrink-0 bg-background/95 backdrop-blur z-[1001] border-b">
         <div className="flex items-center gap-2">
             <Layers className="w-4 h-4 text-primary" />
-            <CardTitle className="font-headline text-lg">Spatial Risk Distribution</CardTitle>
+            <CardTitle className="font-headline text-lg">Spatial Distribution</CardTitle>
         </div>
         <div className="flex items-center gap-2 text-[10px] text-muted-foreground uppercase font-black">
             <Crosshair className="w-3 h-3" />
-            <span>Hotspot Analysis</span>
+            <span>Regional Hotspots</span>
         </div>
       </CardHeader>
       <CardContent className="flex-1 p-0 relative">

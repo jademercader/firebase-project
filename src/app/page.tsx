@@ -8,8 +8,7 @@ import AppLayout from '@/components/layout/app-layout';
 import dynamic from 'next/dynamic';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
-import { Activity, LayoutDashboard, Target, BarChart3, Map as MapIcon } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
+import { Activity } from 'lucide-react';
 
 const DynamicClusterMap = dynamic(
   () => import('@/components/dashboard/cluster-map').then((mod) => mod.ClusterMap),
@@ -38,27 +37,6 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            {[
-                { label: "Objective 1", title: "Consolidation", icon: Target, color: "text-blue-500" },
-                { label: "Objective 2", title: "K-Means Engine", icon: LayoutDashboard, color: "text-purple-500" },
-                { label: "Objective 3", title: "Evaluation Matrix", icon: BarChart3, color: "text-green-500" },
-                { label: "Objective 4", title: "Visualization", icon: MapIcon, color: "text-orange-500" }
-            ].map((obj, i) => (
-                <Card key={i} className="bg-background/50 backdrop-blur border-primary/10 shadow-sm">
-                    <CardContent className="p-4 flex items-center gap-3">
-                        <div className={`p-2 rounded-full bg-secondary/50 ${obj.color}`}>
-                            <obj.icon className="w-4 h-4" />
-                        </div>
-                        <div>
-                            <p className="text-[10px] font-bold uppercase text-muted-foreground">{obj.label}</p>
-                            <p className="text-sm font-bold">{obj.title}</p>
-                        </div>
-                    </CardContent>
-                </Card>
-            ))}
-        </div>
-        
         <div className="space-y-6">
           <ClusterControls />
           

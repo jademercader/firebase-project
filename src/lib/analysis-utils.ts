@@ -1,7 +1,8 @@
 import type { HealthRecord, Cluster, AnalysisResult } from '@/lib/types';
 
 /**
- * Local Barangay Coordinate Map for Calbayog City.
+ * Enhanced Local Coordinate Map for Calbayog City.
+ * Focuses on accurate spatial representation of health data.
  */
 const CALBAYOG_BRGY_COORDS: Record<string, { lat: number, lng: number }> = {
   'Obrero': { lat: 12.0667, lng: 124.5917 },
@@ -36,7 +37,7 @@ const CALBAYOG_BRGY_COORDS: Record<string, { lat: number, lng: number }> = {
   'Banjao': { lat: 12.1050, lng: 124.5850 },
 };
 
-function addJitter(val: number, amount: number = 0.0025) {
+function addJitter(val: number, amount: number = 0.003) {
   return val + (Math.random() - 0.5) * amount;
 }
 
@@ -52,8 +53,8 @@ function getCoordinatesFromAddress(address: string) {
 function recordToVector(record: HealthRecord, indicators: string[]): { [key: string]: number } {
   const vector: { [key: string]: number } = {};
   
-  // Weights to emphasize spatial clustering
-  const SPATIAL_WEIGHT = 4.0;
+  // Heavily weight spatial data to ensure geographic clustering on the map
+  const SPATIAL_WEIGHT = 5.0;
 
   if (record.latitude !== undefined && record.longitude !== undefined) {
     vector['lat'] = ((record.latitude - 12.0) * 10) * SPATIAL_WEIGHT;
@@ -91,7 +92,7 @@ function euclideanDistance(v1: { [key: string]: number }, v2: { [key: string]: n
 }
 
 /**
- * Objective 2: Enhanced K-Means with K-Means++ Initialization
+ * Core Analytical Engine: K-Means++ with Spatial Jittering
  */
 export function performLocalKMeans(
   records: HealthRecord[],
@@ -100,24 +101,25 @@ export function performLocalKMeans(
 ): AnalysisResult {
   if (records.length === 0) return { clusters: [], globalValidation: { avgSilhouetteScore: 0, totalWCSS: 0 } };
 
-  // 1. Objective 1: Geocoding Enrichment & Consolidation
+  // 1. Consolidation & Geocoding with Jittering
   const geocodedRecords = records.map(r => {
-    if (r.latitude !== undefined && r.longitude !== undefined) return r;
+    if (r.latitude !== undefined && r.longitude !== undefined) return { ...r, latitude: addJitter(r.latitude), longitude: addJitter(r.longitude) };
     const coords = getCoordinatesFromAddress(r.address);
-    return coords 
-      ? { ...r, latitude: addJitter(coords.lat), longitude: addJitter(coords.lng) }
-      : { ...r, latitude: addJitter(12.0674), longitude: addJitter(124.5950) };
+    const center = coords || { lat: 12.0674, lng: 124.5950 };
+    return { ...r, latitude: addJitter(center.lat), longitude: addJitter(center.lng) };
   });
 
   // 2. Vectorization
   const vectors = geocodedRecords.map(r => ({ id: r.id, vector: recordToVector(r, selectedIndicators) }));
   
-  // 3. K-Means++ Initialization
+  // 3. K-Means++ Initialization Strategy
   const k = Math.min(numClusters, vectors.length);
   let centroids: { [key: string]: number }[] = [];
   
+  // Pick first centroid randomly
   centroids.push({ ...vectors[Math.floor(Math.random() * vectors.length)].vector });
   
+  // Pick subsequent centroids based on distance from existing ones
   for (let i = 1; i < k; i++) {
     const distances = vectors.map(v => {
       let minDist = Infinity;
@@ -141,12 +143,13 @@ export function performLocalKMeans(
   let assignments: number[] = new Array(vectors.length).fill(-1);
   let changed = true;
   let iterations = 0;
-  const maxIterations = 50;
+  const maxIterations = 100;
 
   while (changed && iterations < maxIterations) {
     changed = false;
     iterations++;
 
+    // Assignment Step
     for (let i = 0; i < vectors.length; i++) {
       let minDist = Infinity;
       let closestCluster = 0;
@@ -163,6 +166,7 @@ export function performLocalKMeans(
       }
     }
 
+    // Update Step
     const newCentroids = centroids.map(() => ({}));
     const counts = new Array(centroids.length).fill(0);
     const keys = new Set(vectors.flatMap(v => Object.keys(v.vector)));
@@ -183,7 +187,7 @@ export function performLocalKMeans(
     });
   }
 
-  // Objective 3: Evaluation using Silhouette Coefficient
+  // 4. Performance Validation: Silhouette Score
   const silhouetteScores = vectors.map((v, i) => {
     const clusterIdx = assignments[i];
     const sameClusterPoints = vectors.filter((_, idx) => assignments[idx] === clusterIdx && idx !== i);
@@ -204,9 +208,9 @@ export function performLocalKMeans(
     return (b - a) / Math.max(a, b);
   });
 
-  const avgSilhouetteScore = silhouetteScores.reduce((a, b) => a + b, 0) / silhouetteScores.length;
+  const avgSilhouetteScore = silhouetteScores.reduce((a, b) => a + b, 0) / Math.max(1, silhouetteScores.length);
 
-  // Objective 4: Visual Synthesis for Dashboards
+  // 5. Result Synthesis
   const finalClusters: Cluster[] = centroids.map((centroidVector, idx) => {
     const clusterRecords = geocodedRecords.filter((_, vIdx) => assignments[vIdx] === idx);
     if (clusterRecords.length === 0) return null;
@@ -220,21 +224,26 @@ export function performLocalKMeans(
       return acc;
     }, {} as { [indicator: string]: number });
 
-    const validCoords = clusterRecords.filter(r => r.latitude !== undefined && r.longitude !== undefined);
-    const centroidLat = validCoords.length > 0 ? validCoords.reduce((s, r) => s + r.latitude!, 0) / validCoords.length : 12.0674;
-    const centroidLng = validCoords.length > 0 ? validCoords.reduce((s, r) => s + r.longitude!, 0) / validCoords.length : 124.5950;
+    const centroidLat = clusterRecords.reduce((s, r) => s + (r.latitude || 12.0674), 0) / clusterRecords.length;
+    const centroidLng = clusterRecords.reduce((s, r) => s + (r.longitude || 124.5950), 0) / clusterRecords.length;
 
     const cohesion = vectors.filter((_, vIdx) => assignments[vIdx] === idx)
       .reduce((sum, v) => sum + Math.pow(euclideanDistance(v.vector, centroidVector), 2), 0);
 
     const clusterSilhouette = silhouetteScores.filter((_, vIdx) => assignments[vIdx] === idx)
-      .reduce((a, b) => a + b, 0) / clusterRecords.length;
+      .reduce((a, b) => a + b, 0) / Math.max(1, clusterRecords.length);
 
     return {
       id: idx + 1,
       name: `Cluster ${idx + 1}: ${getClusterFocusLabel(healthMetrics, averageAge)}`,
       records: clusterRecords,
-      demographics: { averageAge, genderDistribution: {} },
+      demographics: { 
+        averageAge, 
+        genderDistribution: clusterRecords.reduce((acc, r) => {
+          acc[r.gender] = (acc[r.gender] || 0) + 1;
+          return acc;
+        }, {} as any)
+      },
       healthMetrics,
       centroid: { ...centroidVector, latitude: centroidLat, longitude: centroidLng },
       validation: { cohesion, silhouetteScore: clusterSilhouette, separation: 0 }
@@ -251,12 +260,12 @@ export function performLocalKMeans(
 }
 
 function getClusterFocusLabel(metrics: Record<string, number>, avgAge: number): string {
-  if (avgAge > 60) return "Geriatric Risk Group";
-  if (avgAge < 12) return "Pediatric Vulnerability";
+  if (avgAge > 60) return "High Risk Geriatric";
+  if (avgAge < 12) return "Pediatric Risk Segment";
   const top = Object.entries(metrics)
     .filter(([k]) => !['Vaccinated', 'Partially Vaccinated', 'Not Vaccinated'].includes(k))
     .sort((a, b) => b[1] - a[1])[0];
-  return top ? `${top[0]} Prevalence` : "General Health Segment";
+  return top ? `${top[0]} Alert` : "General Segment";
 }
 
 export function generateStatisticalTrends(clusters: Cluster[]): string {
@@ -268,9 +277,9 @@ export function generateStatisticalTrends(clusters: Cluster[]): string {
       .filter(([k]) => !['Vaccinated', 'Partially Vaccinated', 'Not Vaccinated'].includes(k))
       .sort((a, b) => b[1] - a[1])[0];
     report += `[+] ${c.name}\n`;
-    report += `    Population Density: ${total} patients\n`;
-    if (risk) report += `    Primary Risk Factor: ${risk[0]} (${Math.round((risk[1]/total)*100)}% Prevalence)\n`;
-    report += `    Validation Confidence: ${Math.round((c.validation?.silhouetteScore || 0) * 100)}%\n\n`;
+    report += `    Population: ${total} patients\n`;
+    if (risk) report += `    Primary Risk: ${risk[0]} (${Math.round((risk[1]/total)*100)}%)\n`;
+    report += `    Data Reliability: ${Math.round((c.validation?.silhouetteScore || 0) * 100)}%\n\n`;
   });
   return report;
 }
