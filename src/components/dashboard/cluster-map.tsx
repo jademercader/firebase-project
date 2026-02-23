@@ -5,7 +5,7 @@ import 'leaflet/dist/leaflet.css';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '../ui/skeleton';
-import { Layers, Crosshair, HelpCircle, MapPin } from 'lucide-react';
+import { Layers, HelpCircle, MapPin } from 'lucide-react';
 import type { Cluster } from '@/lib/types';
 import { useMounted } from '@/hooks/use-mounted';
 
@@ -105,11 +105,11 @@ export function ClusterMap() {
               .addTo(markerLayer)
               .bindPopup(`
                 <div class="p-2">
-                  <strong class="text-sm">${record.name}</strong><br/>
-                  <span class="text-xs text-muted-foreground">${cluster.name}</span><br/>
-                  <div class="mt-1 flex gap-1">
-                    <span class="px-1.5 py-0.5 bg-secondary text-[10px] rounded">${record.disease}</span>
-                    <span class="px-1.5 py-0.5 bg-primary/10 text-primary text-[10px] rounded">${record.age}y</span>
+                  <strong class="text-sm font-bold">${record.name}</strong><br/>
+                  <span class="text-xs text-muted-foreground font-medium">${cluster.name}</span><br/>
+                  <div class="mt-2 flex flex-wrap gap-1">
+                    <span class="px-2 py-0.5 bg-destructive/10 text-destructive text-[10px] font-bold rounded">${record.disease}</span>
+                    <span class="px-2 py-0.5 bg-primary/10 text-primary text-[10px] font-bold rounded">${record.age}y</span>
                   </div>
                 </div>
               `);
@@ -121,7 +121,7 @@ export function ClusterMap() {
             allPoints.push(center);
             L.marker(center, { icon: createCentroidIcon(color, cluster.id), zIndexOffset: 1000 })
               .addTo(centroidLayer)
-              .bindPopup(`<div class="text-xs font-bold p-1">${cluster.name}<br/><span class="font-normal">Population Center</span></div>`);
+              .bindPopup(`<div class="text-xs font-bold p-1">${cluster.name}<br/><span class="font-normal">Statistically Calculated Hotspot</span></div>`);
         }
       });
     }
@@ -186,7 +186,7 @@ export function ClusterMap() {
             </div>
              <div className="flex items-center gap-1.5">
                 <MapPin className="w-3.5 h-3.5 text-primary" />
-                <span>Hotspots</span>
+                <span>Calculated Hotspots</span>
             </div>
         </div>
       </CardHeader>
@@ -197,7 +197,7 @@ export function ClusterMap() {
             <div className="absolute bottom-6 left-6 z-[1000] bg-white/90 backdrop-blur-xl p-4 rounded-xl border border-slate-200 shadow-2xl max-w-[280px]">
                 <h4 className="text-[11px] font-black uppercase tracking-widest text-slate-500 mb-3 flex items-center gap-2">
                     <HelpCircle className="w-4 h-4" />
-                    Segment Definitions
+                    Segment Analysis
                 </h4>
                 <div className="space-y-3 max-h-[250px] overflow-y-auto pr-2 custom-scrollbar">
                     {clusters.map((c, i) => (
@@ -222,7 +222,7 @@ export function ClusterMap() {
             <Skeleton className="h-full w-full opacity-60" />
             <div className="absolute flex flex-col items-center gap-3">
                 <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-                <p className="text-sm font-bold animate-pulse text-primary">INITIALIZING SPATIAL ENGINE...</p>
+                <p className="text-sm font-bold animate-pulse text-primary tracking-widest">INITIALIZING SPATIAL ENGINE...</p>
             </div>
           </div>
         )}

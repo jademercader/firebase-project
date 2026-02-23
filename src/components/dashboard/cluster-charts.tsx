@@ -31,6 +31,9 @@ const CHART_COLORS = [
   'hsl(27, 87%, 67%)',   // Orange
   'hsl(280, 65%, 60%)',  // Purple
   'hsl(150, 60%, 45%)',  // Green
+  'hsl(197, 37%, 44%)',  // Muted Teal
+  'hsl(43, 74%, 66%)',   // Yellow
+  'hsl(340, 75%, 55%)',  // Pink
 ];
 
 const CustomTooltip = ({ active, payload, label }: any) => {
@@ -120,6 +123,7 @@ export function ClusterCharts() {
   return (
     <div className="space-y-6">
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {/* Objective 3: Evaluation Matrix Card */}
             <Card className="shadow-md border-slate-200 flex flex-col h-full bg-gradient-to-b from-white to-slate-50/30">
                 <CardHeader className="pb-2">
                     <CardTitle className="text-lg font-bold flex items-center gap-2">
@@ -232,6 +236,7 @@ export function ClusterCharts() {
             </Card>
         </div>
 
+        {/* Objective 4: Detailed visual representation */}
         <Card className="shadow-md border-slate-200">
             <CardHeader className="border-b pb-4">
                 <div className="flex items-center justify-between">

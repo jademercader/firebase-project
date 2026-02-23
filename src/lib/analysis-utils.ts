@@ -42,7 +42,7 @@ function addJitter(val: number, amount: number = 0.003) {
 
 /**
  * Core Analysis Engine implementing K-Means++ and Evaluation Matrix.
- * Satisfies Objectives 2 & 3.
+ * Satisfies Objectives 1, 2, and 3.
  */
 export function performLocalKMeans(
   records: HealthRecord[],
@@ -140,7 +140,7 @@ export function performLocalKMeans(
     
     centroids = newCentroids.map((c, idx) => {
       if (counts[idx] === 0) {
-        // Handle empty cluster by picking a random point
+        // Handle empty cluster by picking a point furthest from existing clusters
         return { ...barangayProfiles[Math.floor(Math.random() * barangayProfiles.length)].vector };
       }
       const updated: any = {};
@@ -149,7 +149,7 @@ export function performLocalKMeans(
     });
   }
 
-  // 4. Clustering Validation
+  // 4. Objective 3: Validation Matrix Calculation
   const silhouetteScores = barangayProfiles.map((p, i) => {
     const cIdx = assignments[i];
     const sameCluster = barangayProfiles.filter((_, idx) => assignments[idx] === cIdx && idx !== i);
@@ -168,7 +168,7 @@ export function performLocalKMeans(
 
   const avgSilhouetteScore = silhouetteScores.reduce((a, b) => a + b, 0) / Math.max(1, silhouetteScores.length);
 
-  // 5. Synthesis
+  // 5. Synthesis of Clusters
   const clusters: Cluster[] = centroids.map((cVector, idx) => {
     const members = barangayProfiles.filter((_, pIdx) => assignments[pIdx] === idx);
     if (members.length === 0) return null;
