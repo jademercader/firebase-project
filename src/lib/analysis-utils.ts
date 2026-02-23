@@ -52,6 +52,7 @@ function getCoordinatesFromAddress(address: string) {
 function recordToVector(record: HealthRecord, indicators: string[]): { [key: string]: number } {
   const vector: { [key: string]: number } = {};
   
+  // Weights to emphasize spatial and disease similarity
   const SPATIAL_WEIGHT = 4.0;
   const DISEASE_WEIGHT = 2.0;
 
@@ -111,6 +112,7 @@ export function performLocalKMeans(
       lat = coords.lat;
       lng = coords.lng;
     }
+    // Add jitter so overlapping points are visible
     return { ...r, latitude: addJitter(lat), longitude: addJitter(lng) };
   });
 
@@ -225,6 +227,7 @@ export function performLocalKMeans(
       return acc;
     }, {} as { [indicator: string]: number });
 
+    // Explicitly compute mean coordinates for the centroid
     const centroidLat = clusterRecords.reduce((s, r) => s + (r.latitude || 12.0674), 0) / clusterRecords.length;
     const centroidLng = clusterRecords.reduce((s, r) => s + (r.longitude || 124.5950), 0) / clusterRecords.length;
 
