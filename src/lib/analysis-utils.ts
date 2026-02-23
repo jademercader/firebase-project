@@ -73,14 +73,12 @@ export function performLocalKMeans(
 
     const coords = CALBAYOG_BRGY_COORDS[name] || { lat: 12.0674, lng: 124.5950 };
 
-    // Create a normalized vector for clustering
     const vector: Record<string, number> = {
       'lat_norm': (coords.lat - 12.0) * 10,
       'lng_norm': (coords.lng - 124.0) * 10,
       'age_norm': avgAge / 100,
     };
 
-    // Add health markers as normalized dimensions
     Object.entries(diseaseCounts).forEach(([disease, count]) => {
       vector[`d_${disease.toLowerCase().replace(/\s+/g, '_')}`] = count / total;
     });
@@ -88,11 +86,10 @@ export function performLocalKMeans(
     return { name, records: groupRecords, vector, lat: coords.lat, lng: coords.lng };
   });
 
-  // 3. Objective 2: Advanced K-Means++ Implementation
+  // 3. K-Means++ Initialization
   const k = Math.min(numClusters, barangayProfiles.length);
   let centroids: Record<string, number>[] = [];
   
-  // K-Means++ Initialization Strategy
   centroids.push({ ...barangayProfiles[Math.floor(Math.random() * barangayProfiles.length)].vector });
   for (let i = 1; i < k; i++) {
     const distances = barangayProfiles.map(p => {
@@ -113,7 +110,7 @@ export function performLocalKMeans(
     centroids.push({ ...barangayProfiles[idx].vector });
   }
 
-  // Iterative Optimization (Max 50 iterations for local performance)
+  // Iterative Optimization
   let assignments: number[] = new Array(barangayProfiles.length).fill(-1);
   let changed = true;
   let iterations = 0;
@@ -130,7 +127,7 @@ export function performLocalKMeans(
       if (assignments[pIdx] !== bestC) { assignments[pIdx] = bestC; changed = true; }
     });
 
-    // Recompute centroids based on cluster members
+    // Recompute centroids
     const newCentroids = centroids.map(() => ({}));
     const counts = new Array(centroids.length).fill(0);
     barangayProfiles.forEach((p, pIdx) => {
@@ -140,15 +137,19 @@ export function performLocalKMeans(
         (newCentroids[cIdx] as any)[dim] = ((newCentroids[cIdx] as any)[dim] || 0) + val;
       });
     });
+    
     centroids = newCentroids.map((c, idx) => {
-      if (counts[idx] === 0) return centroids[idx];
+      if (counts[idx] === 0) {
+        // Handle empty cluster by picking a random point
+        return { ...barangayProfiles[Math.floor(Math.random() * barangayProfiles.length)].vector };
+      }
       const updated: any = {};
       Object.keys(c).forEach(dim => updated[dim] = (c as any)[dim] / counts[idx]);
       return updated;
     });
   }
 
-  // 4. Objective 3: Clustering Validation Matrix (Silhouette Scores)
+  // 4. Clustering Validation
   const silhouetteScores = barangayProfiles.map((p, i) => {
     const cIdx = assignments[i];
     const sameCluster = barangayProfiles.filter((_, idx) => assignments[idx] === cIdx && idx !== i);
@@ -162,17 +163,16 @@ export function performLocalKMeans(
       const avgDist = otherCluster.reduce((s, o) => s + euclideanDistance(p.vector, o.vector), 0) / otherCluster.length;
       if (avgDist < b) b = avgDist;
     }
-    return (b === Infinity) ? 0 : (b - a) / Math.max(a, b);
+    return (b === Infinity) ? 0 : (b - a) / Math.max(a, b || 0.0001);
   });
 
   const avgSilhouetteScore = silhouetteScores.reduce((a, b) => a + b, 0) / Math.max(1, silhouetteScores.length);
 
-  // 5. Objective 4: Synthesize Visual Results
+  // 5. Synthesis
   const clusters: Cluster[] = centroids.map((cVector, idx) => {
     const members = barangayProfiles.filter((_, pIdx) => assignments[pIdx] === idx);
     if (members.length === 0) return null;
 
-    // Flattening records from members (barangays) into a single list for the cluster
     const allRecords = members.flatMap(profile => 
       profile.records.map(r => ({
         ...r,
@@ -198,10 +198,13 @@ export function performLocalKMeans(
         genderDistribution: allRecords.reduce((acc, r) => { acc[r.gender] = (acc[r.gender] || 0) + 1; return acc; }, {} as any)
       },
       healthMetrics,
-      centroid: { latitude: members.reduce((s, m) => s + m.lat, 0) / members.length, longitude: members.reduce((s, m) => s + m.lng, 0) / members.length },
+      centroid: { 
+        latitude: members.reduce((s, m) => s + m.lat, 0) / members.length, 
+        longitude: members.reduce((s, m) => s + m.lng, 0) / members.length 
+      },
       validation: { 
         cohesion: iterations, 
-        silhouetteScore: silhouetteScores.filter((_, pIdx) => assignments[pIdx] === idx).reduce((a, b) => a + b, 0) / members.length, 
+        silhouetteScore: silhouetteScores.filter((_, pIdx) => assignments[pIdx] === idx).reduce((a, b) => a + b, 0) / Math.max(1, members.length), 
         separation: 0 
       }
     };
@@ -211,7 +214,7 @@ export function performLocalKMeans(
     clusters,
     globalValidation: {
       avgSilhouetteScore,
-      totalWCSS: 100 - (iterations * 2) 
+      totalWCSS: Math.max(0, 100 - (iterations * 2))
     }
   };
 }
