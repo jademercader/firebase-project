@@ -21,7 +21,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
-import { Activity, BarChart3, PieChartIcon, Target, CheckCircle2, UserCircle, Syringe, Baby, TrendingUp, AlertTriangle } from 'lucide-react';
+import { Activity, BarChart3, PieChartIcon, Target, CheckCircle2, UserCircle, Syringe, Baby, TrendingUp, AlertTriangle, ShieldAlert } from 'lucide-react';
 import type { AnalysisResult } from '@/lib/types';
 import { useMounted } from '@/hooks/use-mounted';
 
@@ -90,7 +90,7 @@ export function ClusterCharts() {
 
   const { clusters, globalValidation, selectedIndicators = [] } = analysisResult;
 
-  // Chart Visibility Logic based on selected indicators
+  // Chart Visibility Logic
   const showDisease = selectedIndicators.includes('disease');
   const showVaccination = selectedIndicators.includes('vaccinationStatus');
   const showAge = selectedIndicators.includes('age');
@@ -158,14 +158,14 @@ export function ClusterCharts() {
   return (
     <div className="space-y-6 pb-20">
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {/* Evaluation Matrix (Objective 3) */}
+            {/* Evaluation Matrix */}
             <Card className="shadow-md border-slate-200 bg-gradient-to-b from-white to-slate-50/30">
                 <CardHeader className="pb-2">
                     <CardTitle className="text-lg font-bold flex items-center gap-2">
                         <Target className="w-5 h-5 text-primary" />
-                        Evaluation Matrix
+                        Analysis Effectiveness
                     </CardTitle>
-                    <CardDescription className="text-xs">Statistical effectiveness of analysis.</CardDescription>
+                    <CardDescription className="text-xs">Statistical validation of clustering quality.</CardDescription>
                 </CardHeader>
                 <CardContent className="pt-4">
                     <div className="h-[200px] w-full">
@@ -180,7 +180,7 @@ export function ClusterCharts() {
                     <div className="flex items-center gap-3 bg-white p-3 rounded-xl border border-slate-100 shadow-sm mt-4">
                         <CheckCircle2 className="w-5 h-5 text-primary" />
                         <div>
-                            <p className="text-[10px] uppercase font-black text-slate-400">Analysis Confidence</p>
+                            <p className="text-[10px] uppercase font-black text-slate-400">Model Confidence</p>
                             <p className="text-xl font-black text-slate-900 leading-none">
                                 {Math.max(20, Math.round((globalValidation.avgSilhouetteScore + 1) * 50))}%
                             </p>
@@ -189,14 +189,14 @@ export function ClusterCharts() {
                 </CardContent>
             </Card>
 
-            {/* Population Distribution */}
+            {/* Population Clusters */}
             <Card className="shadow-md border-slate-200 bg-gradient-to-b from-white to-slate-50/30">
                 <CardHeader className="pb-2">
                     <CardTitle className="text-lg font-bold flex items-center gap-2">
                         <PieChartIcon className="w-5 h-5 text-primary" />
-                        Population Clusters
+                        Population Distribution
                     </CardTitle>
-                    <CardDescription className="text-xs">Distribution of identified groups.</CardDescription>
+                    <CardDescription className="text-xs">Size of identified population segments.</CardDescription>
                 </CardHeader>
                 <CardContent className="flex flex-col items-center justify-center pt-0">
                     <div className="h-[240px] w-full mt-2">
@@ -213,98 +213,46 @@ export function ClusterCharts() {
                 </CardContent>
             </Card>
 
-            {/* Gender Distribution (Conditional) */}
-            {showGender && (
-                <Card className="shadow-md border-slate-200 bg-gradient-to-b from-white to-slate-50/30">
-                    <CardHeader className="pb-2">
-                        <CardTitle className="text-lg font-bold flex items-center gap-2">
-                            <UserCircle className="w-5 h-5 text-primary" />
-                            Gender Split
-                        </CardTitle>
-                        <CardDescription className="text-xs">Ratio of Male/Female per cluster.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="pt-4">
-                        <div className="h-[240px] w-full">
-                            <ResponsiveContainer width="100%" height="100%">
-                                <BarChart data={genderData} layout="vertical">
-                                    <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
-                                    <XAxis type="number" hide />
-                                    <YAxis dataKey="name" type="category" fontSize={10} tickLine={false} axisLine={false} />
-                                    <Tooltip content={<CustomTooltip />} />
-                                    <Bar dataKey="Male" stackId="a" fill="#2563eb" radius={[0, 0, 0, 0]} />
-                                    <Bar dataKey="Female" stackId="a" fill="#e11d48" radius={[0, 4, 4, 0]} />
-                                </BarChart>
-                            </ResponsiveContainer>
+            {/* High-Risk Diseases Identification */}
+            <Card className="shadow-md border-slate-200 bg-gradient-to-b from-white to-slate-50/30">
+                <CardHeader className="pb-2">
+                    <CardTitle className="text-lg font-bold flex items-center gap-2 text-destructive">
+                        <ShieldAlert className="w-5 h-5" />
+                        Critical Indicators
+                    </CardTitle>
+                    <CardDescription className="text-xs">Identifying diseases with highest involvement.</CardDescription>
+                </CardHeader>
+                <CardContent className="pt-4 space-y-3">
+                    {diseaseBurdenData.slice(0, 4).map((item, idx) => (
+                         <div key={item.disease} className="flex items-center justify-between p-2 rounded-lg bg-white border border-slate-100 shadow-sm">
+                            <div className="flex items-center gap-3">
+                                <span className="text-xs font-black text-slate-400">#0{idx+1}</span>
+                                <span className="text-sm font-bold text-slate-800">{item.disease}</span>
+                            </div>
+                            <Badge variant="destructive" className="font-black text-[10px] px-2 py-0">
+                                {item.count} INVOLVED
+                            </Badge>
+                         </div>
+                    ))}
+                    {diseaseBurdenData.length === 0 && (
+                        <div className="text-center py-8 text-slate-400 text-xs italic">
+                            No disease indicators selected for analysis.
                         </div>
-                    </CardContent>
-                </Card>
-            )}
-
-            {/* Average Age (Conditional) */}
-            {showAge && (
-                <Card className="shadow-md border-slate-200 bg-gradient-to-b from-white to-slate-50/30">
-                    <CardHeader className="pb-2">
-                        <CardTitle className="text-lg font-bold flex items-center gap-2">
-                            <Baby className="w-5 h-5 text-primary" />
-                            Cluster Mean Age
-                        </CardTitle>
-                        <CardDescription className="text-xs">Average age within each hotspot.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="pt-4">
-                        <div className="h-[240px] w-full">
-                            <ResponsiveContainer width="100%" height="100%">
-                                <BarChart data={ageData}>
-                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                                    <XAxis dataKey="name" fontSize={10} tickLine={false} axisLine={false} />
-                                    <YAxis fontSize={10} tickLine={false} axisLine={false} />
-                                    <Tooltip content={<CustomTooltip />} />
-                                    <Bar dataKey="Avg Age" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-                                </BarChart>
-                            </ResponsiveContainer>
-                        </div>
-                    </CardContent>
-                </Card>
-            )}
-
-            {/* Vaccination Status (Conditional) */}
-            {showVaccination && (
-                <Card className="shadow-md border-slate-200 bg-gradient-to-b from-white to-slate-50/30">
-                    <CardHeader className="pb-2">
-                        <CardTitle className="text-lg font-bold flex items-center gap-2">
-                            <Syringe className="w-5 h-5 text-primary" />
-                            Vaccination Coverage
-                        </CardTitle>
-                        <CardDescription className="text-xs">Immunization levels across segments.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="pt-4">
-                        <div className="h-[240px] w-full">
-                            <ResponsiveContainer width="100%" height="100%">
-                                <BarChart data={vaccinationData}>
-                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                                    <XAxis dataKey="name" fontSize={10} tickLine={false} axisLine={false} />
-                                    <YAxis hide />
-                                    <Tooltip content={<CustomTooltip />} />
-                                    <Bar dataKey="Full" stackId="v" fill="#16a34a" />
-                                    <Bar dataKey="Partial" stackId="v" fill="#f97316" />
-                                    <Bar dataKey="Unvaccinated" stackId="v" fill="#ef4444" radius={[4, 4, 0, 0]} />
-                                </BarChart>
-                            </ResponsiveContainer>
-                        </div>
-                    </CardContent>
-                </Card>
-            )}
+                    )}
+                </CardContent>
+            </Card>
         </div>
 
-        {/* Principal Disease Burden (Objective 4 - Identifying most involved diseases) */}
+        {/* Aggregate Disease Burden Analysis */}
         {showDisease && diseaseBurdenData.length > 0 && (
             <div className="grid gap-6 md:grid-cols-2">
                 <Card className="shadow-md border-slate-200 overflow-hidden">
                     <CardHeader className="bg-slate-50/50 border-b">
                         <CardTitle className="text-lg font-bold flex items-center gap-2">
                             <TrendingUp className="w-5 h-5 text-primary" />
-                            Aggregate Disease Involvement
+                            Disease Prevalence Ranking
                         </CardTitle>
-                        <CardDescription>Identifying which diseases are most prominent across the dataset.</CardDescription>
+                        <CardDescription>Aggregate count of disease markers found across all segments.</CardDescription>
                     </CardHeader>
                     <CardContent className="pt-6">
                         <div className="h-[400px] w-full">
@@ -322,8 +270,8 @@ export function ClusterCharts() {
                                         tick={{ fill: '#1e293b', fontWeight: 800 }}
                                     />
                                     <Tooltip content={<CustomTooltip />} />
-                                    <Bar dataKey="count" name="Reported Involvement" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]}>
-                                        <LabelList dataKey="disease" position="right" offset={10} style={{ fontSize: '10px', fontWeight: 'bold', fill: '#475569' }} />
+                                    <Bar dataKey="count" name="Case Count" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]}>
+                                        <LabelList dataKey="count" position="right" offset={10} style={{ fontSize: '10px', fontWeight: 'bold', fill: '#475569' }} />
                                     </Bar>
                                 </BarChart>
                             </ResponsiveContainer>
@@ -337,10 +285,10 @@ export function ClusterCharts() {
                             <AlertTriangle className="w-5 h-5 text-destructive" />
                             Cluster-Specific Dominant Risks
                         </CardTitle>
-                        <CardDescription>Primary markers identified for each analyzed cluster segment.</CardDescription>
+                        <CardDescription>Primary health marker identified for each population cluster.</CardDescription>
                     </CardHeader>
                     <CardContent className="pt-6">
-                        <div className="space-y-4">
+                        <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
                             {clusters.map((c, i) => {
                                 const diseases = Object.entries(c.healthMetrics)
                                     .filter(([k]) => !['Vaccinated', 'Partially Vaccinated', 'Not Vaccinated', 'Male', 'Female', 'Other'].includes(k))
@@ -357,13 +305,13 @@ export function ClusterCharts() {
                                                     {top ? top[0] : 'No Significant Marker'}
                                                 </p>
                                                 <p className="text-[10px] font-bold text-slate-500 mt-0.5 italic">
-                                                    {c.records.length} records analyzed in this segment.
+                                                    {c.records.length} patients in this segment.
                                                 </p>
                                             </div>
                                         </div>
                                         <div className="text-right">
                                             <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20 font-black">
-                                                {top ? top[1] : 0} INVOLVED
+                                                {top ? top[1] : 0} CASES
                                             </Badge>
                                         </div>
                                     </div>
@@ -375,7 +323,7 @@ export function ClusterCharts() {
             </div>
         )}
 
-        {/* Comparative Disease Prevalence Chart (Objective 4 - Accurate spatial distribution) */}
+        {/* Detailed Cluster-Disease Multi-Series Visualization */}
         {showDisease && (
             <Card className="shadow-md border-slate-200 overflow-hidden">
                 <CardHeader className="border-b pb-4 bg-slate-50/50">
@@ -383,9 +331,9 @@ export function ClusterCharts() {
                         <div>
                             <CardTitle className="text-xl font-bold flex items-center gap-2">
                                 <Activity className="w-5 h-5 text-primary" />
-                                Multi-Cluster Disease Involvement
+                                Multi-Cluster Involvement Detail
                             </CardTitle>
-                            <CardDescription>Visualizing disease prevalence and specific involvement across all identified clusters.</CardDescription>
+                            <CardDescription>Visualizing specific disease involvement levels across all identified population clusters.</CardDescription>
                         </div>
                         <div className="flex flex-wrap gap-2 justify-end">
                             {clusters.map((c, i) => (
@@ -411,7 +359,7 @@ export function ClusterCharts() {
                                     textAnchor="end"
                                     interval={0}
                                     height={140}
-                                    dx={-5}
+                                    dx={-10}
                                     dy={10}
                                     tick={{ fill: '#1e293b', fontWeight: 800 }}
                                 />
@@ -420,7 +368,6 @@ export function ClusterCharts() {
                                     tickLine={false} 
                                     axisLine={false} 
                                     tick={{ fill: '#94a3b8', fontWeight: 700 }}
-                                    label={{ value: 'INVOLVEMENT COUNT', angle: -90, position: 'insideLeft', offset: 0, style: { fontSize: 9, fill: '#94a3b8', fontWeight: 900, letterSpacing: '0.1em' } }}
                                 />
                                 <Tooltip content={<CustomTooltip />} cursor={{ fill: '#f1f5f9', opacity: 0.5 }} />
                                 {clusters.map((c, i) => (
@@ -430,7 +377,7 @@ export function ClusterCharts() {
                                         dataKey={`Cluster ${c.id}`} 
                                         fill={CHART_COLORS[i % CHART_COLORS.length]} 
                                         radius={[4, 4, 0, 0]} 
-                                        barSize={Math.max(4, 20 - (clusters.length))}
+                                        barSize={Math.max(4, 25 - (clusters.length))}
                                     />
                                 ))}
                             </BarChart>
@@ -439,6 +386,87 @@ export function ClusterCharts() {
                 </CardContent>
             </Card>
         )}
+
+        {/* Secondary Indicators Grid */}
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+             {/* Gender Distribution */}
+             {showGender && (
+                <Card className="shadow-md border-slate-200">
+                    <CardHeader className="pb-2">
+                        <CardTitle className="text-lg font-bold flex items-center gap-2">
+                            <UserCircle className="w-5 h-5 text-primary" />
+                            Gender Split
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="pt-4">
+                        <div className="h-[240px] w-full">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <BarChart data={genderData} layout="vertical">
+                                    <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
+                                    <XAxis type="number" hide />
+                                    <YAxis dataKey="name" type="category" fontSize={10} tickLine={false} axisLine={false} />
+                                    <Tooltip content={<CustomTooltip />} />
+                                    <Bar dataKey="Male" stackId="a" fill="#2563eb" />
+                                    <Bar dataKey="Female" stackId="a" fill="#e11d48" radius={[0, 4, 4, 0]} />
+                                </BarChart>
+                            </ResponsiveContainer>
+                        </div>
+                    </CardContent>
+                </Card>
+            )}
+
+            {/* Average Age */}
+            {showAge && (
+                <Card className="shadow-md border-slate-200">
+                    <CardHeader className="pb-2">
+                        <CardTitle className="text-lg font-bold flex items-center gap-2">
+                            <Baby className="w-5 h-5 text-primary" />
+                            Mean Age Profile
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="pt-4">
+                        <div className="h-[240px] w-full">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <BarChart data={ageData}>
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                                    <XAxis dataKey="name" fontSize={10} tickLine={false} axisLine={false} />
+                                    <YAxis fontSize={10} tickLine={false} axisLine={false} />
+                                    <Tooltip content={<CustomTooltip />} />
+                                    <Bar dataKey="Avg Age" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                                </BarChart>
+                            </ResponsiveContainer>
+                        </div>
+                    </CardContent>
+                </Card>
+            )}
+
+            {/* Vaccination Status */}
+            {showVaccination && (
+                <Card className="shadow-md border-slate-200">
+                    <CardHeader className="pb-2">
+                        <CardTitle className="text-lg font-bold flex items-center gap-2">
+                            <Syringe className="w-5 h-5 text-primary" />
+                            Immunization Rate
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="pt-4">
+                        <div className="h-[240px] w-full">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <BarChart data={vaccinationData}>
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                                    <XAxis dataKey="name" fontSize={10} tickLine={false} axisLine={false} />
+                                    <YAxis hide />
+                                    <Tooltip content={<CustomTooltip />} />
+                                    <Bar dataKey="Full" stackId="v" fill="#16a34a" />
+                                    <Bar dataKey="Partial" stackId="v" fill="#f97316" />
+                                    <Bar dataKey="Unvaccinated" stackId="v" fill="#ef4444" radius={[4, 4, 0, 0]} />
+                                </BarChart>
+                            </ResponsiveContainer>
+                        </div>
+                    </CardContent>
+                </Card>
+            )}
+        </div>
     </div>
   );
 }
