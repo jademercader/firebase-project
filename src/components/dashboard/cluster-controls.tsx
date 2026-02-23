@@ -1,3 +1,4 @@
+
 'use client';
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -22,7 +23,7 @@ export function ClusterControls() {
   const mounted = useMounted();
   const [numClusters, setNumClusters] = useState(3);
   const [selectedIndicators, setSelectedIndicators] = useState<string[]>([
-    'age', 'gender', 'vaccinationStatus'
+    'age', 'gender', 'vaccinationStatus', 'disease'
   ]);
   const [isAnalysisRunning, setIsAnalysisRunning] = useState(false);
   const [healthRecords, setHealthRecords] = useState<HealthRecord[]>([]);
@@ -86,7 +87,12 @@ export function ClusterControls() {
       });
 
       if (result.success && result.data) {
-          localStorage.setItem(ANALYSIS_STORAGE_KEY, JSON.stringify(result.data));
+          // Store selected indicators within the result for chart filtering
+          const storedData = {
+              ...result.data,
+              selectedIndicators: selectedIndicators
+          };
+          localStorage.setItem(ANALYSIS_STORAGE_KEY, JSON.stringify(storedData));
           localStorage.setItem(CLUSTERS_STORAGE_KEY, JSON.stringify(result.data.clusters));
           
           toast({
@@ -94,11 +100,8 @@ export function ClusterControls() {
               description: `Processed ${healthRecords.length} records into ${result.data.clusters.length} clusters.`
           });
 
-          // Dispatch custom event for immediate UI synchronization
           window.dispatchEvent(new Event('analysis-updated'));
-          // Dispatch storage event for other windows/tabs
           window.dispatchEvent(new StorageEvent('storage', { key: ANALYSIS_STORAGE_KEY }));
-          window.dispatchEvent(new StorageEvent('storage', { key: CLUSTERS_STORAGE_KEY }));
       } else {
           toast({
               variant: "destructive",
@@ -117,7 +120,7 @@ export function ClusterControls() {
       <CardHeader>
         <CardTitle className="font-headline">K-Means Health Clustering Engine</CardTitle>
         <CardDescription>
-          Identify population segments based on uploaded dataset health markers.
+          Identify population segments based on specific health markers.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -129,7 +132,7 @@ export function ClusterControls() {
           <AlertDescription>
             {isUsingUploadedData
               ? `Ready to analyze ${healthRecords.length} records from your file.`
-              : 'Using demonstration records. Upload a CSV with "latitude" and "longitude" columns to map your own data.'}
+              : 'Using demonstration records. Upload a CSV to map your own data.'}
           </AlertDescription>
         </Alert>
 
@@ -157,7 +160,7 @@ export function ClusterControls() {
                             />
                             <label
                                 htmlFor={indicator.id}
-                                className="text-sm font-medium leading-none"
+                                className="text-sm font-medium leading-none cursor-pointer"
                             >
                                 {indicator.name}
                             </label>
@@ -167,7 +170,7 @@ export function ClusterControls() {
             </div>
         </div>
         <div className="space-y-4">
-            <Label htmlFor="clusters">Number of Clusters (k): {numClusters}</Label>
+            <Label htmlFor="clusters">Number of Clusters: {numClusters}</Label>
             <Slider
               id="clusters"
               min={2}
@@ -176,7 +179,7 @@ export function ClusterControls() {
               value={[numClusters]}
               onValueChange={(value) => setNumClusters(value[0])}
             />
-            <p className="text-[10px] text-muted-foreground italic">Request up to 15 clusters for high-granularity population analysis.</p>
+            <p className="text-[10px] text-muted-foreground italic">Determine exactly how many segments you want to identify in Calbayog City.</p>
         </div>
          <Button onClick={handleRunAnalysis} disabled={isAnalysisRunning} className="w-full md:w-auto">
           <PlayCircle className="mr-2 h-4 w-4" />
