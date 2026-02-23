@@ -46,6 +46,7 @@ export type AnalysisResult = {
     avgSilhouetteScore: number;
     totalWCSS: number;
   };
+  selectedIndicators?: string[];
 };
 
 export type User = {

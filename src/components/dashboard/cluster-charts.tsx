@@ -55,7 +55,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 
 export function ClusterCharts() {
   const mounted = useMounted();
-  const [analysisResult, setAnalysisResult] = useState<(AnalysisResult & { selectedIndicators?: string[] }) | null>(null);
+  const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   
   useEffect(() => {
