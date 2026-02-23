@@ -200,7 +200,7 @@ export function performLocalKMeans(
 
     return {
       id: idx + 1,
-      name: `Segment ${idx + 1}: ${getClusterFocusLabel(healthMetrics, averageAge)}`,
+      name: `Cluster ${idx + 1}: ${getClusterFocusLabel(healthMetrics, averageAge)}`,
       records: allRecords,
       demographics: {
         averageAge,

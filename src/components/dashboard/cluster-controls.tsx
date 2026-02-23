@@ -91,7 +91,7 @@ export function ClusterControls() {
           
           toast({
               title: "Analysis Complete",
-              description: `Processed ${healthRecords.length} records into ${result.data.clusters.length} segments.`
+              description: `Processed ${healthRecords.length} records into ${result.data.clusters.length} clusters.`
           });
 
           // Dispatch custom event for immediate UI synchronization
@@ -167,16 +167,16 @@ export function ClusterControls() {
             </div>
         </div>
         <div className="space-y-4">
-            <Label htmlFor="clusters">Number of Segments (k): {numClusters}</Label>
+            <Label htmlFor="clusters">Number of Clusters (k): {numClusters}</Label>
             <Slider
               id="clusters"
               min={2}
-              max={10}
+              max={15}
               step={1}
               value={[numClusters]}
               onValueChange={(value) => setNumClusters(value[0])}
             />
-            <p className="text-[10px] text-muted-foreground italic">Higher 'k' values increase segment specificity but may reduce cohesion.</p>
+            <p className="text-[10px] text-muted-foreground italic">Higher 'k' values increase cluster specificity but may reduce cohesion.</p>
         </div>
          <Button onClick={handleRunAnalysis} disabled={isAnalysisRunning} className="w-full md:w-auto">
           <PlayCircle className="mr-2 h-4 w-4" />

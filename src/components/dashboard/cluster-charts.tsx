@@ -36,6 +36,11 @@ const CHART_COLORS = [
   'hsl(340, 75%, 55%)',  // Pink
   'hsl(10, 80%, 50%)',   // Red
   'hsl(120, 40%, 40%)',  // Forest
+  'hsl(190, 80%, 30%)',
+  'hsl(30, 90%, 40%)',
+  'hsl(260, 50%, 45%)',
+  'hsl(100, 70%, 35%)',
+  'hsl(320, 60%, 50%)',
 ];
 
 const CustomTooltip = ({ active, payload, label }: any) => {
@@ -47,7 +52,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
           {payload.map((entry: any, index: number) => (
             <div key={index} className="flex items-center justify-between gap-6 text-xs">
               <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full" style={{ backgroundColor: entry.color || entry.fill }} />
+                <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: entry.color || entry.fill }} />
                 <span className="text-slate-500 font-medium">{entry.name}:</span>
               </div>
               <span className="font-bold text-slate-900">{entry.value} Cases</span>
@@ -97,7 +102,7 @@ export function ClusterCharts() {
   const { clusters, globalValidation } = analysisResult;
 
   const populationData = clusters.map((c, i) => ({
-    name: `Segment ${c.id}`,
+    name: `Cluster ${c.id}`,
     value: c.records.length,
     color: CHART_COLORS[i % CHART_COLORS.length]
   }));
@@ -109,7 +114,7 @@ export function ClusterCharts() {
   const diseaseChartData = allDiseases.map(disease => {
     const entry: any = { disease };
     clusters.forEach(c => {
-      entry[`Segment ${c.id}`] = c.healthMetrics[disease] || 0;
+      entry[`Cluster ${c.id}`] = c.healthMetrics[disease] || 0;
     });
     return entry;
   });
@@ -168,7 +173,7 @@ export function ClusterCharts() {
                 <CardHeader className="pb-2">
                     <CardTitle className="text-lg font-bold flex items-center gap-2">
                         <PieChartIcon className="w-5 h-5 text-primary" />
-                        Population Segments
+                        Population Clusters
                     </CardTitle>
                     <CardDescription className="text-xs">Distribution of identified population groups.</CardDescription>
                 </CardHeader>
@@ -229,7 +234,7 @@ export function ClusterCharts() {
                                 />
                                 <Tooltip content={<CustomTooltip />} cursor={{ fill: '#f8fafc' }} />
                                 {clusters.map((c, i) => (
-                                    <Bar key={c.id} dataKey={`Segment ${c.id}`} stackId="a" fill={CHART_COLORS[i % CHART_COLORS.length]} radius={[2, 2, 2, 2]} />
+                                    <Bar key={c.id} dataKey={`Cluster ${c.id}`} stackId="a" fill={CHART_COLORS[i % CHART_COLORS.length]} radius={[2, 2, 2, 2]} />
                                 ))}
                             </BarChart>
                         </ResponsiveContainer>
@@ -245,15 +250,15 @@ export function ClusterCharts() {
                     <div>
                         <CardTitle className="text-xl font-bold flex items-center gap-2">
                             <Activity className="w-5 h-5 text-primary" />
-                            Indicator Analysis Across Segments
+                            Indicator Analysis Across Clusters
                         </CardTitle>
                         <CardDescription>Comparative visualization of consolidated markers.</CardDescription>
                     </div>
                     <div className="flex flex-wrap gap-4 justify-end max-w-[400px]">
                         {clusters.map((c, i) => (
                             <div key={c.id} className="flex items-center gap-2">
-                                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: CHART_COLORS[i % CHART_COLORS.length] }} />
-                                <span className="text-[10px] font-black uppercase text-slate-400">Seg {c.id}</span>
+                                <div className="w-3.5 h-3.5 rounded-full" style={{ backgroundColor: CHART_COLORS[i % CHART_COLORS.length] }} />
+                                <span className="text-[10px] font-black uppercase text-slate-400">Cluster {c.id}</span>
                             </div>
                         ))}
                     </div>
@@ -283,14 +288,14 @@ export function ClusterCharts() {
                                 tickLine={false} 
                                 axisLine={false} 
                                 tick={{ fill: '#94a3b8' }}
-                                label={{ value: 'Reported Cases', angle: -90, position: 'insideLeft', style: { fontSize: 10, fill: '#94a3b8', fontWeight: 700 } }}
+                                label={{ value: 'Reported Cases', angle: -90, position: 'insideLeft', offset: 0, style: { fontSize: 10, fill: '#94a3b8', fontWeight: 700 } }}
                             />
                             <Tooltip content={<CustomTooltip />} cursor={{ fill: '#f1f5f9', opacity: 0.5 }} />
                             {clusters.map((c, i) => (
                                 <Bar 
                                     key={c.id}
-                                    name={`Segment ${c.id}`}
-                                    dataKey={`Segment ${c.id}`} 
+                                    name={`Cluster ${c.id}`}
+                                    dataKey={`Cluster ${c.id}`} 
                                     fill={CHART_COLORS[i % CHART_COLORS.length]} 
                                     radius={[4, 4, 0, 0]} 
                                     barSize={24}
