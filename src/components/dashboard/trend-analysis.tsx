@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { getTrendAnalysis } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
-import { LineChart, ShieldAlert } from 'lucide-react';
+import { LineChart, ShieldAlert, Activity } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { Cluster } from '@/lib/types';
 import { useMounted } from '@/hooks/use-mounted';
@@ -52,35 +52,36 @@ export function TrendAnalysis() {
   if (!mounted) return null;
 
   return (
-    <Card className="h-full flex flex-col border-primary/20 shadow-lg">
-      <CardHeader>
-        <CardTitle className="font-headline flex items-center gap-2">
+    <Card className="h-full flex flex-col border-primary/20 shadow-lg bg-white overflow-hidden">
+      <CardHeader className="bg-slate-50/50 border-b pb-4">
+        <CardTitle className="font-headline text-lg flex items-center gap-2 text-slate-900">
             <LineChart className="w-5 h-5 text-primary" />
             Statistical Risk Summary
         </CardTitle>
-        <CardDescription>Mathematical analysis of health risk levels per cluster.</CardDescription>
+        <CardDescription className="text-xs">Mathematical analysis of health risk levels per identified cluster.</CardDescription>
       </CardHeader>
-      <CardContent className="flex-grow space-y-4">
-        <div className='flex-grow relative'>
-          <Textarea
-            placeholder={clusters.length === 0 ? "Execute analysis to compute risk trends." : "Statistical summary will appear here..."}
-            value={analysisResult}
-            readOnly
-            className="h-[320px] resize-none bg-secondary/30 font-mono text-xs leading-relaxed border-none focus-visible:ring-0"
-          />
-          {isLoading && (
-             <div className="absolute inset-0 flex items-center justify-center bg-background/50 backdrop-blur-sm rounded-md">
+      <CardContent className="flex-grow p-0 relative overflow-hidden">
+        <div className="h-full w-full absolute inset-0 p-4">
+            <Textarea
+              placeholder={clusters.length === 0 ? "Execute clustering engine to compute local risk trends." : "Statistical summary will appear here..."}
+              value={analysisResult}
+              readOnly
+              className="h-full w-full resize-none bg-slate-50/30 font-mono text-xs leading-relaxed border-none focus-visible:ring-0 custom-scrollbar p-4 rounded-lg shadow-inner"
+            />
+        </div>
+        {isLoading && (
+             <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/50 backdrop-blur-sm">
                 <div className="flex flex-col items-center gap-2">
                     <ActivityIcon className="animate-pulse w-8 h-8 text-primary" />
-                    <p className="text-xs font-bold animate-pulse">COMPUTING RISK...</p>
+                    <p className="text-xs font-black animate-pulse tracking-widest text-primary">COMPUTING RISK...</p>
                 </div>
             </div>
           )}
-        </div>
       </CardContent>
-      <CardFooter>
-        <Button onClick={handleAnalyzeTrends} disabled={isLoading || clusters.length === 0} className="w-full">
-          {isLoading ? 'Processing...' : 'Identify High-Risk Diseases'}
+      <CardFooter className="bg-slate-50/50 border-t p-4">
+        <Button onClick={handleAnalyzeTrends} disabled={isLoading || clusters.length === 0} className="w-full shadow-sm hover:shadow-md transition-all">
+          <ShieldAlert className="w-4 h-4 mr-2" />
+          {isLoading ? 'Processing...' : 'Generate Statistical Risks'}
         </Button>
       </CardFooter>
     </Card>
@@ -97,7 +98,7 @@ function ActivityIcon(props: any) {
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
-            strokeWidth="2"
+            strokeWidth="3"
             strokeLinecap="round"
             strokeLinejoin="round"
         >

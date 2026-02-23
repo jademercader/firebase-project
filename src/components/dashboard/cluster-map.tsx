@@ -175,11 +175,11 @@ export function ClusterMap() {
     };
   }, [mounted]);
 
-  if (!mounted) return <Skeleton className="h-[600px] w-full rounded-xl" />;
+  if (!mounted) return <Skeleton className="h-full w-full rounded-xl" />;
 
   return (
     <Card className="h-full border-primary/10 shadow-xl overflow-hidden flex flex-col min-h-[600px] rounded-xl relative">
-      <CardHeader className="py-4 px-6 flex flex-row items-center justify-between shrink-0 bg-background/95 backdrop-blur z-[1001] border-b">
+      <CardHeader className="py-4 px-6 flex flex-row items-center justify-between shrink-0 bg-white/95 backdrop-blur z-[1001] border-b">
         <div className="flex items-center gap-3">
             <div className="p-2 bg-primary/10 rounded-lg">
                 <Layers className="w-5 h-5 text-primary" />
@@ -191,7 +191,7 @@ export function ClusterMap() {
         </div>
         <div className="hidden md:flex items-center gap-4 text-[11px] font-bold text-muted-foreground">
             <div className="flex items-center gap-1.5">
-                <div className="w-2.5 h-2.5 rounded-full bg-primary" />
+                <div className="w-2.5 h-2.5 rounded-full bg-primary shadow-sm" />
                 <span>Patient Records</span>
             </div>
              <div className="flex items-center gap-1.5">
@@ -203,14 +203,14 @@ export function ClusterMap() {
       <CardContent className="flex-1 p-0 relative">
         <div ref={mapRef} className="absolute inset-0 z-0"></div>
         
-        {/* Collapsible Legend Panel - Positioned precisely below the Zoom Controls */}
+        {/* Collapsible Legend Panel - Positioned safely below Zoom Controls */}
         {clusters.length > 0 && (
           <div className={cn(
             "absolute top-[100px] left-3 z-[1000] transition-all duration-300 ease-in-out",
-            isLegendOpen ? "w-[280px]" : "w-10 overflow-hidden"
+            isLegendOpen ? "w-[280px]" : "w-12 overflow-hidden"
           )}>
             <div className="bg-white/95 backdrop-blur-xl rounded-xl border border-slate-200 shadow-2xl flex flex-col h-full max-h-[450px]">
-              <div className="flex items-center justify-between p-2 border-b shrink-0 bg-slate-50/50">
+              <div className="flex items-center justify-between p-2.5 border-b shrink-0 bg-slate-50/50 rounded-t-xl">
                 <Button 
                   variant="ghost" 
                   size="icon" 
@@ -236,8 +236,8 @@ export function ClusterMap() {
                         <span className="text-[11px] font-bold text-slate-900 truncate leading-tight group-hover:text-primary transition-colors">
                           {c.name.includes(':') ? c.name.split(':')[1].trim() : c.name}
                         </span>
-                        <div className="flex items-center gap-2 mt-0.5">
-                           <span className="text-[9px] text-slate-500 font-black uppercase bg-white px-1 py-0.5 rounded border border-slate-100">
+                        <div className="flex items-center gap-2 mt-1">
+                           <span className="text-[9px] text-slate-500 font-black uppercase bg-white px-1.5 py-0.5 rounded border border-slate-100 shadow-sm">
                              C{c.id}
                            </span>
                            <span className="text-[9px] text-slate-400 font-semibold italic">
@@ -258,7 +258,7 @@ export function ClusterMap() {
             <Skeleton className="h-full w-full opacity-60" />
             <div className="absolute flex flex-col items-center gap-3">
                 <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-                <p className="text-sm font-bold animate-pulse text-primary tracking-widest uppercase">Syncing Clustering Results...</p>
+                <p className="text-sm font-bold animate-pulse text-primary tracking-widest uppercase">Syncing Hotspots...</p>
             </div>
           </div>
         )}
