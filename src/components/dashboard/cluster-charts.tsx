@@ -19,7 +19,7 @@ import {
 } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Activity, BarChart3, PieChartIcon, Target, CheckCircle2, UserCircle, Syringe, Baby } from 'lucide-react';
+import { Activity, BarChart3, PieChartIcon, Target, CheckCircle2, UserCircle, Syringe, Baby, TrendingUp } from 'lucide-react';
 import type { AnalysisResult } from '@/lib/types';
 import { useMounted } from '@/hooks/use-mounted';
 
@@ -110,17 +110,28 @@ export function ClusterCharts() {
     { metric: 'Separation', score: 82 }
   ];
 
-  // 3. Disease Prevalence Data
+  // 3. Disease Burden Data (Aggregate what disease is more involve)
+  const diseaseBurdenMap: Record<string, number> = {};
   const allDiseases = Array.from(new Set(clusters.flatMap(c => 
     Object.keys(c.healthMetrics).filter(k => !['Vaccinated', 'Partially Vaccinated', 'Not Vaccinated'].includes(k))
   ))).sort();
+
+  allDiseases.forEach(disease => {
+    diseaseBurdenMap[disease] = clusters.reduce((sum, c) => sum + (c.healthMetrics[disease] || 0), 0);
+  });
+
+  const diseaseBurdenData = Object.entries(diseaseBurdenMap)
+    .map(([disease, count]) => ({ disease, count }))
+    .sort((a, b) => b.count - a.count);
+
+  // 4. Disease Prevalence per Cluster Data
   const diseaseChartData = allDiseases.map(disease => {
     const entry: any = { disease };
     clusters.forEach(c => { entry[`Cluster ${c.id}`] = c.healthMetrics[disease] || 0; });
     return entry;
   });
 
-  // 4. Vaccination Data
+  // 5. Vaccination Data
   const vaccinationData = clusters.map(c => ({
     name: `C${c.id}`,
     'Full': c.healthMetrics['Vaccinated'] || 0,
@@ -128,7 +139,7 @@ export function ClusterCharts() {
     'Unvaccinated': c.healthMetrics['Not Vaccinated'] || 0,
   }));
 
-  // 5. Gender Data
+  // 6. Gender Data
   const genderData = clusters.map(c => ({
     name: `C${c.id}`,
     'Male': c.demographics.genderDistribution['Male'] || 0,
@@ -136,7 +147,7 @@ export function ClusterCharts() {
     'Other': c.demographics.genderDistribution['Other'] || 0,
   }));
 
-  // 6. Age Data
+  // 7. Age Data
   const ageData = clusters.map(c => ({
     name: `C${c.id}`,
     'Avg Age': Math.round(c.demographics.averageAge),
@@ -282,7 +293,77 @@ export function ClusterCharts() {
             )}
         </div>
 
-        {/* Primary Indicator Analysis (Only if Diseases selected) */}
+        {/* Principal Disease Burden (What disease more involve) */}
+        {showDisease && diseaseBurdenData.length > 0 && (
+            <div className="grid gap-6 md:grid-cols-2">
+                <Card className="shadow-md border-slate-200 overflow-hidden">
+                    <CardHeader className="bg-slate-50/50 border-b">
+                        <CardTitle className="text-lg font-bold flex items-center gap-2">
+                            <TrendingUp className="w-5 h-5 text-primary" />
+                            Principal Disease Burden
+                        </CardTitle>
+                        <CardDescription>Aggregate case volume by condition - Identifying highest involvement.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="pt-6">
+                        <div className="h-[300px] w-full">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <BarChart data={diseaseBurdenData} layout="vertical" margin={{ left: 40, right: 30 }}>
+                                    <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#f1f5f9" />
+                                    <XAxis type="number" hide />
+                                    <YAxis 
+                                        dataKey="disease" 
+                                        type="category" 
+                                        fontSize={10} 
+                                        tickLine={false} 
+                                        axisLine={false}
+                                        width={100}
+                                        tick={{ fill: '#475569', fontWeight: 700 }}
+                                    />
+                                    <Tooltip content={<CustomTooltip />} />
+                                    <Bar dataKey="count" name="Total Cases" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
+                                </BarChart>
+                            </ResponsiveContainer>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <Card className="shadow-md border-slate-200 overflow-hidden">
+                    <CardHeader className="bg-slate-50/50 border-b">
+                        <CardTitle className="text-lg font-bold flex items-center gap-2">
+                            <Activity className="w-5 h-5 text-primary" />
+                            Cluster Density Analysis
+                        </CardTitle>
+                        <CardDescription>Highest disease marker for each identified segment.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="pt-6">
+                        <div className="space-y-3">
+                            {clusters.map((c, i) => {
+                                const top = Object.entries(c.healthMetrics)
+                                    .filter(([k]) => !['Vaccinated', 'Partially Vaccinated', 'Not Vaccinated', 'Male', 'Female', 'Other'].includes(k))
+                                    .sort((a, b) => b[1] - a[1])[0];
+                                return (
+                                    <div key={c.id} className="flex items-center justify-between p-3 rounded-lg bg-white border border-slate-100 shadow-sm">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: CHART_COLORS[i % CHART_COLORS.length] }} />
+                                            <div>
+                                                <p className="text-[10px] font-black uppercase text-slate-400">Cluster {c.id}</p>
+                                                <p className="text-sm font-bold text-slate-900">{top ? top[0] : 'None'}</p>
+                                            </div>
+                                        </div>
+                                        <div className="text-right">
+                                            <p className="text-[10px] font-black uppercase text-slate-400">Involvement</p>
+                                            <p className="text-sm font-bold text-primary">{top ? top[1] : 0} cases</p>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
+        )}
+
+        {/* Comparative Disease Prevalence Chart */}
         {showDisease && (
             <Card className="shadow-md border-slate-200 overflow-hidden">
                 <CardHeader className="border-b pb-4 bg-slate-50/50">
@@ -292,7 +373,7 @@ export function ClusterCharts() {
                                 <Activity className="w-5 h-5 text-primary" />
                                 Disease Prevalence Across Clusters
                             </CardTitle>
-                            <CardDescription>Comparative visualization of disease markers.</CardDescription>
+                            <CardDescription>Comparative visualization of disease markers across all segments.</CardDescription>
                         </div>
                         <div className="flex flex-wrap gap-2 justify-end">
                             {clusters.map((c, i) => (

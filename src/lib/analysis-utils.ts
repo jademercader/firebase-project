@@ -51,7 +51,7 @@ export function performLocalKMeans(
 ): AnalysisResult {
   if (records.length === 0) return { clusters: [], globalValidation: { avgSilhouetteScore: 0, totalWCSS: 0 } };
 
-  // 1. Prepare data vectors for EACH record
+  // 1. Prepare data vectors for EACH record (High-Granularity)
   const dataPoints = records.map(record => {
     const address = record.address || '';
     const brgyName = Object.keys(CALBAYOG_BRGY_COORDS).find(b => address.toLowerCase().includes(b.toLowerCase())) || 'Other';
@@ -63,7 +63,6 @@ export function performLocalKMeans(
       'age_norm': record.age / 100,
     };
 
-    // Weighting indicators based on selection
     if (selectedIndicators.includes('gender')) {
       if (record.gender === 'Male') vector['g_m'] = 0.5;
       if (record.gender === 'Female') vector['g_f'] = 0.5;
@@ -85,7 +84,6 @@ export function performLocalKMeans(
   const k = Math.min(numClusters, dataPoints.length);
   let centroids: Record<string, number>[] = [];
   
-  // Seed first centroid
   centroids.push({ ...dataPoints[Math.floor(Math.random() * dataPoints.length)].vector });
   
   for (let i = 1; i < k; i++) {
@@ -116,7 +114,6 @@ export function performLocalKMeans(
     changed = false;
     iterations++;
     
-    // Assign points
     dataPoints.forEach((p, pIdx) => {
       let minDist = Infinity;
       let bestC = 0;
@@ -127,7 +124,6 @@ export function performLocalKMeans(
       if (assignments[pIdx] !== bestC) { assignments[pIdx] = bestC; changed = true; }
     });
 
-    // Recompute centroids and handle empty clusters
     const newCentroids = centroids.map(() => ({}));
     const counts = new Array(centroids.length).fill(0);
     
@@ -141,7 +137,6 @@ export function performLocalKMeans(
     
     centroids = newCentroids.map((c, idx) => {
       if (counts[idx] === 0) {
-        // Find point furthest from its own current assignment to re-seed empty cluster
         let maxDist = -1;
         let furthestIdx = 0;
         dataPoints.forEach((p, pIdx) => {
@@ -156,7 +151,7 @@ export function performLocalKMeans(
     });
   }
 
-  // 3. Validation Matrix Calculation
+  // 3. Validation Scoring
   const silhouetteScores = dataPoints.map((p, i) => {
     const cIdx = assignments[i];
     const sameCluster = dataPoints.filter((_, idx) => assignments[idx] === cIdx && idx !== i);
@@ -175,7 +170,7 @@ export function performLocalKMeans(
 
   const avgSilhouetteScore = silhouetteScores.reduce((a, b) => a + b, 0) / Math.max(1, silhouetteScores.length);
 
-  // 4. Synthesis of Clusters
+  // 4. Final Synthesis
   const clusters: Cluster[] = centroids.map((cVector, idx) => {
     const members = dataPoints.filter((_, pIdx) => assignments[pIdx] === idx);
     if (members.length === 0) return null;
@@ -220,7 +215,8 @@ export function performLocalKMeans(
     globalValidation: {
       avgSilhouetteScore,
       totalWCSS: Math.max(0, 100 - (iterations * 2))
-    }
+    },
+    selectedIndicators
   };
 }
 
