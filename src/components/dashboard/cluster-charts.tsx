@@ -38,9 +38,9 @@ const CHART_COLORS = [
   '#15803d', // Dark Green
   '#1e40af', // Darker Blue
   '#c2410c', // Darker Orange
-  '#15803d', // Darker Green
-  '#7e22ce', // Darker Purple
-  '#b91c1c', // Darker Red
+  '#166534', // Darker Green
+  '#6b21a8', // Darker Purple
+  '#991b1b', // Darker Red
 ];
 
 const CustomTooltip = ({ active, payload, label }: any) => {
@@ -108,7 +108,7 @@ export function ClusterCharts() {
   }));
 
   const allDiseases = Array.from(new Set(clusters.flatMap(c => 
-    Object.keys(c.healthMetrics).filter(k => !['Vaccinated', 'Partially Vaccinated', 'Not Vaccinated'].includes(k))
+    Object.keys(c.healthMetrics).filter(k => !['Vaccinated', 'Partially Vaccinated', 'Not Vaccinated', 'Male', 'Female', 'Other'].includes(k))
   ))).sort();
 
   const diseaseChartData = allDiseases.map(disease => {
@@ -130,14 +130,13 @@ export function ClusterCharts() {
   return (
     <div className="space-y-6 pb-20">
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {/* Objective 3: Evaluation Matrix Card */}
             <Card className="shadow-md border-slate-200 flex flex-col h-full bg-gradient-to-b from-white to-slate-50/30">
                 <CardHeader className="pb-2">
                     <CardTitle className="text-lg font-bold flex items-center gap-2">
                         <Target className="w-5 h-5 text-primary" />
                         Evaluation Matrix
                     </CardTitle>
-                    <CardDescription className="text-xs">Statistical effectiveness of results (Obj 3).</CardDescription>
+                    <CardDescription className="text-xs">Statistical effectiveness of results.</CardDescription>
                 </CardHeader>
                 <CardContent className="flex-1 flex flex-col justify-between pt-4">
                     <div className="h-[200px] w-full">
@@ -243,7 +242,6 @@ export function ClusterCharts() {
             </Card>
         </div>
 
-        {/* Objective 4: Detailed visual representation fix with non-overlapping labels */}
         <Card className="shadow-md border-slate-200 overflow-hidden">
             <CardHeader className="border-b pb-4">
                 <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
@@ -252,7 +250,7 @@ export function ClusterCharts() {
                             <Activity className="w-5 h-5 text-primary" />
                             Indicator Analysis Across Clusters
                         </CardTitle>
-                        <CardDescription>Comparative visualization of consolidated markers (Obj 4).</CardDescription>
+                        <CardDescription>Comparative visualization of consolidated markers.</CardDescription>
                     </div>
                     <div className="flex flex-wrap gap-2 md:gap-4 justify-start md:justify-end max-w-full md:max-w-[500px]">
                         {clusters.map((c, i) => (
@@ -298,7 +296,7 @@ export function ClusterCharts() {
                                     dataKey={`Cluster ${c.id}`} 
                                     fill={CHART_COLORS[i % CHART_COLORS.length]} 
                                     radius={[4, 4, 0, 0]} 
-                                    barSize={clusters.length > 5 ? 12 : 24}
+                                    barSize={clusters.length > 8 ? 8 : clusters.length > 5 ? 12 : 24}
                                 />
                             ))}
                         </BarChart>

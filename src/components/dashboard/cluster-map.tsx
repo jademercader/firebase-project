@@ -24,9 +24,9 @@ const CHART_COLORS = [
   '#15803d', // Dark Green
   '#1e40af', // Darker Blue
   '#c2410c', // Darker Orange
-  '#15803d', // Darker Green
-  '#7e22ce', // Darker Purple
-  '#b91c1c', // Darker Red
+  '#166534', // Darker Green
+  '#6b21a8', // Darker Purple
+  '#991b1b', // Darker Red
 ];
 
 const getChartColor = (index: number) => CHART_COLORS[index % CHART_COLORS.length];
@@ -126,7 +126,7 @@ export function ClusterMap() {
             allPoints.push(center);
             L.marker(center, { icon: createCentroidIcon(color, cluster.id), zIndexOffset: 1000 })
               .addTo(centroidLayer)
-              .bindPopup(`<div class="text-xs font-bold p-1">${cluster.name}<br/><span class="font-normal">Calculated Regional Hotspot</span></div>`);
+              .bindPopup(`<div class="text-xs font-bold p-1">${cluster.name}<br/><span class="font-normal">Calculated Hotspot Center</span></div>`);
         }
       });
     }
@@ -181,7 +181,7 @@ export function ClusterMap() {
             </div>
             <div>
                 <CardTitle className="font-headline text-lg">Spatial Health Distribution</CardTitle>
-                <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">Consolidated Data Representation (Obj 4)</p>
+                <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">Consolidated Data Representation</p>
             </div>
         </div>
         <div className="hidden md:flex items-center gap-4 text-[11px] font-bold text-muted-foreground">
@@ -191,7 +191,7 @@ export function ClusterMap() {
             </div>
              <div className="flex items-center gap-1.5">
                 <MapPin className="w-3.5 h-3.5 text-primary" />
-                <span>Calculated Centers</span>
+                <span>Hotspot Centers</span>
             </div>
         </div>
       </CardHeader>
@@ -210,10 +210,10 @@ export function ClusterMap() {
                             <div className="w-3 h-3 rounded-full mt-1.5 shrink-0" style={{ backgroundColor: getChartColor(i) }} />
                             <div className="flex flex-col">
                                 <span className="text-xs font-bold text-slate-900 leading-tight">
-                                    C{c.id}: {c.name.split(':')[1]?.trim().split(' ')[0] || 'Group'}
+                                    C{c.id}: {c.name.split(':')[1]?.trim() || 'Group'}
                                 </span>
                                 <span className="text-[9px] text-slate-500 font-medium leading-normal mt-0.5">
-                                    {c.records.length} consolidated records
+                                    {c.records.length} records
                                 </span>
                             </div>
                         </div>
