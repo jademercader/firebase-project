@@ -22,6 +22,11 @@ const CHART_COLORS = [
   '#4f46e5', // Indigo
   '#be185d', // Pink
   '#15803d', // Dark Green
+  '#1e40af', // Darker Blue
+  '#c2410c', // Darker Orange
+  '#15803d', // Darker Green
+  '#7e22ce', // Darker Purple
+  '#b91c1c', // Darker Red
 ];
 
 const getChartColor = (index: number) => CHART_COLORS[index % CHART_COLORS.length];
@@ -121,7 +126,7 @@ export function ClusterMap() {
             allPoints.push(center);
             L.marker(center, { icon: createCentroidIcon(color, cluster.id), zIndexOffset: 1000 })
               .addTo(centroidLayer)
-              .bindPopup(`<div class="text-xs font-bold p-1">${cluster.name}<br/><span class="font-normal">Statistically Calculated Hotspot</span></div>`);
+              .bindPopup(`<div class="text-xs font-bold p-1">${cluster.name}<br/><span class="font-normal">Calculated Regional Hotspot</span></div>`);
         }
       });
     }
@@ -175,18 +180,18 @@ export function ClusterMap() {
                 <Layers className="w-5 h-5 text-primary" />
             </div>
             <div>
-                <CardTitle className="font-headline text-lg">Spatial Population Analysis</CardTitle>
-                <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">Regional Health Concentration</p>
+                <CardTitle className="font-headline text-lg">Spatial Health Distribution</CardTitle>
+                <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">Consolidated Data Representation (Obj 4)</p>
             </div>
         </div>
-        <div className="flex items-center gap-4 text-[11px] font-bold text-muted-foreground">
+        <div className="hidden md:flex items-center gap-4 text-[11px] font-bold text-muted-foreground">
             <div className="flex items-center gap-1.5">
                 <div className="w-2.5 h-2.5 rounded-full bg-primary" />
-                <span>Patient Records</span>
+                <span>Patient Points</span>
             </div>
              <div className="flex items-center gap-1.5">
                 <MapPin className="w-3.5 h-3.5 text-primary" />
-                <span>Calculated Hotspots</span>
+                <span>Calculated Centers</span>
             </div>
         </div>
       </CardHeader>
@@ -199,16 +204,16 @@ export function ClusterMap() {
                     <HelpCircle className="w-4 h-4" />
                     Segment Analysis
                 </h4>
-                <div className="space-y-3 max-h-[250px] overflow-y-auto pr-2 custom-scrollbar">
+                <div className="space-y-3 max-h-[200px] overflow-y-auto pr-2 custom-scrollbar">
                     {clusters.map((c, i) => (
                         <div key={c.id} className="flex items-start gap-3 p-2 rounded-lg hover:bg-slate-50 transition-colors">
                             <div className="w-3 h-3 rounded-full mt-1.5 shrink-0" style={{ backgroundColor: getChartColor(i) }} />
                             <div className="flex flex-col">
                                 <span className="text-xs font-bold text-slate-900 leading-tight">
-                                    {c.name.split(':')[0]}
+                                    C{c.id}: {c.name.split(':')[1]?.trim().split(' ')[0] || 'Group'}
                                 </span>
-                                <span className="text-[10px] text-slate-500 font-medium leading-normal mt-0.5">
-                                    {c.name.split(':')[1]?.trim() || 'General Segment'}
+                                <span className="text-[9px] text-slate-500 font-medium leading-normal mt-0.5">
+                                    {c.records.length} consolidated records
                                 </span>
                             </div>
                         </div>
@@ -222,7 +227,7 @@ export function ClusterMap() {
             <Skeleton className="h-full w-full opacity-60" />
             <div className="absolute flex flex-col items-center gap-3">
                 <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-                <p className="text-sm font-bold animate-pulse text-primary tracking-widest">INITIALIZING SPATIAL ENGINE...</p>
+                <p className="text-sm font-bold animate-pulse text-primary tracking-widest uppercase">Initializing Clustering Engine...</p>
             </div>
           </div>
         )}

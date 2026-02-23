@@ -42,7 +42,7 @@ function addJitter(val: number, amount: number = 0.003) {
 
 /**
  * Core Analysis Engine implementing K-Means++ and Evaluation Matrix.
- * Hardened to ensure no clusters are lost during iterations.
+ * Hardened to ensure no clusters are lost during iterations by active re-seeding.
  */
 export function performLocalKMeans(
   records: HealthRecord[],
@@ -143,7 +143,7 @@ export function performLocalKMeans(
     
     centroids = newCentroids.map((c, idx) => {
       if (counts[idx] === 0) {
-        // Find point furthest from its own current centroid assignment to re-seed
+        // Find point furthest from its own current assignment to re-seed
         let maxDist = -1;
         let furthestIdx = 0;
         barangayProfiles.forEach((p, pIdx) => {

@@ -115,7 +115,7 @@ export function ClusterControls() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="font-headline">Local K-Means Clustering Engine</CardTitle>
+        <CardTitle className="font-headline">K-Means Health Clustering Engine</CardTitle>
         <CardDescription>
           Identify population segments based on uploaded dataset health markers.
         </CardDescription>
@@ -176,11 +176,11 @@ export function ClusterControls() {
               value={[numClusters]}
               onValueChange={(value) => setNumClusters(value[0])}
             />
-            <p className="text-[10px] text-muted-foreground italic">Higher 'k' values increase cluster specificity but may reduce cohesion.</p>
+            <p className="text-[10px] text-muted-foreground italic">Request up to 15 clusters for high-granularity population analysis.</p>
         </div>
          <Button onClick={handleRunAnalysis} disabled={isAnalysisRunning} className="w-full md:w-auto">
           <PlayCircle className="mr-2 h-4 w-4" />
-          {isAnalysisRunning ? 'Processing Dataset...' : 'Execute Local Analysis'}
+          {isAnalysisRunning ? 'Processing Dataset...' : 'Execute Clustering Analysis'}
         </Button>
       </CardContent>
     </Card>

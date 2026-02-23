@@ -26,27 +26,27 @@ import { useMounted } from '@/hooks/use-mounted';
 const ANALYSIS_STORAGE_KEY = 'analysis_result';
 
 const CHART_COLORS = [
-  'hsl(180, 100%, 25%)', // Primary Teal
-  'hsl(202, 69%, 55%)',  // Blue
-  'hsl(27, 87%, 67%)',   // Orange
-  'hsl(280, 65%, 60%)',  // Purple
-  'hsl(150, 60%, 45%)',  // Green
-  'hsl(197, 37%, 44%)',  // Muted Teal
-  'hsl(43, 74%, 66%)',   // Yellow
-  'hsl(340, 75%, 55%)',  // Pink
-  'hsl(10, 80%, 50%)',   // Red
-  'hsl(120, 40%, 40%)',  // Forest
-  'hsl(190, 80%, 30%)',
-  'hsl(30, 90%, 40%)',
-  'hsl(260, 50%, 45%)',
-  'hsl(100, 70%, 35%)',
-  'hsl(320, 60%, 50%)',
+  '#2563eb', // Blue
+  '#f97316', // Orange
+  '#16a34a', // Green
+  '#9333ea', // Purple
+  '#e11d48', // Red
+  '#0891b2', // Cyan
+  '#f59e0b', // Amber
+  '#4f46e5', // Indigo
+  '#be185d', // Pink
+  '#15803d', // Dark Green
+  '#1e40af', // Darker Blue
+  '#c2410c', // Darker Orange
+  '#15803d', // Darker Green
+  '#7e22ce', // Darker Purple
+  '#b91c1c', // Darker Red
 ];
 
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
     return (
-      <div className="bg-white/95 border border-slate-200 p-3 rounded-lg shadow-xl backdrop-blur-sm">
+      <div className="bg-white/95 border border-slate-200 p-3 rounded-lg shadow-xl backdrop-blur-sm z-[1000]">
         <p className="font-bold text-sm text-slate-800 mb-2 border-b pb-1">{label}</p>
         <div className="space-y-1.5">
           {payload.map((entry: any, index: number) => (
@@ -128,7 +128,7 @@ export function ClusterCharts() {
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-20">
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {/* Objective 3: Evaluation Matrix Card */}
             <Card className="shadow-md border-slate-200 flex flex-col h-full bg-gradient-to-b from-white to-slate-50/30">
@@ -137,7 +137,7 @@ export function ClusterCharts() {
                         <Target className="w-5 h-5 text-primary" />
                         Evaluation Matrix
                     </CardTitle>
-                    <CardDescription className="text-xs">Statistical assessment of analysis effectiveness.</CardDescription>
+                    <CardDescription className="text-xs">Statistical effectiveness of results (Obj 3).</CardDescription>
                 </CardHeader>
                 <CardContent className="flex-1 flex flex-col justify-between pt-4">
                     <div className="h-[200px] w-full">
@@ -215,7 +215,7 @@ export function ClusterCharts() {
                         <BarChart3 className="w-5 h-5 text-primary" />
                         Prevalence Overview
                     </CardTitle>
-                    <CardDescription className="text-xs">Primary health markers per cluster.</CardDescription>
+                    <CardDescription className="text-xs">Primary markers per clustering group.</CardDescription>
                 </CardHeader>
                 <CardContent className="flex-1 pt-4">
                     <div className="h-[280px] w-full">
@@ -243,38 +243,38 @@ export function ClusterCharts() {
             </Card>
         </div>
 
-        {/* Objective 4: Detailed visual representation */}
-        <Card className="shadow-md border-slate-200">
+        {/* Objective 4: Detailed visual representation fix with non-overlapping labels */}
+        <Card className="shadow-md border-slate-200 overflow-hidden">
             <CardHeader className="border-b pb-4">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                     <div>
                         <CardTitle className="text-xl font-bold flex items-center gap-2">
                             <Activity className="w-5 h-5 text-primary" />
                             Indicator Analysis Across Clusters
                         </CardTitle>
-                        <CardDescription>Comparative visualization of consolidated markers.</CardDescription>
+                        <CardDescription>Comparative visualization of consolidated markers (Obj 4).</CardDescription>
                     </div>
-                    <div className="flex flex-wrap gap-4 justify-end max-w-[400px]">
+                    <div className="flex flex-wrap gap-2 md:gap-4 justify-start md:justify-end max-w-full md:max-w-[500px]">
                         {clusters.map((c, i) => (
-                            <div key={c.id} className="flex items-center gap-2">
-                                <div className="w-3.5 h-3.5 rounded-full" style={{ backgroundColor: CHART_COLORS[i % CHART_COLORS.length] }} />
-                                <span className="text-[10px] font-black uppercase text-slate-400">Cluster {c.id}</span>
+                            <div key={c.id} className="flex items-center gap-2 shrink-0">
+                                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: CHART_COLORS[i % CHART_COLORS.length] }} />
+                                <span className="text-[9px] font-black uppercase text-slate-400">C{c.id}</span>
                             </div>
                         ))}
                     </div>
                 </div>
             </CardHeader>
-            <CardContent className="pt-6">
-                <div className="h-[400px] w-full">
+            <CardContent className="pt-10">
+                <div className="h-[450px] w-full">
                     <ResponsiveContainer width="100%" height="100%">
                         <BarChart 
                             data={diseaseChartData} 
-                            margin={{ top: 20, right: 20, left: 10, bottom: 100 }}
+                            margin={{ top: 20, right: 30, left: 10, bottom: 120 }}
                         >
                             <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#f1f5f9" />
                             <XAxis 
                                 dataKey="disease" 
-                                fontSize={11} 
+                                fontSize={10} 
                                 tickLine={true} 
                                 axisLine={false}
                                 angle={-45}
@@ -298,7 +298,7 @@ export function ClusterCharts() {
                                     dataKey={`Cluster ${c.id}`} 
                                     fill={CHART_COLORS[i % CHART_COLORS.length]} 
                                     radius={[4, 4, 0, 0]} 
-                                    barSize={24}
+                                    barSize={clusters.length > 5 ? 12 : 24}
                                 />
                             ))}
                         </BarChart>
