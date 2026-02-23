@@ -6,7 +6,7 @@ import 'leaflet/dist/leaflet.css';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '../ui/skeleton';
-import { Layers, HelpCircle, MapPin, ChevronRight, ChevronLeft, List } from 'lucide-react';
+import { Layers, MapPin, ChevronRight, ChevronLeft, List } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import type { Cluster } from '@/lib/types';
@@ -155,7 +155,6 @@ export function ClusterMap() {
         if (saved) {
           const parsed = JSON.parse(saved);
           setClusters(parsed);
-          // Auto-open legend if results exist
           if (parsed.length > 0) setIsLegendOpen(true);
         }
       } catch (err) {
@@ -205,26 +204,26 @@ export function ClusterMap() {
       <CardContent className="flex-1 p-0 relative">
         <div ref={mapRef} className="absolute inset-0 z-0"></div>
         
-        {/* Toggleable Legend Panel */}
+        {/* Toggleable Legend Panel - Moved to Right to avoid zoom controls overlap */}
         {clusters.length > 0 && (
           <div className={cn(
-            "absolute top-6 left-6 z-[1000] transition-all duration-300 ease-in-out",
+            "absolute top-6 right-6 z-[1000] transition-all duration-300 ease-in-out",
             isLegendOpen ? "w-[300px]" : "w-10 overflow-hidden"
           )}>
             <div className="bg-white/95 backdrop-blur-xl rounded-xl border border-slate-200 shadow-2xl flex flex-col h-full max-h-[500px]">
               <div className="flex items-center justify-between p-3 border-b shrink-0">
-                <div className={cn("flex items-center gap-2", !isLegendOpen && "hidden")}>
-                   <List className="w-4 h-4 text-primary" />
-                   <span className="text-xs font-black uppercase tracking-widest text-slate-500">Cluster Analysis</span>
-                </div>
                 <Button 
                   variant="ghost" 
                   size="icon" 
                   className="h-8 w-8 hover:bg-slate-100 shrink-0"
                   onClick={() => setIsLegendOpen(!isLegendOpen)}
                 >
-                  {isLegendOpen ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                  {isLegendOpen ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
                 </Button>
+                <div className={cn("flex items-center gap-2", !isLegendOpen && "hidden")}>
+                   <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Cluster Analysis</span>
+                   <List className="w-4 h-4 text-primary" />
+                </div>
               </div>
               
               {isLegendOpen && (

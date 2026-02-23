@@ -1,3 +1,4 @@
+
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import { 
@@ -279,6 +280,8 @@ export function ClusterCharts() {
                                 textAnchor="end"
                                 interval={0}
                                 height={100}
+                                dx={-5}
+                                dy={10}
                                 tick={{ fill: '#475569', fontWeight: 700 }}
                             />
                             <YAxis 
