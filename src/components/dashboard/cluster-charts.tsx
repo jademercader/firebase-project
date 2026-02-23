@@ -34,6 +34,8 @@ const CHART_COLORS = [
   'hsl(197, 37%, 44%)',  // Muted Teal
   'hsl(43, 74%, 66%)',   // Yellow
   'hsl(340, 75%, 55%)',  // Pink
+  'hsl(10, 80%, 50%)',   // Red
+  'hsl(120, 40%, 40%)',  // Forest
 ];
 
 const CustomTooltip = ({ active, payload, label }: any) => {
@@ -247,7 +249,7 @@ export function ClusterCharts() {
                         </CardTitle>
                         <CardDescription>Comparative visualization of consolidated markers.</CardDescription>
                     </div>
-                    <div className="flex gap-4">
+                    <div className="flex flex-wrap gap-4 justify-end max-w-[400px]">
                         {clusters.map((c, i) => (
                             <div key={c.id} className="flex items-center gap-2">
                                 <div className="w-3 h-3 rounded-full" style={{ backgroundColor: CHART_COLORS[i % CHART_COLORS.length] }} />
