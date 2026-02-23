@@ -36,10 +36,6 @@ const CALBAYOG_BRGY_COORDS: Record<string, { lat: number, lng: number }> = {
   'Banjao': { lat: 12.1050, lng: 124.5850 },
 };
 
-function addJitter(val: number, amount: number = 0.005) {
-  return val + (Math.random() - 0.5) * amount;
-}
-
 function getCoordinatesFromAddress(address: string) {
   if (!address) return null;
   const lowerAddr = address.toLowerCase();
@@ -49,52 +45,13 @@ function getCoordinatesFromAddress(address: string) {
   return null;
 }
 
-function recordToVector(record: HealthRecord, indicators: string[]): { [key: string]: number } {
-  const vector: { [key: string]: number } = {};
-  
-  // Weights to emphasize spatial and disease similarity
-  const SPATIAL_WEIGHT = 4.0;
-  const DISEASE_WEIGHT = 2.0;
-
-  if (record.latitude !== undefined && record.longitude !== undefined) {
-    vector['lat'] = ((record.latitude - 12.0) * 10) * SPATIAL_WEIGHT;
-    vector['lng'] = ((record.longitude - 124.0) * 10) * SPATIAL_WEIGHT;
-  }
-
-  const categoryMap: Record<string, Record<string, number>> = {
-    gender: { 'Male': 0, 'Female': 1, 'Other': 2 },
-    vaccinationStatus: { 'Not Vaccinated': 0, 'Partially Vaccinated': 1, 'Vaccinated': 2 },
-  };
-
-  indicators.forEach(indicator => {
-    const value = record[indicator];
-    if (indicator === 'age') {
-      vector['age'] = (Number(value) || 0) / 100;
-    } else if (categoryMap[indicator]) {
-      const map = categoryMap[indicator];
-      const max = Object.keys(map).length - 1;
-      vector[indicator] = (map[String(value)] ?? 0) / (max || 1);
-    } else if (indicator === 'disease') {
-      if (value && value !== 'None') {
-        vector[`disease_${String(value).toLowerCase().replace(/\s+/g, '_')}`] = 1.0 * DISEASE_WEIGHT;
-      }
-    }
-  });
-
-  return vector;
-}
-
-function euclideanDistance(v1: { [key: string]: number }, v2: { [key: string]: number }): number {
-  let sum = 0;
-  const allKeys = new Set([...Object.keys(v1), ...Object.keys(v2)]);
-  for (const key of allKeys) {
-    sum += Math.pow((v1[key] || 0) - (v2[key] || 0), 2);
-  }
-  return Math.sqrt(sum);
+function addJitter(val: number, amount: number = 0.003) {
+  return val + (Math.random() - 0.5) * amount;
 }
 
 /**
- * Professional K-Means Analysis Implementation (Objective 2)
+ * Objective 2: Group Barangays based on similarities on health indicators.
+ * This function aggregates individual records by Barangay before clustering.
  */
 export function performLocalKMeans(
   records: HealthRecord[],
@@ -103,37 +60,58 @@ export function performLocalKMeans(
 ): AnalysisResult {
   if (records.length === 0) return { clusters: [], globalValidation: { avgSilhouetteScore: 0, totalWCSS: 0 } };
 
-  // 1. Geocoding & Pre-processing (Objective 1)
-  const processedRecords = records.map(r => {
-    let lat = r.latitude;
-    let lng = r.longitude;
-    if (lat === undefined || lng === undefined) {
-      const coords = getCoordinatesFromAddress(r.address) || { lat: 12.0674, lng: 124.5950 };
-      lat = coords.lat;
-      lng = coords.lng;
-    }
-    // Add jitter so overlapping points are visible
-    return { ...r, latitude: addJitter(lat), longitude: addJitter(lng) };
+  // 1. Objective 1: Consolidation - Group Records by Barangay
+  const barangayGroups: Record<string, HealthRecord[]> = {};
+  records.forEach(r => {
+    const key = r.address || 'General Calbayog';
+    const brgyName = Object.keys(CALBAYOG_BRGY_COORDS).find(b => key.toLowerCase().includes(b.toLowerCase())) || 'Other';
+    if (!barangayGroups[brgyName]) barangayGroups[brgyName] = [];
+    barangayGroups[brgyName].push(r);
   });
 
-  // 2. Vectorization
-  const vectors = processedRecords.map(r => ({ id: r.id, vector: recordToVector(r, selectedIndicators) }));
+  // 2. Create Barangay Profiles for Clustering
+  const barangayProfiles = Object.entries(barangayGroups).map(([name, groupRecords]) => {
+    const total = groupRecords.length;
+    const avgAge = groupRecords.reduce((s, r) => s + r.age, 0) / total;
+    
+    // Aggregate health indicators (Objective 2)
+    const diseaseCounts = groupRecords.reduce((acc, r) => {
+      if (r.disease && r.disease !== 'None') acc[r.disease] = (acc[r.disease] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+
+    const coords = CALBAYOG_BRGY_COORDS[name] || { lat: 12.0674, lng: 124.5950 };
+
+    // Create a vector for this Barangay
+    const vector: Record<string, number> = {
+      'lat_norm': (coords.lat - 12.0) * 5,
+      'lng_norm': (coords.lng - 124.0) * 5,
+      'age_norm': avgAge / 100,
+    };
+
+    // Add disease prevalence as normalized vector dimensions
+    Object.entries(diseaseCounts).forEach(([disease, count]) => {
+      vector[`d_${disease.toLowerCase().replace(/\s+/g, '_')}`] = count / total;
+    });
+
+    return { name, records: groupRecords, vector, lat: coords.lat, lng: coords.lng };
+  });
+
+  // 3. Objective 2: K-Means Clustering
+  const k = Math.min(numClusters, barangayProfiles.length);
+  let centroids: Record<string, number>[] = [];
   
-  // 3. K-Means++ Initialization
-  const k = Math.min(numClusters, vectors.length);
-  let centroids: { [key: string]: number }[] = [];
-  centroids.push({ ...vectors[Math.floor(Math.random() * vectors.length)].vector });
-  
+  // K-Means++ Initialization
+  centroids.push({ ...barangayProfiles[Math.floor(Math.random() * barangayProfiles.length)].vector });
   for (let i = 1; i < k; i++) {
-    const distances = vectors.map(v => {
+    const distances = barangayProfiles.map(p => {
       let minDist = Infinity;
-      for (const c of centroids) {
-        const d = euclideanDistance(v.vector, c);
-        if (d < minDist) minDist = d;
-      }
+      centroids.forEach(c => {
+        const dist = euclideanDistance(p.vector, c);
+        if (dist < minDist) minDist = dist;
+      });
       return minDist * minDist;
     });
-    
     const sum = distances.reduce((a, b) => a + b, 0);
     let r = Math.random() * sum;
     let idx = 0;
@@ -141,154 +119,130 @@ export function performLocalKMeans(
       r -= distances[idx];
       if (r <= 0) break;
     }
-    centroids.push({ ...vectors[Math.min(idx, vectors.length - 1)].vector });
+    centroids.push({ ...barangayProfiles[idx].vector });
   }
 
-  // 4. Optimization Loop
-  let assignments: number[] = new Array(vectors.length).fill(-1);
+  // Optimization loop
+  let assignments: number[] = new Array(barangayProfiles.length).fill(-1);
   let changed = true;
   let iterations = 0;
-  const maxIterations = 100;
-
-  while (changed && iterations < maxIterations) {
+  while (changed && iterations < 50) {
     changed = false;
     iterations++;
-
-    for (let i = 0; i < vectors.length; i++) {
+    barangayProfiles.forEach((p, pIdx) => {
       let minDist = Infinity;
-      let closestCluster = 0;
-      for (let j = 0; j < centroids.length; j++) {
-        const dist = euclideanDistance(vectors[i].vector, centroids[j]);
-        if (dist < minDist) {
-          minDist = dist;
-          closestCluster = j;
-        }
-      }
-      if (assignments[i] !== closestCluster) {
-        assignments[i] = closestCluster;
-        changed = true;
-      }
-    }
+      let bestC = 0;
+      centroids.forEach((c, cIdx) => {
+        const d = euclideanDistance(p.vector, c);
+        if (d < minDist) { minDist = d; bestC = cIdx; }
+      });
+      if (assignments[pIdx] !== bestC) { assignments[pIdx] = bestC; changed = true; }
+    });
 
+    // Recompute centroids
     const newCentroids = centroids.map(() => ({}));
     const counts = new Array(centroids.length).fill(0);
-    const keys = new Set(vectors.flatMap(v => Object.keys(v.vector)));
-
-    for (let i = 0; i < vectors.length; i++) {
-      const cIdx = assignments[i];
+    barangayProfiles.forEach((p, pIdx) => {
+      const cIdx = assignments[pIdx];
       counts[cIdx]++;
-      keys.forEach(k => { 
-        (newCentroids[cIdx] as any)[k] = ((newCentroids[cIdx] as any)[k] || 0) + (vectors[i].vector[k] || 0); 
+      Object.entries(p.vector).forEach(([dim, val]) => {
+        (newCentroids[cIdx] as any)[dim] = ((newCentroids[cIdx] as any)[dim] || 0) + val;
       });
-    }
-
+    });
     centroids = newCentroids.map((c, idx) => {
       if (counts[idx] === 0) return centroids[idx];
       const updated: any = {};
-      keys.forEach(k => updated[k] = (c as any)[k] / counts[idx]);
+      Object.keys(c).forEach(dim => updated[dim] = (c as any)[dim] / counts[idx]);
       return updated;
     });
   }
 
-  // 5. Evaluation Matrix: Silhouette Scores & WCSS (Objective 3)
-  const silhouetteScores = vectors.map((v, i) => {
-    const clusterIdx = assignments[i];
-    const sameClusterPoints = vectors.filter((_, idx) => assignments[idx] === clusterIdx && idx !== i);
-    const a = sameClusterPoints.length > 0 
-      ? sameClusterPoints.reduce((sum, other) => sum + euclideanDistance(v.vector, other.vector), 0) / sameClusterPoints.length
-      : 0;
-
+  // 4. Objective 3: Validation Matrix (Silhouette)
+  const silhouetteScores = barangayProfiles.map((p, i) => {
+    const cIdx = assignments[i];
+    const sameCluster = barangayProfiles.filter((_, idx) => assignments[idx] === cIdx && idx !== i);
+    const a = sameCluster.length > 0 ? sameCluster.reduce((s, o) => s + euclideanDistance(p.vector, o.vector), 0) / sameCluster.length : 0;
+    
     let b = Infinity;
     for (let j = 0; j < centroids.length; j++) {
-      if (j === clusterIdx) continue;
-      const otherClusterPoints = vectors.filter((_, idx) => assignments[idx] === j);
-      if (otherClusterPoints.length === 0) continue;
-      const avgDist = otherClusterPoints.reduce((sum, other) => sum + euclideanDistance(v.vector, other.vector), 0) / otherClusterPoints.length;
+      if (j === cIdx) continue;
+      const otherCluster = barangayProfiles.filter((_, idx) => assignments[idx] === j);
+      if (otherCluster.length === 0) continue;
+      const avgDist = otherCluster.reduce((s, o) => s + euclideanDistance(p.vector, o.vector), 0) / otherCluster.length;
       if (avgDist < b) b = avgDist;
     }
-
-    if (b === Infinity) return 0;
-    return (b - a) / Math.max(a, b || 1);
+    return (b === Infinity) ? 0 : (b - a) / Math.max(a, b);
   });
 
   const avgSilhouetteScore = silhouetteScores.reduce((a, b) => a + b, 0) / Math.max(1, silhouetteScores.length);
 
-  // 6. Data Synthesis (Objective 4)
-  const finalClusters: Cluster[] = centroids.map((centroidVector, idx) => {
-    const clusterRecords = processedRecords.filter((_, vIdx) => assignments[vIdx] === idx);
-    if (clusterRecords.length === 0) return null;
+  // 5. Synthesize Results for Objective 4
+  const clusters: Cluster[] = centroids.map((cVector, idx) => {
+    const members = barangayProfiles.filter((_, pIdx) => assignments[pIdx] === idx);
+    if (members.length === 0) return null;
 
-    const totalAge = clusterRecords.reduce((sum, r) => sum + r.age, 0);
-    const averageAge = totalAge / clusterRecords.length;
-    
-    const healthMetrics = clusterRecords.reduce((acc, r) => {
+    const allRecords = members.flatMap(m => m.records).map(r => ({
+      ...r,
+      latitude: addJitter(r.latitude || CALBAYOG_BRGY_COORDS[m.name]?.lat || 12.0674),
+      longitude: addJitter(r.longitude || CALBAYOG_BRGY_COORDS[m.name]?.lng || 124.5950)
+    }));
+
+    const healthMetrics = allRecords.reduce((acc, r) => {
       if (r.disease && r.disease !== 'None') acc[r.disease] = (acc[r.disease] || 0) + 1;
       if (r.vaccinationStatus) acc[r.vaccinationStatus] = (acc[r.vaccinationStatus] || 0) + 1;
       return acc;
-    }, {} as { [indicator: string]: number });
+    }, {} as any);
 
-    // Explicitly compute mean coordinates for the centroid
-    const centroidLat = clusterRecords.reduce((s, r) => s + (r.latitude || 12.0674), 0) / clusterRecords.length;
-    const centroidLng = clusterRecords.reduce((s, r) => s + (r.longitude || 124.5950), 0) / clusterRecords.length;
-
-    const cohesion = vectors.filter((_, vIdx) => assignments[vIdx] === idx)
-      .reduce((sum, v) => sum + Math.pow(euclideanDistance(v.vector, centroidVector), 2), 0);
-
-    const clusterSilhouette = silhouetteScores.filter((_, vIdx) => assignments[vIdx] === idx)
-      .reduce((a, b) => a + b, 0) / Math.max(1, clusterRecords.length);
+    const averageAge = allRecords.reduce((s, r) => s + r.age, 0) / allRecords.length;
 
     return {
       id: idx + 1,
       name: `Segment ${idx + 1}: ${getClusterFocusLabel(healthMetrics, averageAge)}`,
-      records: clusterRecords,
-      demographics: { 
-        averageAge, 
-        genderDistribution: clusterRecords.reduce((acc, r) => {
-          acc[r.gender] = (acc[r.gender] || 0) + 1;
-          return acc;
-        }, {} as any)
+      records: allRecords,
+      demographics: {
+        averageAge,
+        genderDistribution: allRecords.reduce((acc, r) => { acc[r.gender] = (acc[r.gender] || 0) + 1; return acc; }, {} as any)
       },
       healthMetrics,
-      centroid: { ...centroidVector, latitude: centroidLat, longitude: centroidLng },
-      validation: { cohesion, silhouetteScore: clusterSilhouette, separation: 0 }
+      centroid: { latitude: members.reduce((s, m) => s + m.lat, 0) / members.length, longitude: members.reduce((s, m) => s + m.lng, 0) / members.length },
+      validation: { cohesion: 0, silhouetteScore: silhouetteScores.filter((_, pIdx) => assignments[pIdx] === idx).reduce((a, b) => a + b, 0) / members.length, separation: 0 }
     };
-  }).filter(c => c !== null) as Cluster[];
+  }).filter(Boolean) as Cluster[];
 
   return {
-    clusters: finalClusters,
+    clusters,
     globalValidation: {
       avgSilhouetteScore,
-      totalWCSS: finalClusters.reduce((sum, c) => sum + (c.validation?.cohesion || 0), 0)
+      totalWCSS: clusters.reduce((s, c) => s + (c.validation?.cohesion || 0), 0)
     }
   };
 }
 
+function euclideanDistance(v1: Record<string, number>, v2: Record<string, number>): number {
+  let sum = 0;
+  const keys = new Set([...Object.keys(v1), ...Object.keys(v2)]);
+  for (const k of keys) {
+    sum += Math.pow((v1[k] || 0) - (v2[k] || 0), 2);
+  }
+  return Math.sqrt(sum);
+}
+
 function getClusterFocusLabel(metrics: Record<string, number>, avgAge: number): string {
-  if (avgAge > 60) return "Geriatric Risk Group";
-  if (avgAge < 12) return "Pediatric Vulnerability";
-  
-  const diseases = Object.entries(metrics)
-    .filter(([k]) => !['Vaccinated', 'Partially Vacinnated', 'Not Vaccinated', 'Partially Vaccinated'].includes(k))
-    .sort((a, b) => b[1] - a[1]);
-    
-  if (diseases.length > 0) return `${diseases[0][0]} Alert`;
-  return "General Health Segment";
+  if (avgAge > 60) return "Geriatric Risk";
+  const disease = Object.entries(metrics)
+    .filter(([k]) => !['Vaccinated', 'Partially Vaccinated', 'Not Vaccinated'].includes(k))
+    .sort((a, b) => b[1] - a[1])[0];
+  return disease ? `${disease[0]} Cluster` : "General Segment";
 }
 
 export function generateStatisticalTrends(clusters: Cluster[]): string {
-  if (clusters.length === 0) return "Insufficient data for trend generation.";
-  let report = "ANALYTICAL RISK ASSESSMENT REPORT\n===================================\n\n";
+  if (clusters.length === 0) return "Insufficient data.";
+  let r = "STATISTICAL RISK SUMMARY\n====================\n\n";
   clusters.forEach(c => {
-    const total = c.records.length;
-    const risk = Object.entries(c.healthMetrics)
-      .filter(([k]) => !['Vaccinated', 'Partially Vacinnated', 'Not Vaccinated', 'Partially Vaccinated'].includes(k))
+    const topDisease = Object.entries(c.healthMetrics)
+      .filter(([k]) => !['Vaccinated', 'Partially Vaccinated', 'Not Vaccinated'].includes(k))
       .sort((a, b) => b[1] - a[1])[0];
-    
-    report += `PHASE: ${c.name}\n`;
-    report += `> Population Concentration: ${total} patients\n`;
-    if (risk) report += `> Primary Clinical Risk: ${risk[0]} (Prevalence: ${Math.round((risk[1]/total)*100)}%)\n`;
-    report += `> Mean Demographic Age: ${Math.round(c.demographics.averageAge)} years\n`;
-    report += `> Silhouette Index: ${(c.validation?.silhouetteScore || 0).toFixed(3)}\n\n`;
+    r += `${c.name}\n- Population: ${c.records.length}\n- Avg Age: ${c.demographics.averageAge.toFixed(1)}\n- Primary Risk: ${topDisease ? topDisease[0] : 'Low'}\n\n`;
   });
-  return report;
+  return r;
 }
