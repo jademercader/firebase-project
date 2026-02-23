@@ -91,7 +91,7 @@ function euclideanDistance(v1: { [key: string]: number }, v2: { [key: string]: n
 }
 
 /**
- * Enhanced K-Means with K-Means++ Initialization
+ * Objective 2: Enhanced K-Means with K-Means++ Initialization
  */
 export function performLocalKMeans(
   records: HealthRecord[],
@@ -100,7 +100,7 @@ export function performLocalKMeans(
 ): AnalysisResult {
   if (records.length === 0) return { clusters: [], globalValidation: { avgSilhouetteScore: 0, totalWCSS: 0 } };
 
-  // 1. Geocoding Enrichment
+  // 1. Objective 1: Geocoding Enrichment & Consolidation
   const geocodedRecords = records.map(r => {
     if (r.latitude !== undefined && r.longitude !== undefined) return r;
     const coords = getCoordinatesFromAddress(r.address);
@@ -116,10 +116,8 @@ export function performLocalKMeans(
   const k = Math.min(numClusters, vectors.length);
   let centroids: { [key: string]: number }[] = [];
   
-  // Randomly pick the first centroid
   centroids.push({ ...vectors[Math.floor(Math.random() * vectors.length)].vector });
   
-  // Pick remaining centroids based on distance (K-Means++)
   for (let i = 1; i < k; i++) {
     const distances = vectors.map(v => {
       let minDist = Infinity;
@@ -145,12 +143,10 @@ export function performLocalKMeans(
   let iterations = 0;
   const maxIterations = 50;
 
-  // 4. Optimization Loop
   while (changed && iterations < maxIterations) {
     changed = false;
     iterations++;
 
-    // Assignment Phase
     for (let i = 0; i < vectors.length; i++) {
       let minDist = Infinity;
       let closestCluster = 0;
@@ -167,7 +163,6 @@ export function performLocalKMeans(
       }
     }
 
-    // Centroid Update Phase
     const newCentroids = centroids.map(() => ({}));
     const counts = new Array(centroids.length).fill(0);
     const keys = new Set(vectors.flatMap(v => Object.keys(v.vector)));
@@ -188,17 +183,14 @@ export function performLocalKMeans(
     });
   }
 
-  // 5. Silhouette Coefficient Calculation (Validation Matrix)
+  // Objective 3: Evaluation using Silhouette Coefficient
   const silhouetteScores = vectors.map((v, i) => {
     const clusterIdx = assignments[i];
-    
-    // a(i): average distance to points in same cluster
     const sameClusterPoints = vectors.filter((_, idx) => assignments[idx] === clusterIdx && idx !== i);
     const a = sameClusterPoints.length > 0 
       ? sameClusterPoints.reduce((sum, other) => sum + euclideanDistance(v.vector, other.vector), 0) / sameClusterPoints.length
       : 0;
 
-    // b(i): average distance to points in the closest other cluster
     let b = Infinity;
     for (let j = 0; j < centroids.length; j++) {
       if (j === clusterIdx) continue;
@@ -214,7 +206,7 @@ export function performLocalKMeans(
 
   const avgSilhouetteScore = silhouetteScores.reduce((a, b) => a + b, 0) / silhouetteScores.length;
 
-  // 6. Synthesis
+  // Objective 4: Visual Synthesis for Dashboards
   const finalClusters: Cluster[] = centroids.map((centroidVector, idx) => {
     const clusterRecords = geocodedRecords.filter((_, vIdx) => assignments[vIdx] === idx);
     if (clusterRecords.length === 0) return null;

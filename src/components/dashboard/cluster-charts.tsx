@@ -44,7 +44,7 @@ export function ClusterCharts() {
         <div className="flex items-center justify-between">
             <h3 className="text-2xl font-bold tracking-tight font-headline flex items-center gap-2">
                 <Activity className="w-6 h-6 text-primary" />
-                Cluster Validation Matrix
+                Objective 3: Evaluation Matrix
             </h3>
             <div className="flex gap-4">
                  <div className="text-right">
@@ -59,7 +59,7 @@ export function ClusterCharts() {
         </div>
 
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            <Card className="border-t-4 border-primary">
+            <Card className="border-t-4 border-primary shadow-md">
                 <CardHeader>
                     <CardTitle className="text-sm font-bold flex items-center gap-2">
                         <CheckCircle2 className="w-4 h-4 text-green-600" />
@@ -72,7 +72,7 @@ export function ClusterCharts() {
                         <RadarChart cx="50%" cy="50%" outerRadius="80%" data={clusters.map(c => ({
                             name: `C${c.id}`,
                             silhouette: (c.validation?.silhouetteScore || 0) * 100,
-                            size: (c.records.length / clusters[0].records.length) * 100
+                            size: (c.records.length / (clusters[0]?.records.length || 1)) * 100
                         }))}>
                             <PolarGrid />
                             <PolarAngleAxis dataKey="name" fontSize={10} />
@@ -83,7 +83,7 @@ export function ClusterCharts() {
                 </CardContent>
             </Card>
 
-            <Card className="lg:col-span-2">
+            <Card className="lg:col-span-2 shadow-md">
                 <CardHeader>
                     <CardTitle>Disease Prevalence by Segment</CardTitle>
                     <CardDescription>Comparative distribution of identified health indicators.</CardDescription>
