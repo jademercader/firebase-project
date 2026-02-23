@@ -9,6 +9,7 @@ import dynamic from 'next/dynamic';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { Activity } from 'lucide-react';
+import { useMounted } from '@/hooks/use-mounted';
 
 const DynamicClusterMap = dynamic(
   () => import('@/components/dashboard/cluster-map').then((mod) => mod.ClusterMap),
@@ -19,9 +20,26 @@ const DynamicClusterMap = dynamic(
 );
 
 export default function DashboardPage() {
+  const mounted = useMounted();
+
+  if (!mounted) {
+    return (
+      <AppLayout>
+        <div className="flex-1 space-y-6 p-4 md:p-8 pt-6 bg-slate-50/20">
+          <Skeleton className="h-10 w-[300px]" />
+          <Skeleton className="h-64 w-full" />
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <Skeleton className="lg:col-span-8 h-[600px]" />
+            <Skeleton className="lg:col-span-4 h-[600px]" />
+          </div>
+        </div>
+      </AppLayout>
+    );
+  }
+
   return (
     <AppLayout>
-      <div className="bg-slate-50/20 min-h-screen">
+      <div className="bg-slate-50/20 min-h-screen" suppressHydrationWarning>
         <div className="max-w-[1600px] mx-auto space-y-6 p-4 md:p-8 pt-6">
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
             <div>

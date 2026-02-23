@@ -147,6 +147,7 @@ const SidebarProvider = React.forwardRef<
             )}
             ref={ref}
             {...props}
+            suppressHydrationWarning
           >
             {children}
           </div>
@@ -192,6 +193,7 @@ const Sidebar = React.forwardRef<
           )}
           ref={ref}
           {...props}
+          suppressHydrationWarning
         >
           {children}
         </div>
@@ -211,6 +213,7 @@ const Sidebar = React.forwardRef<
               } as React.CSSProperties
             }
             side={side}
+            suppressHydrationWarning
           >
             <div className="flex h-full w-full flex-col">{children}</div>
           </SheetContent>
@@ -226,6 +229,7 @@ const Sidebar = React.forwardRef<
         data-collapsible={state === "collapsed" ? collapsible : ""}
         data-variant={variant}
         data-side={side}
+        suppressHydrationWarning
       >
         {/* This is what handles the sidebar gap on desktop */}
         <div
@@ -251,6 +255,7 @@ const Sidebar = React.forwardRef<
             className
           )}
           {...props}
+          suppressHydrationWarning
         >
           <div
             data-sidebar="sidebar"
@@ -283,6 +288,7 @@ const SidebarTrigger = React.forwardRef<
         toggleSidebar()
       }}
       {...props}
+      suppressHydrationWarning
     >
       <PanelLeft />
       <span className="sr-only">Toggle Sidebar</span>
@@ -333,6 +339,7 @@ const SidebarInset = React.forwardRef<
         className
       )}
       {...props}
+      suppressHydrationWarning
     />
   )
 })
@@ -667,23 +674,7 @@ const SidebarMenuSkeleton = React.forwardRef<
       data-sidebar="menu-skeleton"
       className={cn("rounded-md h-8 flex gap-2 px-2 items-center", className)}
       {...props}
-    >
-      {showIcon && (
-        <Skeleton
-          className="size-4 rounded-md"
-          data-sidebar="menu-skeleton-icon"
-        />
-      )}
-      <Skeleton
-        className="h-4 flex-1 max-w-[--skeleton-width]"
-        data-sidebar="menu-skeleton-text"
-        style={
-          {
-            "--skeleton-width": width,
-          } as React.CSSProperties
-        }
-      />
-    </div>
+    />
   )
 })
 SidebarMenuSkeleton.displayName = "SidebarMenuSkeleton"
@@ -767,5 +758,3 @@ export {
   SidebarTrigger,
   useSidebar,
 }
-
-    
