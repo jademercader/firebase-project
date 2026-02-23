@@ -56,6 +56,11 @@ export default function UploadPage() {
                 
                 const vaccinationStatus = getRowValue(row, ['vaccinationStatus', 'Vaccination Status', 'Vaccinated', 'Status']) as HealthRecord['vaccinationStatus'] || 'Not Vaccinated';
                 
+                // Extract Address components robustly
+                const street = getRowValue(row, ['address', 'Address', 'Street', 'Location', 'Purok']);
+                const brgy = getRowValue(row, ['barangay', 'Barangay', 'Brgy']);
+                const fullAddress = brgy ? `${street}${street ? ', ' : ''}${brgy}` : (street || 'Calbayog City');
+
                 const latStr = getRowValue(row, ['latitude', 'lat', 'Latitude', 'Lat', 'GPS Lat']);
                 const lngStr = getRowValue(row, ['longitude', 'long', 'lng', 'Longitude', 'Lng', 'Long', 'GPS Lng']);
 
@@ -64,7 +69,7 @@ export default function UploadPage() {
                   name: getRowValue(row, ['name', 'Name', 'Patient Name', 'Full Name']),
                   age: isNaN(age) ? 0 : age,
                   gender: ['Male', 'Female', 'Other'].includes(gender) ? gender : 'Other',
-                  address: getRowValue(row, ['address', 'Address', 'Barangay', 'Location']),
+                  address: fullAddress,
                   disease: getRowValue(row, ['disease', 'Disease', 'Condition', 'Diagnosis']) || 'None',
                   vaccinationStatus: ['Vaccinated', 'Partially Vaccinated', 'Not Vaccinated'].includes(vaccinationStatus) ? vaccinationStatus : 'Not Vaccinated',
                   checkupDate: getRowValue(row, ['checkupDate', 'Checkup Date', 'Date']) || new Date().toISOString().split('T')[0],
