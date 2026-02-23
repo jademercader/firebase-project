@@ -58,7 +58,7 @@ export function TrendAnalysis() {
             <LineChart className="w-5 h-5 text-primary" />
             Statistical Risk Summary
         </CardTitle>
-        <CardDescription>Mathematical analysis of health risk levels per segment.</CardDescription>
+        <CardDescription>Mathematical analysis of health risk levels per cluster.</CardDescription>
       </CardHeader>
       <CardContent className="flex-grow space-y-4">
         <div className='flex-grow relative'>

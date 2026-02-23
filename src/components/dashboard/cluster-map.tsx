@@ -202,7 +202,7 @@ export function ClusterMap() {
             <div className="absolute bottom-6 left-6 z-[1000] bg-white/90 backdrop-blur-xl p-4 rounded-xl border border-slate-200 shadow-2xl max-w-[280px]">
                 <h4 className="text-[11px] font-black uppercase tracking-widest text-slate-500 mb-3 flex items-center gap-2">
                     <HelpCircle className="w-4 h-4" />
-                    Segment Analysis
+                    Cluster Analysis
                 </h4>
                 <div className="space-y-3 max-h-[200px] overflow-y-auto pr-2 custom-scrollbar">
                     {clusters.map((c, i) => (
