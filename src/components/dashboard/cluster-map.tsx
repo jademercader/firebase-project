@@ -5,7 +5,7 @@ import 'leaflet/dist/leaflet.css';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '../ui/skeleton';
-import { MapPin, Layers, Crosshair, HelpCircle } from 'lucide-react';
+import { Layers, Crosshair, HelpCircle } from 'lucide-react';
 import type { Cluster } from '@/lib/types';
 import { useMounted } from '@/hooks/use-mounted';
 
@@ -51,21 +51,23 @@ export function ClusterMap() {
   const [clusters, setClusters] = useState<Cluster[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Initialize Map
   useEffect(() => {
-    if (mapRef.current && !mapInstanceRef.current && mounted) {
-      const map = L.map(mapRef.current, {
-        zoomControl: true,
-        scrollWheelZoom: true
-      }).setView(mapCenter, 13);
-      
-      mapInstanceRef.current = map;
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; OpenStreetMap contributors'
-      }).addTo(map);
+    if (!mounted || !mapRef.current || mapInstanceRef.current) return;
 
-      markerLayerRef.current = L.layerGroup().addTo(map);
-      centroidLayerRef.current = L.layerGroup().addTo(map);
-    }
+    const map = L.map(mapRef.current, {
+      zoomControl: true,
+      scrollWheelZoom: true
+    }).setView(mapCenter, 13);
+    
+    mapInstanceRef.current = map;
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    markerLayerRef.current = L.layerGroup().addTo(map);
+    centroidLayerRef.current = L.layerGroup().addTo(map);
+
     return () => {
       if (mapInstanceRef.current) {
         mapInstanceRef.current.remove();
@@ -74,6 +76,7 @@ export function ClusterMap() {
     };
   }, [mounted]);
 
+  // Update Data on Map
   useEffect(() => {
     const map = mapInstanceRef.current;
     const markerLayer = markerLayerRef.current;
@@ -87,16 +90,18 @@ export function ClusterMap() {
     if (clusters.length > 0) {
       clusters.forEach((cluster, index) => {
         const color = getChartColor(index);
+        
         cluster.records.forEach(record => {
-          if (record.latitude && record.longitude) {
+          if (record.latitude !== undefined && record.longitude !== undefined) {
             const point: L.LatLngTuple = [record.latitude, record.longitude];
             allPoints.push(point);
             L.marker(point, { icon: createRecordIcon(color) })
               .addTo(markerLayer)
-              .bindPopup(`<strong>${record.name}</strong><br/>${cluster.name.split(':')[1]}`);
+              .bindPopup(`<strong>${record.name}</strong><br/>${cluster.name}`);
           }
         });
-        if (cluster.centroid?.latitude && cluster.centroid?.longitude) {
+
+        if (cluster.centroid?.latitude !== undefined && cluster.centroid?.longitude !== undefined) {
             const center: L.LatLngTuple = [cluster.centroid.latitude as number, cluster.centroid.longitude as number];
             allPoints.push(center);
             L.marker(center, { icon: createCentroidIcon(color, cluster.id), zIndexOffset: 1000 })
@@ -107,28 +112,49 @@ export function ClusterMap() {
     }
 
     if (allPoints.length > 0) {
-      try { map.fitBounds(L.latLngBounds(allPoints), { padding: [40, 40] }); } catch (e) {}
-    } else { map.setView(mapCenter, 13); }
+      try { 
+        const bounds = L.latLngBounds(allPoints);
+        map.fitBounds(bounds, { padding: [50, 50], maxZoom: 15 }); 
+      } catch (e) {
+        console.warn("Map bounds calculation failed", e);
+      }
+    }
   }, [clusters]);
 
+  // Sync with Analysis
   useEffect(() => {
     if (!mounted) return;
+    
     const fetchClusters = () => {
       setIsLoading(true);
       try {
         const saved = localStorage.getItem(CLUSTERS_STORAGE_KEY);
-        setClusters(saved ? JSON.parse(saved) : []);
-      } finally { setIsLoading(false); }
+        if (saved) {
+          setClusters(JSON.parse(saved));
+        }
+      } catch (err) {
+        console.error("Error fetching clusters from storage:", err);
+      } finally { 
+        setIsLoading(false); 
+      }
     };
+
     fetchClusters();
+    
     window.addEventListener('analysis-updated', fetchClusters);
-    return () => window.removeEventListener('analysis-updated', fetchClusters);
+    window.addEventListener('storage', (e) => {
+      if (e.key === CLUSTERS_STORAGE_KEY) fetchClusters();
+    });
+
+    return () => {
+      window.removeEventListener('analysis-updated', fetchClusters);
+    };
   }, [mounted]);
 
-  if (!mounted) return <Skeleton className="h-full w-full rounded-lg" />;
+  if (!mounted) return <Skeleton className="h-[500px] w-full rounded-lg" />;
 
   return (
-    <Card className="h-full border-primary/20 shadow-2xl overflow-hidden relative">
+    <Card className="h-full border-primary/20 shadow-lg overflow-hidden flex flex-col min-h-[500px]">
       <CardHeader className="py-3 px-4 flex flex-row items-center justify-between shrink-0 bg-background/95 backdrop-blur z-[1001] border-b">
         <div className="flex items-center gap-2">
             <Layers className="w-4 h-4 text-primary" />
@@ -139,26 +165,33 @@ export function ClusterMap() {
             <span>Hotspot Analysis</span>
         </div>
       </CardHeader>
-      <CardContent className="flex-1 p-0 relative min-h-0">
-        <div ref={mapRef} style={{ height: '100%', width: '100%' }}></div>
+      <CardContent className="flex-1 p-0 relative">
+        <div ref={mapRef} className="absolute inset-0 z-0"></div>
+        
         {clusters.length > 0 && (
-            <div className="absolute bottom-4 left-4 z-[1000] bg-background/95 backdrop-blur-md p-4 rounded-lg border shadow-2xl max-w-[200px]">
-                <h4 className="text-[10px] font-black uppercase tracking-tighter text-muted-foreground mb-3 flex items-center gap-1">
+            <div className="absolute bottom-4 left-4 z-[1000] bg-background/90 backdrop-blur-md p-3 rounded-lg border shadow-xl max-w-[220px]">
+                <h4 className="text-[10px] font-black uppercase tracking-tighter text-muted-foreground mb-2 flex items-center gap-1">
                     <HelpCircle className="w-3 h-3" />
                     Population Segments
                 </h4>
-                <div className="space-y-3">
+                <div className="space-y-2 max-h-[200px] overflow-y-auto pr-2">
                     {clusters.map((c, i) => (
                         <div key={c.id} className="flex items-start gap-2">
-                            <div className="w-3 h-3 rounded-full mt-1 shrink-0" style={{ backgroundColor: getChartColor(i) }} />
+                            <div className="w-2.5 h-2.5 rounded-full mt-1 shrink-0" style={{ backgroundColor: getChartColor(i) }} />
                             <div className="flex flex-col">
-                                <span className="text-[11px] font-bold leading-none">{c.name.split(':')[0]}</span>
-                                <span className="text-[9px] text-muted-foreground leading-tight mt-1">{c.name.split(':')[1]?.trim()}</span>
+                                <span className="text-[11px] font-bold leading-tight">{c.name.split(':')[0]}</span>
+                                <span className="text-[9px] text-muted-foreground leading-tight">{c.name.split(':')[1]?.trim() || 'General Segment'}</span>
                             </div>
                         </div>
                     ))}
                 </div>
             </div>
+        )}
+
+        {isLoading && clusters.length === 0 && (
+          <div className="absolute inset-0 z-[1001] flex items-center justify-center bg-background/20 backdrop-blur-[2px]">
+            <Skeleton className="h-full w-full opacity-50" />
+          </div>
         )}
       </CardContent>
     </Card>

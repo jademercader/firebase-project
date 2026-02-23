@@ -14,7 +14,7 @@ const DynamicClusterMap = dynamic(
   () => import('@/components/dashboard/cluster-map').then((mod) => mod.ClusterMap),
   {
     ssr: false,
-    loading: () => <Skeleton className="h-full w-full rounded-lg" />,
+    loading: () => <Skeleton className="h-[500px] w-full rounded-lg" />,
   }
 );
 
@@ -22,7 +22,7 @@ export default function DashboardPage() {
   return (
     <AppLayout>
       <div className="flex-1 space-y-6 p-4 md:p-8 pt-6">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div>
             <h2 className="text-3xl font-bold tracking-tight font-headline flex items-center gap-3">
                 <Activity className="text-primary w-8 h-8" />
@@ -38,17 +38,20 @@ export default function DashboardPage() {
         <div className="space-y-6">
           <ClusterControls />
           
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            <div className="lg:col-span-8 min-h-[500px]">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+            <div className="lg:col-span-8 flex flex-col">
               <DynamicClusterMap />
             </div>
-            <div className="lg:col-span-4">
+            <div className="lg:col-span-4 flex flex-col">
               <TrendAnalysis />
             </div>
           </div>
           
           <Separator />
-          <ClusterCharts />
+          
+          <div className="pb-8">
+            <ClusterCharts />
+          </div>
         </div>
       </div>
     </AppLayout>
