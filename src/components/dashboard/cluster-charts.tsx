@@ -15,11 +15,12 @@ import {
   PieChart,
   Pie,
   Cell,
-  Legend
+  Legend,
+  LabelList
 } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Activity, BarChart3, PieChartIcon, Target, CheckCircle2, UserCircle, Syringe, Baby, TrendingUp } from 'lucide-react';
+import { Activity, BarChart3, PieChartIcon, Target, CheckCircle2, UserCircle, Syringe, Baby, TrendingUp, AlertTriangle } from 'lucide-react';
 import type { AnalysisResult } from '@/lib/types';
 import { useMounted } from '@/hooks/use-mounted';
 
@@ -110,7 +111,7 @@ export function ClusterCharts() {
     { metric: 'Separation', score: 82 }
   ];
 
-  // 3. Disease Burden Data (Aggregate what disease is more involve)
+  // 3. Disease Burden Data
   const diseaseBurdenMap: Record<string, number> = {};
   const allDiseases = Array.from(new Set(clusters.flatMap(c => 
     Object.keys(c.healthMetrics).filter(k => !['Vaccinated', 'Partially Vaccinated', 'Not Vaccinated'].includes(k))
@@ -293,34 +294,36 @@ export function ClusterCharts() {
             )}
         </div>
 
-        {/* Principal Disease Burden (What disease more involve) */}
+        {/* Principal Disease Burden - Identifying exactly what disease is most involved */}
         {showDisease && diseaseBurdenData.length > 0 && (
             <div className="grid gap-6 md:grid-cols-2">
                 <Card className="shadow-md border-slate-200 overflow-hidden">
                     <CardHeader className="bg-slate-50/50 border-b">
                         <CardTitle className="text-lg font-bold flex items-center gap-2">
                             <TrendingUp className="w-5 h-5 text-primary" />
-                            Principal Disease Burden
+                            Principal Disease Burden (Aggregate)
                         </CardTitle>
-                        <CardDescription>Aggregate case volume by condition - Identifying highest involvement.</CardDescription>
+                        <CardDescription>Visualizing which diseases have the highest population involvement.</CardDescription>
                     </CardHeader>
                     <CardContent className="pt-6">
-                        <div className="h-[300px] w-full">
+                        <div className="h-[400px] w-full">
                             <ResponsiveContainer width="100%" height="100%">
-                                <BarChart data={diseaseBurdenData} layout="vertical" margin={{ left: 40, right: 30 }}>
+                                <BarChart data={diseaseBurdenData} layout="vertical" margin={{ left: 20, right: 60, top: 20, bottom: 20 }}>
                                     <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#f1f5f9" />
                                     <XAxis type="number" hide />
                                     <YAxis 
                                         dataKey="disease" 
                                         type="category" 
-                                        fontSize={10} 
+                                        fontSize={11} 
                                         tickLine={false} 
                                         axisLine={false}
-                                        width={100}
-                                        tick={{ fill: '#475569', fontWeight: 700 }}
+                                        width={140}
+                                        tick={{ fill: '#1e293b', fontWeight: 800 }}
                                     />
                                     <Tooltip content={<CustomTooltip />} />
-                                    <Bar dataKey="count" name="Total Cases" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
+                                    <Bar dataKey="count" name="Reported Cases" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]}>
+                                        <LabelList dataKey="disease" position="right" offset={10} style={{ fontSize: '10px', fontWeight: 'bold', fill: '#475569' }} />
+                                    </Bar>
                                 </BarChart>
                             </ResponsiveContainer>
                         </div>
@@ -330,29 +333,37 @@ export function ClusterCharts() {
                 <Card className="shadow-md border-slate-200 overflow-hidden">
                     <CardHeader className="bg-slate-50/50 border-b">
                         <CardTitle className="text-lg font-bold flex items-center gap-2">
-                            <Activity className="w-5 h-5 text-primary" />
-                            Cluster Density Analysis
+                            <AlertTriangle className="w-5 h-5 text-destructive" />
+                            Cluster-Specific Health Threats
                         </CardTitle>
-                        <CardDescription>Highest disease marker for each identified segment.</CardDescription>
+                        <CardDescription>Primary disease markers identified for each analyzed segment.</CardDescription>
                     </CardHeader>
                     <CardContent className="pt-6">
-                        <div className="space-y-3">
+                        <div className="space-y-4">
                             {clusters.map((c, i) => {
-                                const top = Object.entries(c.healthMetrics)
+                                const diseases = Object.entries(c.healthMetrics)
                                     .filter(([k]) => !['Vaccinated', 'Partially Vaccinated', 'Not Vaccinated', 'Male', 'Female', 'Other'].includes(k))
-                                    .sort((a, b) => b[1] - a[1])[0];
+                                    .sort((a, b) => b[1] - a[1]);
+                                const top = diseases[0];
+                                
                                 return (
-                                    <div key={c.id} className="flex items-center justify-between p-3 rounded-lg bg-white border border-slate-100 shadow-sm">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: CHART_COLORS[i % CHART_COLORS.length] }} />
+                                    <div key={c.id} className="flex items-center justify-between p-4 rounded-xl bg-white border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
+                                        <div className="flex items-center gap-4">
+                                            <div className="w-4 h-4 rounded-full" style={{ backgroundColor: CHART_COLORS[i % CHART_COLORS.length] }} />
                                             <div>
-                                                <p className="text-[10px] font-black uppercase text-slate-400">Cluster {c.id}</p>
-                                                <p className="text-sm font-bold text-slate-900">{top ? top[0] : 'None'}</p>
+                                                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Cluster {c.id}</p>
+                                                <p className="text-base font-black text-slate-900 leading-tight">
+                                                    {top ? top[0] : 'No Significant Disease Marker'}
+                                                </p>
+                                                <p className="text-[10px] font-bold text-slate-500 mt-0.5 italic">
+                                                    {c.records.length} patients monitored in this hotspot.
+                                                </p>
                                             </div>
                                         </div>
                                         <div className="text-right">
-                                            <p className="text-[10px] font-black uppercase text-slate-400">Involvement</p>
-                                            <p className="text-sm font-bold text-primary">{top ? top[1] : 0} cases</p>
+                                            <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20 font-black">
+                                                {top ? top[1] : 0} CASES
+                                            </Badge>
                                         </div>
                                     </div>
                                 );
@@ -371,44 +382,44 @@ export function ClusterCharts() {
                         <div>
                             <CardTitle className="text-xl font-bold flex items-center gap-2">
                                 <Activity className="w-5 h-5 text-primary" />
-                                Disease Prevalence Across Clusters
+                                Disease Involvement Distribution
                             </CardTitle>
-                            <CardDescription>Comparative visualization of disease markers across all segments.</CardDescription>
+                            <CardDescription>Comparative visualization of disease names and their impact across all identified clusters.</CardDescription>
                         </div>
                         <div className="flex flex-wrap gap-2 justify-end">
                             {clusters.map((c, i) => (
-                                <div key={c.id} className="flex items-center gap-2">
-                                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: CHART_COLORS[i % CHART_COLORS.length] }} />
-                                    <span className="text-[9px] font-black uppercase text-slate-500">C{c.id}</span>
+                                <div key={c.id} className="flex items-center gap-2 bg-white px-2 py-1 rounded-md border text-[9px] font-black shadow-sm">
+                                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: CHART_COLORS[i % CHART_COLORS.length] }} />
+                                    <span className="text-slate-600 uppercase">C{c.id}</span>
                                 </div>
                             ))}
                         </div>
                     </div>
                 </CardHeader>
                 <CardContent className="pt-10">
-                    <div className="h-[500px] w-full">
+                    <div className="h-[550px] w-full">
                         <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={diseaseChartData} margin={{ top: 20, right: 30, left: 10, bottom: 140 }}>
+                            <BarChart data={diseaseChartData} margin={{ top: 20, right: 30, left: 10, bottom: 160 }}>
                                 <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#f1f5f9" />
                                 <XAxis 
                                     dataKey="disease" 
-                                    fontSize={10} 
+                                    fontSize={11} 
                                     tickLine={true} 
                                     axisLine={false}
                                     angle={-45}
                                     textAnchor="end"
                                     interval={0}
-                                    height={120}
+                                    height={140}
                                     dx={-5}
                                     dy={10}
-                                    tick={{ fill: '#475569', fontWeight: 800 }}
+                                    tick={{ fill: '#1e293b', fontWeight: 800 }}
                                 />
                                 <YAxis 
                                     fontSize={10} 
                                     tickLine={false} 
                                     axisLine={false} 
                                     tick={{ fill: '#94a3b8', fontWeight: 700 }}
-                                    label={{ value: 'REPORTED CASES', angle: -90, position: 'insideLeft', offset: 0, style: { fontSize: 9, fill: '#94a3b8', fontWeight: 900, letterSpacing: '0.1em' } }}
+                                    label={{ value: 'REPORTED INVOLVEMENT', angle: -90, position: 'insideLeft', offset: 0, style: { fontSize: 9, fill: '#94a3b8', fontWeight: 900, letterSpacing: '0.1em' } }}
                                 />
                                 <Tooltip content={<CustomTooltip />} cursor={{ fill: '#f1f5f9', opacity: 0.5 }} />
                                 {clusters.map((c, i) => (
@@ -418,7 +429,7 @@ export function ClusterCharts() {
                                         dataKey={`Cluster ${c.id}`} 
                                         fill={CHART_COLORS[i % CHART_COLORS.length]} 
                                         radius={[4, 4, 0, 0]} 
-                                        barSize={clusters.length > 10 ? 6 : 20}
+                                        barSize={Math.max(4, 20 - (clusters.length))}
                                     />
                                 ))}
                             </BarChart>
