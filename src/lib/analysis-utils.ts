@@ -172,7 +172,7 @@ export function performLocalKMeans(
     const members = barangayProfiles.filter((_, pIdx) => assignments[pIdx] === idx);
     if (members.length === 0) return null;
 
-    // Fixed scoping issue for variable 'm' (renamed to 'profile' for clarity)
+    // Flattening records from members (barangays) into a single list for the cluster
     const allRecords = members.flatMap(profile => 
       profile.records.map(r => ({
         ...r,

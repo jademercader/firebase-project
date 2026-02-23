@@ -15,8 +15,7 @@ import {
   PieChart,
   Pie,
   Cell,
-  Legend,
-  TooltipProps
+  Legend
 } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -34,13 +33,13 @@ const CHART_COLORS = [
   'hsl(150, 60%, 45%)',  // Green
 ];
 
-const CustomTooltip = ({ active, payload, label }: TooltipProps<number, string>) => {
+const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
     return (
       <div className="bg-white/95 border border-slate-200 p-3 rounded-lg shadow-xl backdrop-blur-sm">
         <p className="font-bold text-sm text-slate-800 mb-2 border-b pb-1">{label}</p>
         <div className="space-y-1.5">
-          {payload.map((entry, index) => (
+          {payload.map((entry: any, index: number) => (
             <div key={index} className="flex items-center justify-between gap-6 text-xs">
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 rounded-full" style={{ backgroundColor: entry.color }} />
@@ -67,8 +66,11 @@ export function ClusterCharts() {
         setIsLoading(true);
         try {
             const savedResult = localStorage.getItem(ANALYSIS_STORAGE_KEY);
-            if (savedResult) setAnalysisResult(JSON.parse(savedResult));
+            if (savedResult) {
+                setAnalysisResult(JSON.parse(savedResult));
+            }
         } catch (error) {
+            console.error("Failed to load analysis results", error);
             setAnalysisResult(null);
         } finally {
             setIsLoading(false);
@@ -79,8 +81,13 @@ export function ClusterCharts() {
     return () => window.removeEventListener('analysis-updated', fetchClusters);
   }, [mounted]);
 
-  if (!mounted || isLoading) return <Skeleton className="w-full h-[600px] rounded-xl" />;
-  if (!analysisResult || !analysisResult.clusters || analysisResult.clusters.length === 0) return null;
+  if (!mounted || isLoading) {
+      return <Skeleton className="w-full h-[600px] rounded-xl" />;
+  }
+  
+  if (!analysisResult || !analysisResult.clusters || analysisResult.clusters.length === 0) {
+      return null;
+  }
 
   const { clusters, globalValidation } = analysisResult;
 
@@ -113,14 +120,14 @@ export function ClusterCharts() {
   return (
     <div className="space-y-6">
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {/* Evaluation Matrix Card */}
+            {/* Objective 3: Evaluation Matrix Card */}
             <Card className="shadow-md border-slate-200 flex flex-col h-full bg-gradient-to-b from-white to-slate-50/30">
                 <CardHeader className="pb-2">
                     <CardTitle className="text-lg font-bold flex items-center gap-2">
                         <Target className="w-5 h-5 text-primary" />
-                        Performance Matrix
+                        Clustering Validation Matrix
                     </CardTitle>
-                    <CardDescription className="text-xs">Mathematical effectiveness of the grouping results.</CardDescription>
+                    <CardDescription className="text-xs">Statistical assessment of grouping effectiveness.</CardDescription>
                 </CardHeader>
                 <CardContent className="flex-1 flex flex-col justify-between pt-4">
                     <div className="h-[200px] w-full">
@@ -152,14 +159,14 @@ export function ClusterCharts() {
                 </CardContent>
             </Card>
 
-            {/* Population Distribution Card */}
+            {/* Objective 4: Visual Representation - Population Distribution */}
             <Card className="shadow-md border-slate-200 flex flex-col h-full bg-gradient-to-b from-white to-slate-50/30">
                 <CardHeader className="pb-2">
                     <CardTitle className="text-lg font-bold flex items-center gap-2">
                         <PieChartIcon className="w-5 h-5 text-primary" />
-                        Population Split
+                        Population Distribution
                     </CardTitle>
-                    <CardDescription className="text-xs">Distribution of records across identified clusters.</CardDescription>
+                    <CardDescription className="text-xs">Relative size of identified population segments.</CardDescription>
                 </CardHeader>
                 <CardContent className="flex-1 flex flex-col items-center justify-center pt-0">
                     <div className="h-[220px] w-full mt-4">
@@ -193,14 +200,14 @@ export function ClusterCharts() {
                 </CardContent>
             </Card>
 
-            {/* Disease Ranking Card */}
+            {/* Objective 4: Visual Representation - Risk Prevalence Overview */}
             <Card className="shadow-md border-slate-200 flex flex-col h-full bg-gradient-to-b from-white to-slate-50/30">
                 <CardHeader className="pb-2">
                     <CardTitle className="text-lg font-bold flex items-center gap-2">
                         <BarChart3 className="w-5 h-5 text-primary" />
-                        Risk Prevalence
+                        Prevalence Overview
                     </CardTitle>
-                    <CardDescription className="text-xs">Ranking of primary health markers per segment.</CardDescription>
+                    <CardDescription className="text-xs">Dominant health indicators per cluster.</CardDescription>
                 </CardHeader>
                 <CardContent className="flex-1 pt-4">
                     <div className="h-[280px] w-full">
@@ -235,9 +242,9 @@ export function ClusterCharts() {
                     <div>
                         <CardTitle className="text-xl font-bold flex items-center gap-2">
                             <Activity className="w-5 h-5 text-primary" />
-                            Detailed Indicator Analysis
+                            Detailed Cross-Segment Indicator Analysis
                         </CardTitle>
-                        <CardDescription>Comparison of consolidated indicators across segments.</CardDescription>
+                        <CardDescription>Comparative visualization of consolidated markers across segments.</CardDescription>
                     </div>
                     <div className="flex gap-4">
                         {clusters.map((c, i) => (
@@ -254,7 +261,7 @@ export function ClusterCharts() {
                     <ResponsiveContainer width="100%" height="100%">
                         <BarChart 
                             data={diseaseChartData} 
-                            margin={{ top: 20, right: 20, left: 10, bottom: 80 }}
+                            margin={{ top: 20, right: 20, left: 10, bottom: 100 }}
                         >
                             <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#f1f5f9" />
                             <XAxis 
@@ -265,7 +272,7 @@ export function ClusterCharts() {
                                 angle={-45}
                                 textAnchor="end"
                                 interval={0}
-                                height={80}
+                                height={100}
                                 tick={{ fill: '#475569', fontWeight: 700 }}
                             />
                             <YAxis 
