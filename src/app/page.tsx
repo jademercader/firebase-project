@@ -7,6 +7,8 @@ import { Separator } from '@/components/ui/separator';
 import AppLayout from '@/components/layout/app-layout';
 import dynamic from 'next/dynamic';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Badge } from '@/components/ui/badge';
+import { Activity } from 'lucide-react';
 
 const DynamicClusterMap = dynamic(
   () => import('@/components/dashboard/cluster-map').then((mod) => mod.ClusterMap),
@@ -19,20 +21,32 @@ const DynamicClusterMap = dynamic(
 export default function DashboardPage() {
   return (
     <AppLayout>
-      <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
-        <div className="flex items-center justify-between space-y-2">
-          <h2 className="text-3xl font-bold tracking-tight font-headline">Dashboard</h2>
+      <div className="flex-1 space-y-6 p-4 md:p-8 pt-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-3xl font-bold tracking-tight font-headline flex items-center gap-3">
+                <Activity className="text-primary w-8 h-8" />
+                Barangay Health Intelligence
+            </h2>
+            <p className="text-muted-foreground mt-1">Advanced Spatial K-Means Analysis for Public Health Monitoring</p>
+          </div>
+          <Badge variant="outline" className="text-xs py-1 px-3 border-primary/30 text-primary">
+            Analytical Engine v2.5
+          </Badge>
         </div>
-        <div className="space-y-4">
+        
+        <div className="space-y-6">
           <ClusterControls />
-          <div className="grid grid-cols-1 lg:grid-cols-7 gap-4">
-            <div className="lg:col-span-4 h-[500px]">
+          
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <div className="lg:col-span-8 min-h-[500px]">
               <DynamicClusterMap />
             </div>
-            <div className="lg:col-span-3">
+            <div className="lg:col-span-4">
               <TrendAnalysis />
             </div>
           </div>
+          
           <Separator />
           <ClusterCharts />
         </div>

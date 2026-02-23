@@ -2,7 +2,6 @@ import type { HealthRecord, Cluster, AnalysisResult } from '@/lib/types';
 
 /**
  * Local Barangay Coordinate Map for Calbayog City.
- * Expanded with more barangays to ensure mapping success across diverse datasets.
  */
 const CALBAYOG_BRGY_COORDS: Record<string, { lat: number, lng: number }> = {
   'Obrero': { lat: 12.0667, lng: 124.5917 },
@@ -37,36 +36,28 @@ const CALBAYOG_BRGY_COORDS: Record<string, { lat: number, lng: number }> = {
   'Banjao': { lat: 12.1050, lng: 124.5850 },
 };
 
-/**
- * Adds a small random jitter to coordinates to prevent perfect overlap on the map.
- */
-function addJitter(val: number, amount: number = 0.003) {
+function addJitter(val: number, amount: number = 0.0025) {
   return val + (Math.random() - 0.5) * amount;
 }
 
 function getCoordinatesFromAddress(address: string) {
   if (!address) return null;
+  const lowerAddr = address.toLowerCase();
   for (const [brgy, coords] of Object.entries(CALBAYOG_BRGY_COORDS)) {
-    if (address.toLowerCase().includes(brgy.toLowerCase())) {
-      return coords;
-    }
+    if (lowerAddr.includes(brgy.toLowerCase())) return coords;
   }
   return null;
 }
 
-/**
- * Converts a health record into a mathematical vector for clustering.
- */
 function recordToVector(record: HealthRecord, indicators: string[]): { [key: string]: number } {
   const vector: { [key: string]: number } = {};
   
-  // High weight for spatial clustering to ensure geographic grouping
-  const SPATIAL_WEIGHT = 5.0;
+  // Weights to emphasize spatial clustering
+  const SPATIAL_WEIGHT = 4.0;
 
   if (record.latitude !== undefined && record.longitude !== undefined) {
-    // Normalize coordinates around Calbayog center for vector analysis
-    vector['latitude'] = ((record.latitude - 12.0) * 10) * SPATIAL_WEIGHT;
-    vector['longitude'] = ((record.longitude - 124.0) * 10) * SPATIAL_WEIGHT;
+    vector['lat'] = ((record.latitude - 12.0) * 10) * SPATIAL_WEIGHT;
+    vector['lng'] = ((record.longitude - 124.0) * 10) * SPATIAL_WEIGHT;
   }
 
   const categoryMap: Record<string, Record<string, number>> = {
@@ -82,10 +73,8 @@ function recordToVector(record: HealthRecord, indicators: string[]): { [key: str
       const map = categoryMap[indicator];
       const max = Object.keys(map).length - 1;
       vector[indicator] = (map[String(value)] ?? 0) / (max || 1);
-    } else if (typeof value === 'number') {
-      vector[indicator] = value / 100;
     } else if (indicator === 'disease') {
-      vector['disease_present'] = value && value !== 'None' ? 1 : 0;
+      vector['disease_flag'] = value && value !== 'None' ? 1.0 : 0.0;
     }
   });
 
@@ -102,61 +91,53 @@ function euclideanDistance(v1: { [key: string]: number }, v2: { [key: string]: n
 }
 
 /**
- * Core Local K-Means Algorithm with K-Means++ Initialization
+ * Enhanced K-Means with K-Means++ Initialization
  */
 export function performLocalKMeans(
   records: HealthRecord[],
   numClusters: number,
-  selectedIndicators: string[] = ['age', 'gender', 'vaccinationStatus']
+  selectedIndicators: string[] = ['age', 'gender', 'vaccinationStatus', 'disease']
 ): AnalysisResult {
   if (records.length === 0) return { clusters: [], globalValidation: { avgSilhouetteScore: 0, totalWCSS: 0 } };
 
-  // 1. Geocoding Enrichment with Spatial Jitter
+  // 1. Geocoding Enrichment
   const geocodedRecords = records.map(r => {
     if (r.latitude !== undefined && r.longitude !== undefined) return r;
     const coords = getCoordinatesFromAddress(r.address);
-    if (coords) {
-      return { 
-        ...r, 
-        latitude: addJitter(coords.lat), 
-        longitude: addJitter(coords.lng) 
-      };
-    }
-    // Fallback to a default if no address match (prevent unmappable records)
-    return {
-        ...r,
-        latitude: addJitter(12.0674),
-        longitude: addJitter(124.5950)
-    };
+    return coords 
+      ? { ...r, latitude: addJitter(coords.lat), longitude: addJitter(coords.lng) }
+      : { ...r, latitude: addJitter(12.0674), longitude: addJitter(124.5950) };
   });
 
   // 2. Vectorization
   const vectors = geocodedRecords.map(r => ({ id: r.id, vector: recordToVector(r, selectedIndicators) }));
   
   // 3. K-Means++ Initialization
-  const initialCentroidsCount = Math.min(numClusters, geocodedRecords.length);
+  const k = Math.min(numClusters, vectors.length);
   let centroids: { [key: string]: number }[] = [];
   
-  // Pick first centroid randomly
+  // Randomly pick the first centroid
   centroids.push({ ...vectors[Math.floor(Math.random() * vectors.length)].vector });
   
-  // Pick remaining centroids based on distance to ensure spread
-  while (centroids.length < initialCentroidsCount) {
-      let maxDist = -1;
-      let bestIdx = 0;
-      
-      for (let i = 0; i < vectors.length; i++) {
-          let minDistToCentroid = Infinity;
-          for (const c of centroids) {
-              const dist = euclideanDistance(vectors[i].vector, c);
-              if (dist < minDistToCentroid) minDistToCentroid = dist;
-          }
-          if (minDistToCentroid > maxDist) {
-              maxDist = minDistToCentroid;
-              bestIdx = i;
-          }
+  // Pick remaining centroids based on distance (K-Means++)
+  for (let i = 1; i < k; i++) {
+    const distances = vectors.map(v => {
+      let minDist = Infinity;
+      for (const c of centroids) {
+        const d = euclideanDistance(v.vector, c);
+        if (d < minDist) minDist = d;
       }
-      centroids.push({ ...vectors[bestIdx].vector });
+      return minDist * minDist;
+    });
+    
+    const sum = distances.reduce((a, b) => a + b, 0);
+    let r = Math.random() * sum;
+    let idx = 0;
+    for (; idx < distances.length; idx++) {
+      r -= distances[idx];
+      if (r <= 0) break;
+    }
+    centroids.push({ ...vectors[Math.min(idx, vectors.length - 1)].vector });
   }
 
   let assignments: number[] = new Array(vectors.length).fill(-1);
@@ -207,97 +188,97 @@ export function performLocalKMeans(
     });
   }
 
-  // 5. Final Result Synthesis
+  // 5. Silhouette Coefficient Calculation (Validation Matrix)
+  const silhouetteScores = vectors.map((v, i) => {
+    const clusterIdx = assignments[i];
+    
+    // a(i): average distance to points in same cluster
+    const sameClusterPoints = vectors.filter((_, idx) => assignments[idx] === clusterIdx && idx !== i);
+    const a = sameClusterPoints.length > 0 
+      ? sameClusterPoints.reduce((sum, other) => sum + euclideanDistance(v.vector, other.vector), 0) / sameClusterPoints.length
+      : 0;
+
+    // b(i): average distance to points in the closest other cluster
+    let b = Infinity;
+    for (let j = 0; j < centroids.length; j++) {
+      if (j === clusterIdx) continue;
+      const otherClusterPoints = vectors.filter((_, idx) => assignments[idx] === j);
+      if (otherClusterPoints.length === 0) continue;
+      const avgDist = otherClusterPoints.reduce((sum, other) => sum + euclideanDistance(v.vector, other.vector), 0) / otherClusterPoints.length;
+      if (avgDist < b) b = avgDist;
+    }
+
+    if (b === Infinity) return 0;
+    return (b - a) / Math.max(a, b);
+  });
+
+  const avgSilhouetteScore = silhouetteScores.reduce((a, b) => a + b, 0) / silhouetteScores.length;
+
+  // 6. Synthesis
   const finalClusters: Cluster[] = centroids.map((centroidVector, idx) => {
     const clusterRecords = geocodedRecords.filter((_, vIdx) => assignments[vIdx] === idx);
     if (clusterRecords.length === 0) return null;
 
     const totalAge = clusterRecords.reduce((sum, r) => sum + r.age, 0);
     const averageAge = totalAge / clusterRecords.length;
-    const genderDistribution = clusterRecords.reduce((acc, r) => {
-      acc[r.gender] = (acc[r.gender] || 0) + 1;
-      return acc;
-    }, {} as { [key: string]: number });
-
+    
     const healthMetrics = clusterRecords.reduce((acc, r) => {
-      if (r.disease && r.disease !== 'None') { 
-        acc[r.disease] = (acc[r.disease] || 0) + 1; 
-      }
-      if (r.vaccinationStatus) { 
-        acc[r.vaccinationStatus] = (acc[r.vaccinationStatus] || 0) + 1; 
-      }
+      if (r.disease && r.disease !== 'None') acc[r.disease] = (acc[r.disease] || 0) + 1;
+      if (r.vaccinationStatus) acc[r.vaccinationStatus] = (acc[r.vaccinationStatus] || 0) + 1;
       return acc;
     }, {} as { [indicator: string]: number });
 
-    // Calculate Geographic Center for Map
     const validCoords = clusterRecords.filter(r => r.latitude !== undefined && r.longitude !== undefined);
-    const centroidLat = validCoords.length > 0 
-      ? validCoords.reduce((sum, r) => sum + (r.latitude || 0), 0) / validCoords.length 
-      : 12.0674;
-    const centroidLng = validCoords.length > 0 
-      ? validCoords.reduce((sum, r) => sum + (r.longitude || 0), 0) / validCoords.length 
-      : 124.5950;
+    const centroidLat = validCoords.length > 0 ? validCoords.reduce((s, r) => s + r.latitude!, 0) / validCoords.length : 12.0674;
+    const centroidLng = validCoords.length > 0 ? validCoords.reduce((s, r) => s + r.longitude!, 0) / validCoords.length : 124.5950;
 
-    const clusterVectors = vectors.filter((_, vIdx) => assignments[vIdx] === idx);
-    const cohesion = clusterVectors.reduce((sum, v) => sum + Math.pow(euclideanDistance(v.vector, centroidVector), 2), 0);
+    const cohesion = vectors.filter((_, vIdx) => assignments[vIdx] === idx)
+      .reduce((sum, v) => sum + Math.pow(euclideanDistance(v.vector, centroidVector), 2), 0);
+
+    const clusterSilhouette = silhouetteScores.filter((_, vIdx) => assignments[vIdx] === idx)
+      .reduce((a, b) => a + b, 0) / clusterRecords.length;
 
     return {
       id: idx + 1,
       name: `Cluster ${idx + 1}: ${getClusterFocusLabel(healthMetrics, averageAge)}`,
       records: clusterRecords,
-      demographics: { averageAge, genderDistribution },
+      demographics: { averageAge, genderDistribution: {} },
       healthMetrics,
       centroid: { ...centroidVector, latitude: centroidLat, longitude: centroidLng },
-      validation: { cohesion, silhouetteScore: 0, separation: 0 }
+      validation: { cohesion, silhouetteScore: clusterSilhouette, separation: 0 }
     };
   }).filter(c => c !== null) as Cluster[];
 
   return {
     clusters: finalClusters,
     globalValidation: {
-      avgSilhouetteScore: 0,
+      avgSilhouetteScore,
       totalWCSS: finalClusters.reduce((sum, c) => sum + (c.validation?.cohesion || 0), 0)
     }
   };
 }
 
 function getClusterFocusLabel(metrics: Record<string, number>, avgAge: number): string {
-  if (avgAge > 60) return "Geriatric Segment";
-  if (avgAge < 12) return "Pediatric Segment";
-  
-  const topCondition = Object.entries(metrics)
-    .filter(([k]) => !['Vaccinated', 'Partially Vaccinated', 'Not Vaccinated', 'None'].includes(k))
+  if (avgAge > 60) return "Geriatric Risk Group";
+  if (avgAge < 12) return "Pediatric Vulnerability";
+  const top = Object.entries(metrics)
+    .filter(([k]) => !['Vaccinated', 'Partially Vaccinated', 'Not Vaccinated'].includes(k))
     .sort((a, b) => b[1] - a[1])[0];
-    
-  if (topCondition && topCondition[1] > 0) return `${topCondition[0]} Segment`;
-  return "General Health";
+  return top ? `${top[0]} Prevalence` : "General Health Segment";
 }
 
 export function generateStatisticalTrends(clusters: Cluster[]): string {
-  if (clusters.length === 0) return "No data analyzed yet.";
-  
-  let report = "CALBAYOG HEALTH RISK ASSESSMENT\n==============================\n\n";
-  
-  clusters.forEach(cluster => {
-    const total = cluster.records.length;
-    report += `● ${cluster.name.split(':')[0]}: ${cluster.name.split(':')[1]?.trim()}\n`;
-    report += `  - Population Size: ${total} patients.\n`;
-    
-    const diseaseEntries = Object.entries(cluster.healthMetrics)
-      .filter(([k]) => !['Vaccinated', 'Partially Vaccinated', 'Not Vaccinated', 'None'].includes(k))
-      .sort((a, b) => b[1] - a[1]);
-      
-    if (diseaseEntries.length > 0) {
-        const top = diseaseEntries[0];
-        const riskVal = top[1] / total;
-        const riskLabel = riskVal > 0.4 ? "CRITICAL" : riskVal > 0.2 ? "HIGH" : "MONITOR";
-        report += `  - Top Condition: ${top[0]} (${Math.round(riskVal*100)}%)\n`;
-        report += `  - Statistical Risk: ${riskLabel}\n`;
-    }
-    
-    const vaxRate = (cluster.healthMetrics['Vaccinated'] || 0) / total;
-    report += `  - Vaccination Rate: ${Math.round(vaxRate * 100)}%\n\n`;
+  if (clusters.length === 0) return "No data available.";
+  let report = "PUBLIC HEALTH RISK ASSESSMENT REPORT\n===================================\n\n";
+  clusters.forEach(c => {
+    const total = c.records.length;
+    const risk = Object.entries(c.healthMetrics)
+      .filter(([k]) => !['Vaccinated', 'Partially Vaccinated', 'Not Vaccinated'].includes(k))
+      .sort((a, b) => b[1] - a[1])[0];
+    report += `[+] ${c.name}\n`;
+    report += `    Population Density: ${total} patients\n`;
+    if (risk) report += `    Primary Risk Factor: ${risk[0]} (${Math.round((risk[1]/total)*100)}% Prevalence)\n`;
+    report += `    Validation Confidence: ${Math.round((c.validation?.silhouetteScore || 0) * 100)}%\n\n`;
   });
-  
   return report;
 }
