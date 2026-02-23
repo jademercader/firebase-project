@@ -1,4 +1,3 @@
-
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
@@ -204,7 +203,7 @@ export function ClusterMap() {
       <CardContent className="flex-1 p-0 relative">
         <div ref={mapRef} className="absolute inset-0 z-0"></div>
         
-        {/* Toggleable Legend Panel - Positioned below the Zoom Controls (top-left) */}
+        {/* Collapsible Legend Panel - Positioned below the Zoom Controls (top-left) */}
         {clusters.length > 0 && (
           <div className={cn(
             "absolute top-[90px] left-3 z-[1000] transition-all duration-300 ease-in-out",

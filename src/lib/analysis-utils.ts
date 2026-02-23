@@ -42,7 +42,7 @@ function addJitter(val: number, amount: number = 0.003) {
 
 /**
  * Core Analysis Engine implementing K-Means++ and Evaluation Matrix.
- * Hardened to support many clusters (up to 15) by clustering at record level.
+ * Hardened to support up to 15 clusters by re-seeding empty clusters.
  */
 export function performLocalKMeans(
   records: HealthRecord[],
