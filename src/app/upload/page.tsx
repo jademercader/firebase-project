@@ -1,3 +1,4 @@
+
 'use client';
 import { useState } from 'react';
 import Papa from 'papaparse';
@@ -48,7 +49,7 @@ export default function UploadPage() {
                 const street = getRowValue(row, ['address', 'Address', 'Street', 'Location', 'Purok', 'Street Address']);
                 const brgy = getRowValue(row, ['barangay', 'Barangay', 'Brgy', 'Area']);
                 
-                // Combine Street and Barangay into Address
+                // Combine Street and Barangay into Address for accurate spatial analysis
                 const fullAddress = brgy 
                   ? `${street}${street ? ', ' : ''}Brgy. ${brgy.replace(/^Brgy\.?\s+/i, '')}` 
                   : (street || 'Calbayog City');
@@ -84,7 +85,7 @@ export default function UploadPage() {
   const handleSaveData = () => {
     if (records.length === 0) return;
     
-    // Save to localStorage for local analysis only
+    // Save exclusively to localStorage for stable local analysis
     localStorage.setItem('health_records', JSON.stringify(records));
     
     // Dispatch custom event for real-time dashboard updates
@@ -92,7 +93,7 @@ export default function UploadPage() {
     
     toast({
       title: 'Data Saved Locally',
-      description: `${records.length} records are now available for analysis on the dashboard.`,
+      description: `${records.length} records are now available for analysis.`,
     });
   }
 

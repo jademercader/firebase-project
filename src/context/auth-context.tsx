@@ -1,3 +1,4 @@
+
 'use client';
 
 import { createContext, useContext, useState, type ReactNode } from 'react';
@@ -18,8 +19,11 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+/**
+ * Simplified AuthProvider for local-only operation.
+ * Removes cloud dependencies to ensure zero connection errors.
+ */
 export function AuthProvider({ children }: { children: ReactNode }) {
-  // Simplified stable mock user for local analysis engine
   const [user, setUser] = useState<User | null>({
     name: 'Health Admin',
     email: 'admin@barangay.gov'

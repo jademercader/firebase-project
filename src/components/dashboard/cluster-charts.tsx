@@ -1,3 +1,4 @@
+
 'use client';
 import { useEffect, useState } from 'react';
 import { 
@@ -149,9 +150,7 @@ export function ClusterCharts() {
 
   return (
     <div className="space-y-8">
-        {/* ROW 1: CORE METRICS & HIGH RISK OVERVIEW */}
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 items-stretch">
-            {/* Analysis Quality Radar */}
             <Card className="shadow-md border-slate-200 flex flex-col h-full">
                 <CardHeader className="pb-2">
                     <CardTitle className="text-lg font-bold flex items-center gap-2 text-slate-900">
@@ -170,19 +169,9 @@ export function ClusterCharts() {
                             </RadarChart>
                         </ResponsiveContainer>
                     </div>
-                    <div className="flex items-center gap-3 bg-white p-3 rounded-xl border border-slate-100 shadow-sm mt-4">
-                        <CheckCircle2 className="w-5 h-5 text-primary" />
-                        <div>
-                            <p className="text-[10px] uppercase font-black text-slate-400">Model Confidence</p>
-                            <p className="text-xl font-black text-slate-900">
-                                {Math.max(20, Math.round((globalValidation.avgSilhouetteScore + 1) * 50))}%
-                            </p>
-                        </div>
-                    </div>
                 </CardContent>
             </Card>
 
-            {/* Population Segments Pie */}
             <Card className="shadow-md border-slate-200 flex flex-col h-full">
                 <CardHeader className="pb-2">
                     <CardTitle className="text-lg font-bold flex items-center gap-2 text-slate-900">
@@ -206,112 +195,27 @@ export function ClusterCharts() {
                 </CardContent>
             </Card>
 
-            {/* High-Risk Identification Card */}
             <Card className="shadow-md border-slate-200 bg-destructive/5 flex flex-col h-full">
                 <CardHeader className="pb-2">
                     <CardTitle className="text-lg font-bold flex items-center gap-2 text-destructive">
                         <ShieldAlert className="w-5 h-5" />
                         High-Risk Priority
                     </CardTitle>
-                    <CardDescription className="text-xs">Top 5 diseases with highest prevalence in the dataset.</CardDescription>
+                    <CardDescription className="text-xs">Top 5 diseases with highest prevalence.</CardDescription>
                 </CardHeader>
                 <CardContent className="pt-4 space-y-3 flex-grow overflow-y-auto max-h-[350px]">
                     {diseaseBurdenData.slice(0, 5).map((item, idx) => (
-                         <div key={item.disease} className="flex items-center justify-between p-2 rounded-lg bg-white border border-destructive/10 shadow-sm transition-all hover:translate-x-1">
-                            <div className="flex items-center gap-3">
-                                <span className="text-xs font-black text-destructive/40">#0{idx+1}</span>
-                                <span className="text-sm font-bold text-slate-800">{item.disease}</span>
-                            </div>
+                         <div key={item.disease} className="flex items-center justify-between p-2 rounded-lg bg-white border border-destructive/10 shadow-sm">
+                            <span className="text-sm font-bold text-slate-800">{item.disease}</span>
                             <Badge variant="destructive" className="font-black text-[10px]">
                                 {item.count} CASES
                             </Badge>
                          </div>
                     ))}
-                    {diseaseBurdenData.length === 0 && (
-                        <div className="text-center py-12 text-slate-400 text-xs italic">
-                            No high-risk diseases detected in selected criteria.
-                        </div>
-                    )}
                 </CardContent>
             </Card>
         </div>
 
-        {/* ROW 2: DISEASE BURDEN RANKING & CLUSTER SPECIFIC RISKS */}
-        {showDisease && diseaseBurdenData.length > 0 && (
-            <div className="grid gap-6 md:grid-cols-2">
-                <Card className="shadow-md border-slate-200 h-full">
-                    <CardHeader className="bg-slate-50/50 border-b">
-                        <CardTitle className="text-lg font-bold flex items-center gap-2 text-slate-900">
-                            <TrendingUp className="w-5 h-5 text-primary" />
-                            Disease Prevalence Ranking
-                        </CardTitle>
-                        <CardDescription>Aggregate case volume across all population clusters.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="pt-6">
-                        <div className="h-[400px] w-full">
-                            <ResponsiveContainer width="100%" height="100%">
-                                <BarChart data={diseaseBurdenData} layout="vertical" margin={{ left: 20, right: 60, top: 10, bottom: 10 }}>
-                                    <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#f1f5f9" />
-                                    <XAxis type="number" hide />
-                                    <YAxis 
-                                        dataKey="disease" 
-                                        type="category" 
-                                        fontSize={11} 
-                                        tickLine={false} 
-                                        axisLine={false}
-                                        width={140}
-                                        tick={{ fill: '#1e293b', fontWeight: 800 }}
-                                    />
-                                    <Tooltip content={<CustomTooltip />} />
-                                    <Bar dataKey="count" name="Case Count" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]}>
-                                        <LabelList dataKey="count" position="right" offset={10} style={{ fontSize: '10px', fontWeight: 'bold', fill: '#475569' }} />
-                                    </Bar>
-                                </BarChart>
-                            </ResponsiveContainer>
-                        </div>
-                    </CardContent>
-                </Card>
-
-                <Card className="shadow-md border-slate-200 h-full">
-                    <CardHeader className="bg-slate-50/50 border-b">
-                        <CardTitle className="text-lg font-bold flex items-center gap-2 text-destructive">
-                            <AlertTriangle className="w-5 h-5" />
-                            Cluster-Dominant Risks
-                        </CardTitle>
-                        <CardDescription>Primary health marker identified per identified hotspot.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="pt-6">
-                        <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
-                            {clusters.map((c, i) => {
-                                const diseases = Object.entries(c.healthMetrics)
-                                    .filter(([k]) => !['Vaccinated', 'Partially Vaccinated', 'Not Vaccinated', 'Male', 'Female', 'Other'].includes(k))
-                                    .sort((a, b) => b[1] - a[1]);
-                                const top = diseases[0];
-                                
-                                return (
-                                    <div key={c.id} className="flex items-center justify-between p-4 rounded-xl bg-white border border-slate-100 shadow-sm transition-all hover:border-primary/20">
-                                        <div className="flex items-center gap-4">
-                                            <div className="w-3 h-3 rounded-full shadow-sm" style={{ backgroundColor: CHART_COLORS[i % CHART_COLORS.length] }} />
-                                            <div>
-                                                <p className="text-[10px] font-black uppercase text-slate-400">Cluster {c.id}</p>
-                                                <p className="text-sm font-black text-slate-900 leading-tight">
-                                                    {top ? top[0] : 'Stable Health Profile'}
-                                                </p>
-                                            </div>
-                                        </div>
-                                        <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20 font-black shrink-0">
-                                            {top ? top[1] : 0} CASES
-                                        </Badge>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    </CardContent>
-                </Card>
-            </div>
-        )}
-
-        {/* ROW 3: DETAILED MULTI-CLUSTER INVOLVEMENT (FULL WIDTH) */}
         {showDisease && (
             <Card className="shadow-md border-slate-200 overflow-hidden">
                 <CardHeader className="border-b bg-slate-50/50 pb-4">
@@ -328,7 +232,6 @@ export function ClusterCharts() {
                               data={diseaseChartData} 
                               margin={{ top: 20, right: 30, left: 10, bottom: 120 }}
                               barCategoryGap="20%"
-                              barGap={2}
                             >
                                 <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#f1f5f9" />
                                 <XAxis 
@@ -350,7 +253,7 @@ export function ClusterCharts() {
                                     axisLine={false} 
                                     tick={{ fill: '#94a3b8', fontWeight: 700 }}
                                 />
-                                <Tooltip content={<CustomTooltip />} cursor={{ fill: '#f1f5f9', opacity: 0.5 }} />
+                                <Tooltip content={<CustomTooltip />} />
                                 {clusters.map((c, i) => (
                                     <Bar 
                                         key={c.id}
@@ -366,84 +269,6 @@ export function ClusterCharts() {
                 </CardContent>
             </Card>
         )}
-
-        {/* ROW 4: DEMOGRAPHIC INDICATORS (DYNAMIC GRID) */}
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-             {showGender && (
-                <Card className="shadow-md border-slate-200">
-                    <CardHeader className="pb-2">
-                        <CardTitle className="text-lg font-bold flex items-center gap-2 text-slate-800">
-                            <UserCircle className="w-5 h-5 text-primary" />
-                            Gender Profile
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent className="pt-4">
-                        <div className="h-[240px] w-full">
-                            <ResponsiveContainer width="100%" height="100%">
-                                <BarChart data={genderData} layout="vertical">
-                                    <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
-                                    <XAxis type="number" hide />
-                                    <YAxis dataKey="name" type="category" fontSize={10} tickLine={false} axisLine={false} tick={{ fontWeight: 700 }} />
-                                    <Tooltip content={<CustomTooltip />} />
-                                    <Bar dataKey="Male" stackId="a" fill="#2563eb" />
-                                    <Bar dataKey="Female" stackId="a" fill="#e11d48" radius={[0, 4, 4, 0]} />
-                                </BarChart>
-                            </ResponsiveContainer>
-                        </div>
-                    </CardContent>
-                </Card>
-            )}
-
-            {showAge && (
-                <Card className="shadow-md border-slate-200">
-                    <CardHeader className="pb-2">
-                        <CardTitle className="text-lg font-bold flex items-center gap-2 text-slate-800">
-                            <Baby className="w-5 h-5 text-primary" />
-                            Mean Age Split
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent className="pt-4">
-                        <div className="h-[240px] w-full">
-                            <ResponsiveContainer width="100%" height="100%">
-                                <BarChart data={ageData}>
-                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                                    <XAxis dataKey="name" fontSize={10} tickLine={false} axisLine={false} tick={{ fontWeight: 700 }} />
-                                    <YAxis fontSize={10} tickLine={false} axisLine={false} />
-                                    <Tooltip content={<CustomTooltip />} />
-                                    <Bar dataKey="Avg Age" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-                                </BarChart>
-                            </ResponsiveContainer>
-                        </div>
-                    </CardContent>
-                </Card>
-            )}
-
-            {showVaccination && (
-                <Card className="shadow-md border-slate-200">
-                    <CardHeader className="pb-2">
-                        <CardTitle className="text-lg font-bold flex items-center gap-2 text-slate-800">
-                            <Syringe className="w-5 h-5 text-primary" />
-                            Vaccination Coverage
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent className="pt-4">
-                        <div className="h-[240px] w-full">
-                            <ResponsiveContainer width="100%" height="100%">
-                                <BarChart data={vaccinationData}>
-                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                                    <XAxis dataKey="name" fontSize={10} tickLine={false} axisLine={false} tick={{ fontWeight: 700 }} />
-                                    <YAxis hide />
-                                    <Tooltip content={<CustomTooltip />} />
-                                    <Bar dataKey="Full" stackId="v" fill="#16a34a" />
-                                    <Bar dataKey="Partial" stackId="v" fill="#f97316" />
-                                    <Bar dataKey="Unvaccinated" stackId="v" fill="#ef4444" radius={[4, 4, 0, 0]} />
-                                </BarChart>
-                            </ResponsiveContainer>
-                        </div>
-                    </CardContent>
-                </Card>
-            )}
-        </div>
     </div>
   );
 }
