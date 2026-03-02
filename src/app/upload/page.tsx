@@ -89,36 +89,29 @@ export default function UploadPage() {
   const handleSaveData = () => {
     if (records.length === 0) return;
     
-    // Check for both availability and loading state
-    if (isUserLoading) {
+    // Check for both availability and loading state to match the requested error toast
+    if (isUserLoading || !user || !firestore) {
       toast({
-        title: 'Authenticating...',
-        description: 'Establishing a secure cloud session. Please wait a moment.',
+        variant: 'destructive',
+        title: 'Cloud Connection Pending',
+        description: 'Establishing a secure session. Please wait a moment and try again.',
       });
       return;
     }
 
-    if (user && firestore) {
-      records.forEach(record => {
-        const recordRef = doc(collection(firestore, 'users', user.uid, 'health_records'), record.id);
-        setDocumentNonBlocking(recordRef, {
-          ...record,
-          ownerId: user.uid,
-          updatedAt: new Date().toISOString(),
-        }, { merge: true });
-      });
-      
-      toast({
-        title: 'Cloud Database Synchronized!',
-        description: `${records.length} records recorded in your secure database.`,
-      });
-    } else {
-      toast({
-        variant: 'destructive',
-        title: 'Cloud Access Error',
-        description: 'Unable to establish a secure session. Please refresh and try again.',
-      });
-    }
+    records.forEach(record => {
+      const recordRef = doc(collection(firestore, 'users', user.uid, 'health_records'), record.id);
+      setDocumentNonBlocking(recordRef, {
+        ...record,
+        ownerId: user.uid,
+        updatedAt: new Date().toISOString(),
+      }, { merge: true });
+    });
+    
+    toast({
+      title: 'Cloud Database Synchronized!',
+      description: `${records.length} records recorded in your secure database.`,
+    });
   }
 
   return (
