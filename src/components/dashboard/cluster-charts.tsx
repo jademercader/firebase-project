@@ -20,39 +20,36 @@ import {
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
-import { Activity, Target, ShieldAlert, PieChartIcon, Syringe, Users, Baby, Map as MapIcon, BarChart3 } from 'lucide-react';
+import { Activity, Target, PieChartIcon, Syringe, Users, Baby, Map as MapIcon } from 'lucide-react';
 import type { AnalysisResult } from '@/lib/types';
 import { useMounted } from '@/hooks/use-mounted';
 
 const ANALYSIS_STORAGE_KEY = 'analysis_result';
 
-// Professional medical/analytical palette
+// Classic Excel-inspired color palette
 const CHART_COLORS = [
-  '#0d9488', // Teal
-  '#2563eb', // Blue
-  '#f97316', // Orange
-  '#9333ea', // Purple
-  '#e11d48', // Red
-  '#0891b2', // Cyan
-  '#f59e0b', // Amber
-  '#4f46e5', // Indigo
-  '#be185d', // Pink
-  '#15803d', // Dark Green
+  '#4472C4', // Excel Blue
+  '#ED7D31', // Excel Orange
+  '#A5A5A5', // Excel Grey
+  '#FFC000', // Excel Gold
+  '#5B9BD5', // Excel Light Blue
+  '#70AD47', // Excel Green
+  '#264478', // Excel Dark Blue
+  '#9E480E', // Excel Dark Orange
+  '#636363', // Excel Dark Grey
+  '#997300', // Excel Dark Gold
 ];
 
-const CustomTooltip = ({ active, payload, label }: any) => {
+const ExcelTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
     return (
-      <div className="bg-white/95 border border-slate-200 p-3 rounded-lg shadow-2xl backdrop-blur-md z-[1000] min-w-[150px]">
-        <p className="font-bold text-xs uppercase tracking-widest text-slate-400 mb-2 border-b pb-1">{label}</p>
-        <div className="space-y-1.5">
+      <div className="bg-white border border-slate-300 p-2 shadow-md text-xs font-sans">
+        <p className="font-bold border-b border-slate-200 mb-1 pb-1">{label}</p>
+        <div className="space-y-1">
           {payload.map((entry: any, index: number) => (
-            <div key={index} className="flex items-center justify-between gap-4 text-xs">
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full" style={{ backgroundColor: entry.color || entry.fill }} />
-                <span className="text-slate-600 font-medium">{entry.name}:</span>
-              </div>
-              <span className="font-bold text-slate-900">{entry.value}</span>
+            <div key={index} className="flex items-center gap-4">
+              <span className="text-slate-600">{entry.name}:</span>
+              <span className="font-bold text-slate-900 ml-auto">{entry.value}</span>
             </div>
           ))}
         </div>
@@ -115,7 +112,7 @@ export function ClusterCharts() {
     color: CHART_COLORS[i % CHART_COLORS.length]
   }));
 
-  // 2. High Risk Barangay Distribution (Aggregate cases per barangay)
+  // 2. High Risk Barangay Distribution
   const barangayRiskMap: Record<string, number> = {};
   clusters.forEach(cluster => {
     cluster.records.forEach(record => {
@@ -130,7 +127,7 @@ export function ClusterCharts() {
   const barangayRiskData = Object.entries(barangayRiskMap)
     .map(([name, count]) => ({ name, count }))
     .sort((a, b) => b.count - a.count)
-    .slice(0, 8);
+    .slice(0, 10);
 
   // 3. Validation Radar
   const performanceData = [
@@ -169,76 +166,81 @@ export function ClusterCharts() {
   }));
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-700">
+    <div className="space-y-8 animate-in fade-in duration-500 max-w-[1400px] mx-auto">
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {/* Validation Radar */}
-            <Card className="shadow-lg border-primary/5 bg-white/50 backdrop-blur-sm">
-                <CardHeader className="pb-2">
-                    <CardTitle className="text-base font-bold flex items-center gap-2 text-slate-800">
-                        <Target className="w-4 h-4 text-primary" />
-                        Analysis Validation
+            <Card className="shadow border-slate-200">
+                <CardHeader className="pb-2 border-b border-slate-100 bg-slate-50/50">
+                    <CardTitle className="text-sm font-bold flex items-center gap-2 text-slate-700">
+                        <Target className="w-4 h-4 text-slate-500" />
+                        Analysis Performance
                     </CardTitle>
-                    <CardDescription className="text-[10px] uppercase tracking-wider font-bold text-slate-400">Model Performance Metrics</CardDescription>
                 </CardHeader>
-                <CardContent className="h-[250px] pt-4">
+                <CardContent className="h-[280px] pt-4">
                     <ResponsiveContainer width="100%" height="100%">
                         <RadarChart cx="50%" cy="50%" outerRadius="70%" data={performanceData}>
-                            <PolarGrid stroke="#e2e8f0" />
-                            <PolarAngleAxis dataKey="metric" fontSize={10} tick={{ fill: '#94a3b8', fontWeight: 600 }} />
-                            <Radar name="Performance" dataKey="score" stroke="hsl(var(--primary))" fill="hsl(var(--primary))" fillOpacity={0.5} />
-                            <Tooltip content={<CustomTooltip />} />
+                            <PolarGrid stroke="#d1d5db" />
+                            <PolarAngleAxis dataKey="metric" fontSize={10} tick={{ fill: '#4b5563', fontWeight: 600 }} />
+                            <Radar name="Performance" dataKey="score" stroke="#4472C4" fill="#4472C4" fillOpacity={0.6} />
+                            <Tooltip content={<ExcelTooltip />} />
                         </RadarChart>
                     </ResponsiveContainer>
                 </CardContent>
             </Card>
 
-            {/* High Risk Barangay Chart */}
-            <Card className="shadow-lg border-primary/5 bg-white/50 backdrop-blur-sm">
-                <CardHeader className="pb-2">
-                    <CardTitle className="text-base font-bold flex items-center gap-2 text-slate-800">
-                        <MapIcon className="w-4 h-4 text-primary" />
-                        High-Risk Areas
+            {/* High Risk Barangay Chart - Ranked List Style */}
+            <Card className="shadow border-slate-200">
+                <CardHeader className="pb-2 border-b border-slate-100 bg-slate-50/50">
+                    <CardTitle className="text-sm font-bold flex items-center gap-2 text-slate-700">
+                        <MapIcon className="w-4 h-4 text-slate-500" />
+                        High-Risk Neighborhoods
                     </CardTitle>
-                    <CardDescription className="text-[10px] uppercase tracking-wider font-bold text-slate-400">Total Cases per Barangay</CardDescription>
                 </CardHeader>
-                <CardContent className="h-[250px] pt-0">
+                <CardContent className="h-[280px] pt-4">
                     <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={barangayRiskData} layout="vertical" margin={{ left: 10, right: 30, top: 10 }}>
-                            <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#f1f5f9" />
+                        <BarChart data={barangayRiskData} layout="vertical" margin={{ left: 10, right: 30, top: 0, bottom: 0 }}>
+                            <CartesianGrid strokeDasharray="0 0" horizontal={true} vertical={false} stroke="#e5e7eb" />
                             <XAxis type="number" hide />
                             <YAxis 
                                 dataKey="name" 
                                 type="category" 
                                 fontSize={10} 
-                                width={90}
-                                tick={{ fontWeight: 700, fill: '#64748b' }}
-                                axisLine={false}
+                                width={100}
+                                tick={{ fontWeight: 600, fill: '#374151' }}
+                                axisLine={{ stroke: '#9ca3af' }}
                                 tickLine={false}
                             />
-                            <Tooltip content={<CustomTooltip />} />
-                            <Bar dataKey="count" fill="#e11d48" radius={[0, 4, 4, 0]} barSize={20} name="Active Cases" />
+                            <Tooltip content={<ExcelTooltip />} />
+                            <Bar dataKey="count" fill="#ED7D31" barSize={18} name="Total Cases" />
                         </BarChart>
                     </ResponsiveContainer>
                 </CardContent>
             </Card>
 
-            {/* Population Pie */}
-            <Card className="shadow-lg border-primary/5 bg-white/50 backdrop-blur-sm">
-                <CardHeader className="pb-2">
-                    <CardTitle className="text-base font-bold flex items-center gap-2 text-slate-800">
-                        <PieChartIcon className="w-4 h-4 text-primary" />
-                        Population Distribution
+            {/* Population Distribution */}
+            <Card className="shadow border-slate-200">
+                <CardHeader className="pb-2 border-b border-slate-100 bg-slate-50/50">
+                    <CardTitle className="text-sm font-bold flex items-center gap-2 text-slate-700">
+                        <PieChartIcon className="w-4 h-4 text-slate-500" />
+                        Population Overview
                     </CardTitle>
-                    <CardDescription className="text-[10px] uppercase tracking-wider font-bold text-slate-400">Segment Proportion</CardDescription>
                 </CardHeader>
-                <CardContent className="h-[250px] pt-0">
+                <CardContent className="h-[280px] pt-4">
                     <ResponsiveContainer width="100%" height="100%">
                         <PieChart>
-                            <Pie data={populationData} cx="50%" cy="50%" innerRadius={60} outerRadius={85} paddingAngle={4} dataKey="value" stroke="white" strokeWidth={2}>
-                                {populationData.map((entry, index) => <Cell key={index} fill={entry.color} />)}
+                            <Pie 
+                                data={populationData} 
+                                cx="50%" 
+                                cy="50%" 
+                                outerRadius={80} 
+                                dataKey="value" 
+                                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                                labelLine={true}
+                            >
+                                {populationData.map((entry, index) => <Cell key={index} fill={entry.color} stroke="#fff" strokeWidth={1} />)}
                             </Pie>
-                            <Tooltip content={<CustomTooltip />} />
-                            <Legend verticalAlign="bottom" height={36} iconType="circle" wrapperStyle={{ fontSize: '10px', fontWeight: 'bold' }} />
+                            <Tooltip content={<ExcelTooltip />} />
+                            <Legend verticalAlign="bottom" align="center" iconType="rect" wrapperStyle={{ fontSize: '10px', paddingTop: '10px' }} />
                         </PieChart>
                     </ResponsiveContainer>
                 </CardContent>
@@ -246,53 +248,51 @@ export function ClusterCharts() {
         </div>
 
         <div className="grid gap-6 md:grid-cols-2">
-            {/* Vaccination Status Stacked Bar */}
+            {/* Vaccination Stacked Column */}
             {showVaccination && (
-                <Card className="shadow-lg border-primary/5 bg-white/50 backdrop-blur-sm">
-                    <CardHeader>
-                        <CardTitle className="text-base font-bold flex items-center gap-2">
-                            <Syringe className="w-4 h-4 text-primary" />
-                            Vaccination Coverage Matrix
+                <Card className="shadow border-slate-200">
+                    <CardHeader className="border-b border-slate-100 bg-slate-50/50">
+                        <CardTitle className="text-sm font-bold flex items-center gap-2">
+                            <Syringe className="w-4 h-4 text-slate-500" />
+                            Vaccination Status by Segment
                         </CardTitle>
-                        <CardDescription className="text-xs font-medium text-slate-500">Protection levels segmented by cluster.</CardDescription>
                     </CardHeader>
-                    <CardContent className="h-[300px]">
+                    <CardContent className="h-[350px] pt-6">
                         <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={vaccinationData}>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                                <XAxis dataKey="name" fontSize={10} tick={{ fontWeight: 700, fill: '#64748b' }} axisLine={false} tickLine={false} />
-                                <YAxis fontSize={10} axisLine={false} tickLine={false} tick={{ fill: '#94a3b8' }} />
-                                <Tooltip content={<CustomTooltip />} />
-                                <Legend wrapperStyle={{ fontSize: '10px', paddingTop: '10px' }} />
-                                <Bar dataKey="Fully Vaccinated" stackId="a" fill="#0d9488" radius={[0, 0, 0, 0]} />
-                                <Bar dataKey="Partially Vaccinated" stackId="a" fill="#f59e0b" radius={[0, 0, 0, 0]} />
-                                <Bar dataKey="Not Vaccinated" stackId="a" fill="#e11d48" radius={[4, 4, 0, 0]} />
+                            <BarChart data={vaccinationData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                                <CartesianGrid strokeDasharray="0 0" vertical={false} stroke="#e5e7eb" />
+                                <XAxis dataKey="name" fontSize={11} tick={{ fontWeight: 600, fill: '#374151' }} axisLine={{ stroke: '#9ca3af' }} tickLine={false} />
+                                <YAxis fontSize={11} axisLine={{ stroke: '#9ca3af' }} tickLine={false} tick={{ fill: '#6b7280' }} />
+                                <Tooltip content={<ExcelTooltip />} />
+                                <Legend verticalAlign="top" align="right" iconType="rect" wrapperStyle={{ fontSize: '10px', paddingBottom: '20px' }} />
+                                <Bar dataKey="Fully Vaccinated" stackId="vax" fill="#4472C4" />
+                                <Bar dataKey="Partially Vaccinated" stackId="vax" fill="#ED7D31" />
+                                <Bar dataKey="Not Vaccinated" stackId="vax" fill="#A5A5A5" />
                             </BarChart>
                         </ResponsiveContainer>
                     </CardContent>
                 </Card>
             )}
 
-            {/* Gender Distribution */}
+            {/* Gender Balance Clustered Column */}
             {showGender && (
-                <Card className="shadow-lg border-primary/5 bg-white/50 backdrop-blur-sm">
-                    <CardHeader>
-                        <CardTitle className="text-base font-bold flex items-center gap-2">
-                            <Users className="w-4 h-4 text-primary" />
-                            Gender Balance
+                <Card className="shadow border-slate-200">
+                    <CardHeader className="border-b border-slate-100 bg-slate-50/50">
+                        <CardTitle className="text-sm font-bold flex items-center gap-2">
+                            <Users className="w-4 h-4 text-slate-500" />
+                            Gender Demographic Split
                         </CardTitle>
-                        <CardDescription className="text-xs font-medium text-slate-500">Demographic breakdown across populations.</CardDescription>
                     </CardHeader>
-                    <CardContent className="h-[300px]">
+                    <CardContent className="h-[350px] pt-6">
                         <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={demographicData}>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                                <XAxis dataKey="name" fontSize={10} tick={{ fontWeight: 700, fill: '#64748b' }} axisLine={false} tickLine={false} />
-                                <YAxis fontSize={10} axisLine={false} tickLine={false} tick={{ fill: '#94a3b8' }} />
-                                <Tooltip content={<CustomTooltip />} />
-                                <Legend wrapperStyle={{ fontSize: '10px', paddingTop: '10px' }} />
-                                <Bar dataKey="Male" fill="#2563eb" radius={[4, 4, 0, 0]} />
-                                <Bar dataKey="Female" fill="#db2777" radius={[4, 4, 0, 0]} />
+                            <BarChart data={demographicData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                                <CartesianGrid strokeDasharray="0 0" vertical={false} stroke="#e5e7eb" />
+                                <XAxis dataKey="name" fontSize={11} tick={{ fontWeight: 600, fill: '#374151' }} axisLine={{ stroke: '#9ca3af' }} tickLine={false} />
+                                <YAxis fontSize={11} axisLine={{ stroke: '#9ca3af' }} tickLine={false} tick={{ fill: '#6b7280' }} />
+                                <Tooltip content={<ExcelTooltip />} />
+                                <Legend verticalAlign="top" align="right" iconType="rect" wrapperStyle={{ fontSize: '10px', paddingBottom: '20px' }} />
+                                <Bar dataKey="Male" fill="#4472C4" barSize={30} />
+                                <Bar dataKey="Female" fill="#ED7D31" barSize={30} />
                             </BarChart>
                         </ResponsiveContainer>
                     </CardContent>
@@ -300,49 +300,48 @@ export function ClusterCharts() {
             )}
         </div>
 
-        {/* Large Disease Matrix */}
+        {/* Multi-Series Disease Matrix */}
         {showDisease && (
-            <Card className="shadow-xl border-primary/5 bg-white/50 backdrop-blur-sm">
-                <CardHeader className="flex flex-row items-center justify-between">
+            <Card className="shadow border-slate-200">
+                <CardHeader className="flex flex-row items-center justify-between border-b border-slate-100 bg-slate-50/50">
                     <div>
-                        <CardTitle className="text-lg font-bold flex items-center gap-2">
-                            <Activity className="w-5 h-5 text-primary" />
-                            Global Disease Burden Matrix
+                        <CardTitle className="text-base font-bold flex items-center gap-2">
+                            <Activity className="w-5 h-5 text-slate-500" />
+                            Disease Prevalence Matrix
                         </CardTitle>
-                        <CardDescription className="text-xs font-medium text-slate-500">Granular disease prevalence identified by the clustering algorithm.</CardDescription>
                     </div>
-                    <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20 font-bold px-3 py-1">
-                        High Precision
+                    <Badge variant="outline" className="bg-slate-100 text-slate-700 border-slate-300 font-bold px-3 py-1 text-xs">
+                        Consolidated Analysis
                     </Badge>
                 </CardHeader>
-                <CardContent className="h-[450px]">
+                <CardContent className="h-[500px] pt-6">
                     <ResponsiveContainer width="100%" height="100%">
                         <BarChart 
                             data={diseaseChartData} 
-                            margin={{ top: 20, right: 30, left: 10, bottom: 100 }}
+                            margin={{ top: 20, right: 30, left: 0, bottom: 100 }}
                         >
-                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                            <CartesianGrid strokeDasharray="0 0" vertical={false} stroke="#e5e7eb" />
                             <XAxis 
                                 dataKey="disease" 
-                                fontSize={10} 
+                                fontSize={11} 
                                 angle={-45}
                                 textAnchor="end"
                                 interval={0}
                                 height={120}
-                                tick={{ fill: '#334155', fontWeight: 800 }}
-                                axisLine={false}
+                                tick={{ fill: '#374151', fontWeight: 600 }}
+                                axisLine={{ stroke: '#9ca3af' }}
                                 tickLine={false}
                             />
-                            <YAxis fontSize={10} axisLine={false} tickLine={false} tick={{ fill: '#94a3b8' }} />
-                            <Tooltip content={<CustomTooltip />} />
+                            <YAxis fontSize={11} axisLine={{ stroke: '#9ca3af' }} tickLine={false} tick={{ fill: '#6b7280' }} />
+                            <Tooltip content={<ExcelTooltip />} />
+                            <Legend verticalAlign="top" align="right" iconType="rect" wrapperStyle={{ fontSize: '10px', paddingBottom: '30px' }} />
                             {clusters.map((c, i) => (
                                 <Bar 
                                     key={c.id}
                                     name={`Cluster ${c.id}`}
                                     dataKey={`Cluster ${c.id}`} 
                                     fill={CHART_COLORS[i % CHART_COLORS.length]} 
-                                    radius={[4, 4, 0, 0]} 
-                                    barSize={15}
+                                    barSize={12}
                                 />
                             ))}
                         </BarChart>
@@ -351,24 +350,23 @@ export function ClusterCharts() {
             </Card>
         )}
 
-        {/* Average Age Comparison */}
+        {/* Average Age Column Chart */}
         {showAge && (
-            <Card className="shadow-lg border-primary/5 bg-white/50 backdrop-blur-sm">
-                <CardHeader>
-                    <CardTitle className="text-base font-bold flex items-center gap-2">
-                        <Baby className="w-4 h-4 text-primary" />
-                        Age Profiles per Segment
+            <Card className="shadow border-slate-200">
+                <CardHeader className="border-b border-slate-100 bg-slate-50/50">
+                    <CardTitle className="text-sm font-bold flex items-center gap-2">
+                        <Baby className="w-4 h-4 text-slate-500" />
+                        Mean Population Age
                     </CardTitle>
-                    <CardDescription className="text-xs font-medium text-slate-500">Calculated mean age of clinical records in each group.</CardDescription>
                 </CardHeader>
-                <CardContent className="h-[300px]">
+                <CardContent className="h-[300px] pt-6">
                     <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={demographicData}>
-                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                            <XAxis dataKey="name" fontSize={10} tick={{ fontWeight: 700, fill: '#64748b' }} axisLine={false} tickLine={false} />
-                            <YAxis fontSize={10} axisLine={false} tickLine={false} tick={{ fill: '#94a3b8' }} />
-                            <Tooltip content={<CustomTooltip />} />
-                            <Bar dataKey="Avg Age" fill="#9333ea" radius={[4, 4, 0, 0]} barSize={40} />
+                        <BarChart data={demographicData} margin={{ top: 10, right: 30, left: 0, bottom: 20 }}>
+                            <CartesianGrid strokeDasharray="0 0" vertical={false} stroke="#e5e7eb" />
+                            <XAxis dataKey="name" fontSize={11} tick={{ fontWeight: 600, fill: '#374151' }} axisLine={{ stroke: '#9ca3af' }} tickLine={false} />
+                            <YAxis fontSize={11} axisLine={{ stroke: '#9ca3af' }} tickLine={false} tick={{ fill: '#6b7280' }} />
+                            <Tooltip content={<ExcelTooltip />} />
+                            <Bar dataKey="Avg Age" fill="#4472C4" barSize={50} name="Average Age (Years)" />
                         </BarChart>
                     </ResponsiveContainer>
                 </CardContent>
