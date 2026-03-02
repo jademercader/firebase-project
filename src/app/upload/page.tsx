@@ -6,6 +6,8 @@ import { DataTable } from '@/components/upload/data-table';
 import { HealthRecord } from '@/lib/types';
 import AppLayout from '@/components/layout/app-layout';
 import { useToast } from '@/hooks/use-toast';
+import { useFirestore, useUser, setDocumentNonBlocking } from '@/firebase';
+import { doc, collection } from 'firebase/firestore';
 
 /**
  * Robust helper to extract values from a row by trying multiple possible header variations.
@@ -26,6 +28,8 @@ const isRowEmpty = (row: any): boolean => {
 export default function UploadPage() {
   const [records, setRecords] = useState<HealthRecord[]>([]);
   const { toast } = useToast();
+  const { firestore } = useFirestore();
+  const { user } = useUser();
 
   const handleFileSelected = (file: File) => {
     if (file) {
@@ -55,7 +59,6 @@ export default function UploadPage() {
                 
                 const vaccinationStatus = getRowValue(row, ['vaccinationStatus', 'Vaccination Status', 'Vaccinated', 'Status']) as HealthRecord['vaccinationStatus'] || 'Not Vaccinated';
                 
-                // HCI Fix: Correct Barangay to Address mapping
                 const street = getRowValue(row, ['address', 'Address', 'Street', 'Location', 'Purok', 'Street Address']);
                 const brgy = getRowValue(row, ['barangay', 'Barangay', 'Brgy', 'Area']);
                 
@@ -66,8 +69,6 @@ export default function UploadPage() {
 
                 const latStr = getRowValue(row, ['latitude', 'lat', 'Latitude', 'Lat', 'GPS Lat']);
                 const lngStr = getRowValue(row, ['longitude', 'long', 'lng', 'Longitude', 'Lng', 'Long', 'GPS Lng']);
-
-                // Ensure Disease is mapped accurately from health-specific columns only
                 const diseaseValue = getRowValue(row, ['disease', 'Disease', 'Condition', 'Diagnosis', 'Medical Condition']);
 
                 return {
@@ -96,11 +97,31 @@ export default function UploadPage() {
   
   const handleSaveData = () => {
     if (records.length === 0) return;
+    
+    // 1. Update local storage for immediate analysis engine use
     localStorage.setItem('health_records', JSON.stringify(records));
-     toast({
-        title: 'Data Saved Successfully!',
-        description: 'Analysis engine is now using your specific dataset for clustering.',
+    
+    // 2. Persist to Firestore if user is authenticated
+    if (user && firestore) {
+      records.forEach(record => {
+        const recordRef = doc(collection(firestore, 'users', user.uid, 'health_records'), record.id);
+        setDocumentNonBlocking(recordRef, {
+          ...record,
+          ownerId: user.uid,
+          updatedAt: new Date().toISOString(),
+        }, { merge: true });
       });
+      
+      toast({
+        title: 'Database Updated Successfully!',
+        description: `${records.length} records have been recorded in your cloud database and are ready for analysis.`,
+      });
+    } else {
+      toast({
+        title: 'Data Saved (Local Only)',
+        description: 'Records are available for this session. Sign in to sync with your database.',
+      });
+    }
   }
 
   return (
