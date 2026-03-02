@@ -1,4 +1,3 @@
-
 'use client';
 import { useEffect, useState } from 'react';
 import { 
@@ -21,7 +20,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
-import { Activity, Target, ShieldAlert, PieChartIcon, Syringe, Users, Baby } from 'lucide-react';
+import { Activity, Target, ShieldAlert, PieChartIcon, Syringe, Users, Baby, Map as MapIcon } from 'lucide-react';
 import type { AnalysisResult } from '@/lib/types';
 import { useMounted } from '@/hooks/use-mounted';
 
@@ -101,7 +100,25 @@ export function ClusterCharts() {
     color: CHART_COLORS[i % CHART_COLORS.length]
   }));
 
-  // 2. Validation Radar
+  // 2. High Risk Barangay Distribution (Aggregate cases per barangay)
+  const barangayRiskMap: Record<string, number> = {};
+  clusters.forEach(cluster => {
+    cluster.records.forEach(record => {
+      if (record.disease && record.disease !== 'None') {
+        // Extract Barangay from address string (e.g., "Brgy. Obrero")
+        const brgyMatch = record.address.match(/Brgy\.?\s+([^,]+)/i);
+        const brgyName = brgyMatch ? brgyMatch[1].trim() : 'Unknown';
+        barangayRiskMap[brgyName] = (barangayRiskMap[brgyName] || 0) + 1;
+      }
+    });
+  });
+
+  const barangayRiskData = Object.entries(barangayRiskMap)
+    .map(([name, count]) => ({ name, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 8); // Top 8 high risk barangays
+
+  // 3. Validation Radar
   const performanceData = [
     { metric: 'Distinctness', score: Math.max(20, Math.round((globalValidation.avgSilhouetteScore + 1) * 50)) },
     { metric: 'Cohesion', score: Math.max(10, globalValidation.totalWCSS) },
@@ -110,7 +127,7 @@ export function ClusterCharts() {
     { metric: 'Separation', score: 82 }
   ];
 
-  // 3. Disease Burden
+  // 4. Disease Burden (Top Diseases)
   const diseaseBurdenMap: Record<string, number> = {};
   const allDiseases = Array.from(new Set(clusters.flatMap(c => 
     Object.keys(c.healthMetrics).filter(k => !['Vaccinated', 'Partially Vaccinated', 'Not Vaccinated', 'Male', 'Female', 'Other'].includes(k))
@@ -130,7 +147,7 @@ export function ClusterCharts() {
     return entry;
   });
 
-  // 4. Vaccination Data
+  // 5. Vaccination Data
   const vaccinationData = clusters.map(c => ({
     name: `Cluster ${c.id}`,
     'Full': c.healthMetrics['Vaccinated'] || 0,
@@ -138,7 +155,7 @@ export function ClusterCharts() {
     'None': c.healthMetrics['Not Vaccinated'] || 0,
   }));
 
-  // 5. Demographics (Gender & Age)
+  // 6. Demographics (Gender & Age)
   const demographicData = clusters.map(c => ({
     name: `Cluster ${c.id}`,
     'Male': c.demographics.genderDistribution['Male'] || 0,
@@ -169,6 +186,34 @@ export function ClusterCharts() {
                 </CardContent>
             </Card>
 
+            {/* High Risk Barangay Chart */}
+            <Card className="shadow-md border-slate-200 lg:col-span-1">
+                <CardHeader className="pb-2">
+                    <CardTitle className="text-lg font-bold flex items-center gap-2 text-slate-900">
+                        <MapIcon className="w-5 h-5 text-primary" />
+                        High-Risk Barangays
+                    </CardTitle>
+                    <CardDescription className="text-xs">Top areas with concentrated disease cases.</CardDescription>
+                </CardHeader>
+                <CardContent className="h-[250px] pt-0">
+                    <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={barangayRiskData} layout="vertical" margin={{ left: 20, right: 30 }}>
+                            <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#f1f5f9" />
+                            <XAxis type="number" fontSize={10} hide />
+                            <YAxis 
+                                dataKey="name" 
+                                type="category" 
+                                fontSize={10} 
+                                width={80}
+                                tick={{ fontWeight: 700, fill: '#1e293b' }}
+                            />
+                            <Tooltip content={<CustomTooltip />} />
+                            <Bar dataKey="count" fill="#e11d48" radius={[0, 4, 4, 0]} name="Total Cases" />
+                        </BarChart>
+                    </ResponsiveContainer>
+                </CardContent>
+            </Card>
+
             {/* Population Pie */}
             <Card className="shadow-md border-slate-200">
                 <CardHeader className="pb-2">
@@ -188,27 +233,6 @@ export function ClusterCharts() {
                             <Legend iconType="circle" />
                         </PieChart>
                     </ResponsiveContainer>
-                </CardContent>
-            </Card>
-
-            {/* High-Risk Priority */}
-            <Card className="shadow-md border-slate-200 bg-destructive/5">
-                <CardHeader className="pb-2">
-                    <CardTitle className="text-lg font-bold flex items-center gap-2 text-destructive">
-                        <ShieldAlert className="w-5 h-5" />
-                        High-Risk Markers
-                    </CardTitle>
-                    <CardDescription className="text-xs">Top diseases needing immediate intervention.</CardDescription>
-                </CardHeader>
-                <CardContent className="pt-4 space-y-3">
-                    {diseaseBurdenData.slice(0, 5).map((item) => (
-                         <div key={item.disease} className="flex items-center justify-between p-2 rounded-lg bg-white border border-destructive/10 shadow-sm">
-                            <span className="text-sm font-bold text-slate-800">{item.disease}</span>
-                            <Badge variant="destructive" className="font-black text-[10px]">
-                                {item.count} CASES
-                            </Badge>
-                         </div>
-                    ))}
                 </CardContent>
             </Card>
         </div>
