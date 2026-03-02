@@ -1,5 +1,6 @@
 'use client';
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Papa from 'papaparse';
 import { FileUploader } from '@/components/upload/file-uploader';
 import { DataTable } from '@/components/upload/data-table';
@@ -23,6 +24,7 @@ const isRowEmpty = (row: any): boolean => {
 export default function UploadPage() {
   const [records, setRecords] = useState<HealthRecord[]>([]);
   const { toast } = useToast();
+  const router = useRouter();
 
   const handleFileSelected = (file: File) => {
     if (file) {
@@ -87,8 +89,11 @@ export default function UploadPage() {
     
     toast({
       title: 'Data Saved Locally',
-      description: `${records.length} records are now ready for analysis.`,
+      description: `${records.length} records are now ready for analysis. Redirecting to dashboard...`,
     });
+
+    // Automatically navigate to the dashboard
+    router.push('/');
   }
 
   return (
