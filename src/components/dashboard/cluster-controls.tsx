@@ -34,14 +34,18 @@ export function ClusterControls() {
         const saved = localStorage.getItem(RECORDS_STORAGE_KEY);
         if (saved) {
             setLocalRecords(JSON.parse(saved));
+        } else {
+            setLocalRecords([]);
         }
     };
     fetchLocalData();
     window.addEventListener('storage', fetchLocalData);
     window.addEventListener('records-updated', fetchLocalData);
+    window.addEventListener('analysis-updated', fetchLocalData);
     return () => {
         window.removeEventListener('storage', fetchLocalData);
         window.removeEventListener('records-updated', fetchLocalData);
+        window.removeEventListener('analysis-updated', fetchLocalData);
     };
   }, [mounted]);
 
@@ -105,12 +109,12 @@ export function ClusterControls() {
       setIsAnalysisRunning(false);
   };
 
-  if (!mounted) return <Skeleton className="h-[400px] w-full" />;
+  if (!mounted) return <Skeleton className="h-[400px] w-full rounded-xl" />;
 
   return (
     <Card className="border-primary/10 shadow-sm">
       <CardHeader>
-        <CardTitle className="font-headline text-2xl">K-Means Health Clustering Engine</CardTitle>
+        <CardTitle className="font-headline text-2xl text-slate-900">K-Means Health Clustering Engine</CardTitle>
         <CardDescription>
           Identify population segments based on specific health markers using local records.
         </CardDescription>
@@ -119,17 +123,17 @@ export function ClusterControls() {
         {hasData ? (
           <Alert className="border-primary/50 text-primary bg-primary/5">
             <Database className="h-4 w-4" />
-            <AlertTitle className="font-bold">Source: Local Records</AlertTitle>
+            <AlertTitle className="font-bold">Source: Local Records Detected</AlertTitle>
             <AlertDescription>
-              Ready to analyze {localRecords.length} records detected in local storage.
+              Ready to analyze {localRecords.length} records currently in local storage.
             </AlertDescription>
           </Alert>
         ) : (
-          <Alert variant="destructive" className="bg-destructive/5">
+          <Alert variant="destructive" className="bg-destructive/5 border-destructive/20 text-destructive">
             <AlertCircle className="h-4 w-4" />
-            <AlertTitle className="font-bold">No Dataset Found</AlertTitle>
+            <AlertTitle className="font-bold">Action Required: No Dataset Found</AlertTitle>
             <AlertDescription>
-              Analysis is on standby. Please go to the <strong>Upload Data</strong> page to provide a dataset.
+              The clustering engine is on standby. Please go to the <strong>Upload Data</strong> menu to consolidate a dataset before running analysis.
             </AlertDescription>
           </Alert>
         )}
@@ -156,10 +160,11 @@ export function ClusterControls() {
                                 checked={selectedIndicators.includes(propName)}
                                 onCheckedChange={(checked) => handleIndicatorChange(indicator.id, !!checked)}
                                 className="w-5 h-5"
+                                disabled={!hasData}
                             />
                             <label
                                 htmlFor={indicator.id}
-                                className="text-sm font-semibold leading-none cursor-pointer text-slate-600 hover:text-primary transition-colors"
+                                className={`text-sm font-semibold leading-none cursor-pointer transition-colors ${!hasData ? 'text-slate-300 cursor-not-allowed' : 'text-slate-600 hover:text-primary'}`}
                             >
                                 {indicator.name}
                             </label>
@@ -168,10 +173,11 @@ export function ClusterControls() {
                 })}
             </div>
         </div>
-        <div className="space-y-4 bg-slate-50 p-4 rounded-xl border border-slate-100">
+
+        <div className={`space-y-4 p-4 rounded-xl border transition-colors ${!hasData ? 'bg-slate-50/50 border-slate-100 opacity-50' : 'bg-slate-50 border-slate-100'}`}>
             <div className="flex justify-between items-center">
                 <Label htmlFor="clusters" className="text-slate-700 font-bold">Number of Clusters: {numClusters}</Label>
-                <span className="text-xs font-black text-primary px-3 py-1 bg-primary/10 rounded-full border border-primary/20 shadow-sm">
+                <span className={`text-xs font-black px-3 py-1 rounded-full border shadow-sm ${!hasData ? 'bg-slate-100 text-slate-400 border-slate-200' : 'bg-primary/10 text-primary border-primary/20'}`}>
                     {numClusters} SEGMENTS
                 </span>
             </div>
@@ -183,11 +189,13 @@ export function ClusterControls() {
               value={[numClusters]}
               onValueChange={(value) => setNumClusters(value[0])}
               className="py-4"
+              disabled={!hasData}
             />
             <p className="text-[10px] text-muted-foreground italic font-medium">
                 Determine exactly how many segments you want to identify in Calbayog City.
             </p>
         </div>
+
          <Button 
             onClick={handleRunAnalysis} 
             disabled={isAnalysisRunning || !hasData} 
