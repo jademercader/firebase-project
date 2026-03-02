@@ -3,7 +3,6 @@ import { useState } from 'react';
 import Papa from 'papaparse';
 import { FileUploader } from '@/components/upload/file-uploader';
 import { DataTable } from '@/components/upload/data-table';
-import { CleansingSuggestions } from '@/components/upload/cleansing-suggestions';
 import { HealthRecord } from '@/lib/types';
 import AppLayout from '@/components/layout/app-layout';
 import { useToast } from '@/hooks/use-toast';
@@ -82,7 +81,7 @@ export default function UploadPage() {
   const handleSaveData = () => {
     if (records.length === 0) return;
     
-    // Save strictly to local storage
+    // Save strictly to local storage as per requirement
     localStorage.setItem('health_records', JSON.stringify(records));
     window.dispatchEvent(new Event('records-updated'));
     
@@ -98,18 +97,13 @@ export default function UploadPage() {
         <div className="flex items-center justify-between space-y-2">
             <h2 className="text-3xl font-bold tracking-tight font-headline">Barangay Data Consolidation</h2>
         </div>
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-            <div className="lg:col-span-8 space-y-6">
-                <FileUploader 
-                  onFileSelected={handleFileSelected} 
-                  onSaveData={handleSaveData} 
-                  hasRecords={records.length > 0}
-                />
-                <DataTable records={records} />
-            </div>
-            <div className="lg:col-span-4">
-                <CleansingSuggestions records={records} />
-            </div>
+        <div className="space-y-6">
+            <FileUploader 
+                onFileSelected={handleFileSelected} 
+                onSaveData={handleSaveData} 
+                hasRecords={records.length > 0}
+            />
+            <DataTable records={records} />
         </div>
       </div>
     </AppLayout>
