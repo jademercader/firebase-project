@@ -85,14 +85,16 @@ export default function UploadPage() {
     
     // Save strictly to local storage as per requirement
     localStorage.setItem('health_records', JSON.stringify(records));
+    
+    // Trigger update for other components
     window.dispatchEvent(new Event('records-updated'));
     
     toast({
       title: 'Data Saved Locally',
-      description: `${records.length} records are now ready for analysis. Redirecting to dashboard...`,
+      description: `${records.length} records are now ready for analysis.`,
     });
 
-    // Automatically navigate to the dashboard
+    // Automatically navigate to the dashboard menu
     router.push('/');
   }
 
@@ -100,7 +102,7 @@ export default function UploadPage() {
     <AppLayout>
       <div className="max-w-[1400px] mx-auto space-y-6 p-4 md:p-8 pt-6">
         <div className="flex items-center justify-between space-y-2">
-            <h2 className="text-3xl font-bold tracking-tight font-headline">Barangay Data Consolidation</h2>
+            <h2 className="text-3xl font-bold tracking-tight font-headline text-slate-900">Barangay Data Consolidation</h2>
         </div>
         <div className="space-y-6">
             <FileUploader 
