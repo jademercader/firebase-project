@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect } from 'react';
@@ -24,19 +23,31 @@ const DynamicClusterMap = dynamic(
 export default function DashboardPage() {
   const mounted = useMounted();
 
-  // Erase PREVIOUS analysis results on refresh to ensure a clean slate, 
-  // but keep the source records so analysis can be re-run with different settings.
+  // Session-Based Analysis Reset: 
+  // Erases results on mount (refresh) to ensure a clean session.
+  // We use sessionStorage to detect if we just came from an upload redirect.
   useEffect(() => {
     if (mounted) {
+      // Always clear analysis results on dashboard visit/refresh
       localStorage.removeItem('analysis_result');
       localStorage.removeItem('health_clusters');
       
-      // Notify components to update their state to "ready for new analysis"
+      const justUploaded = sessionStorage.getItem('just_uploaded');
+      
+      if (!justUploaded) {
+        // It's a direct visit or refresh, NOT a redirect from upload.
+        // Wipe raw data to force user to upload "the first dataset to use"
+        localStorage.removeItem('health_records');
+      }
+      
+      // Clear the flag so subsequent refreshes wipe the data
+      sessionStorage.removeItem('just_uploaded');
+      
+      // Notify all components that the data state has changed
       window.dispatchEvent(new Event('analysis-updated'));
     }
   }, [mounted]);
 
-  // HCI Mount Guard: Prevents hydration mismatch and layout shifts
   if (!mounted) {
     return (
       <AppLayout>

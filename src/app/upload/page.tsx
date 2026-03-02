@@ -47,7 +47,6 @@ export default function UploadPage() {
                 const street = getRowValue(row, ['address', 'Address', 'Street', 'Location', 'Purok', 'Street Address']);
                 const brgy = getRowValue(row, ['barangay', 'Barangay', 'Brgy', 'Area']);
                 
-                // Combine Street and Barangay for accurate spatial logic
                 const fullAddress = brgy 
                   ? `${street}${street ? ', ' : ''}Brgy. ${brgy.replace(/^Brgy\.?\s+/i, '')}` 
                   : (street || 'Calbayog City');
@@ -85,6 +84,9 @@ export default function UploadPage() {
     
     // Save to local storage
     localStorage.setItem('health_records', JSON.stringify(records));
+    
+    // Set a session flag to prevent Dashboard from wiping the data on redirect
+    sessionStorage.setItem('just_uploaded', 'true');
     
     // Trigger update event
     window.dispatchEvent(new Event('records-updated'));

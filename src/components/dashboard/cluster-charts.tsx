@@ -1,4 +1,3 @@
-
 'use client';
 import { useEffect, useState } from 'react';
 import { 
@@ -21,13 +20,13 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
-import { Activity, Target, PieChartIcon, Syringe, Users, Baby, Map as MapIcon } from 'lucide-react';
+import { Activity, Target, PieChartIcon, Syringe, Users, Map as MapIcon } from 'lucide-react';
 import type { AnalysisResult } from '@/lib/types';
 import { useMounted } from '@/hooks/use-mounted';
 
 const ANALYSIS_STORAGE_KEY = 'analysis_result';
 
-// Excel-inspired medical color palette
+// Professional Excel corporate color palette
 const CHART_COLORS = [
   '#4472C4', // Office Blue
   '#ED7D31', // Office Orange
@@ -37,8 +36,6 @@ const CHART_COLORS = [
   '#70AD47', // Office Green
   '#264478', // Office Dark Blue
   '#9E480E', // Office Dark Orange
-  '#636363', // Office Dark Grey
-  '#997300', // Office Dark Gold
 ];
 
 const ExcelTooltip = ({ active, payload, label }: any) => {
@@ -73,6 +70,8 @@ export function ClusterCharts() {
             const savedResult = localStorage.getItem(ANALYSIS_STORAGE_KEY);
             if (savedResult) {
                 setAnalysisResult(JSON.parse(savedResult));
+            } else {
+                setAnalysisResult(null);
             }
         } catch (error) {
             console.error("Failed to load analysis results", error);
@@ -103,7 +102,6 @@ export function ClusterCharts() {
 
   const showDisease = selectedIndicators.includes('disease');
   const showVaccination = selectedIndicators.includes('vaccinationStatus');
-  const showAge = selectedIndicators.includes('age');
   const showGender = selectedIndicators.includes('gender');
 
   // 1. Population Overview
@@ -188,7 +186,7 @@ export function ClusterCharts() {
                 </CardContent>
             </Card>
 
-            {/* High Risk Barangay Chart (NEW) */}
+            {/* High Risk Barangay Chart */}
             <Card className="shadow border-slate-200">
                 <CardHeader className="pb-2 border-b border-slate-100 bg-slate-50/50">
                     <CardTitle className="text-sm font-bold flex items-center gap-2 text-slate-700">
@@ -253,7 +251,7 @@ export function ClusterCharts() {
             {showVaccination && (
                 <Card className="shadow border-slate-200">
                     <CardHeader className="border-b border-slate-100 bg-slate-50/50">
-                        <CardTitle className="text-sm font-bold flex items-center gap-2">
+                        <CardTitle className="text-sm font-bold flex items-center gap-2 text-slate-700">
                             <Syringe className="w-4 h-4 text-slate-500" />
                             Vaccination Distribution by Segment
                         </CardTitle>
@@ -279,7 +277,7 @@ export function ClusterCharts() {
             {showGender && (
                 <Card className="shadow border-slate-200">
                     <CardHeader className="border-b border-slate-100 bg-slate-50/50">
-                        <CardTitle className="text-sm font-bold flex items-center gap-2">
+                        <CardTitle className="text-sm font-bold flex items-center gap-2 text-slate-700">
                             <Users className="w-4 h-4 text-slate-500" />
                             Gender Demographics
                         </CardTitle>
@@ -305,7 +303,7 @@ export function ClusterCharts() {
         {showDisease && (
             <Card className="shadow border-slate-200 overflow-hidden">
                 <CardHeader className="flex flex-col md:flex-row md:items-center justify-between gap-2 border-b border-slate-100 bg-slate-50/50">
-                    <CardTitle className="text-base font-bold flex items-center gap-2">
+                    <CardTitle className="text-base font-bold flex items-center gap-2 text-slate-700">
                         <Activity className="w-5 h-5 text-slate-500" />
                         Disease Prevalence Matrix
                     </CardTitle>
