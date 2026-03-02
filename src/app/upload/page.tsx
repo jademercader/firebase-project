@@ -1,4 +1,3 @@
-
 'use client';
 import { useState } from 'react';
 import Papa from 'papaparse';
@@ -7,8 +6,6 @@ import { DataTable } from '@/components/upload/data-table';
 import { HealthRecord } from '@/lib/types';
 import AppLayout from '@/components/layout/app-layout';
 import { useToast } from '@/hooks/use-toast';
-import { useFirestore, useUser, setDocumentNonBlocking } from '@/firebase';
-import { doc, collection } from 'firebase/firestore';
 
 /**
  * Robust helper to extract values from a row by trying multiple possible header variations.
@@ -29,8 +26,6 @@ const isRowEmpty = (row: any): boolean => {
 export default function UploadPage() {
   const [records, setRecords] = useState<HealthRecord[]>([]);
   const { toast } = useToast();
-  const { firestore } = useFirestore();
-  const { user, isUserLoading } = useUser();
 
   const handleFileSelected = (file: File) => {
     if (file) {
@@ -79,7 +74,7 @@ export default function UploadPage() {
           setRecords(parsedRecords);
           toast({
             title: 'File Parsed Successfully',
-            description: `${parsedRecords.length} records loaded and ready for database synchronization.`,
+            description: `${parsedRecords.length} records loaded and ready for saving.`,
           });
         },
       });
@@ -89,28 +84,12 @@ export default function UploadPage() {
   const handleSaveData = () => {
     if (records.length === 0) return;
     
-    // Check for both availability and loading state to match the requested error toast
-    if (isUserLoading || !user || !firestore) {
-      toast({
-        variant: 'destructive',
-        title: 'Cloud Connection Pending',
-        description: 'Establishing a secure session. Please wait a moment and try again.',
-      });
-      return;
-    }
-
-    records.forEach(record => {
-      const recordRef = doc(collection(firestore, 'users', user.uid, 'health_records'), record.id);
-      setDocumentNonBlocking(recordRef, {
-        ...record,
-        ownerId: user.uid,
-        updatedAt: new Date().toISOString(),
-      }, { merge: true });
-    });
+    // Save to localStorage for local analysis
+    localStorage.setItem('health_records', JSON.stringify(records));
     
     toast({
-      title: 'Cloud Database Synchronized!',
-      description: `${records.length} records recorded in your secure database.`,
+      title: 'Data Saved Successfully',
+      description: `${records.length} records are now available for analysis on the dashboard.`,
     });
   }
 
@@ -125,7 +104,6 @@ export default function UploadPage() {
               onFileSelected={handleFileSelected} 
               onSaveData={handleSaveData} 
               hasRecords={records.length > 0}
-              isLoading={isUserLoading}
             />
             <DataTable records={records} />
         </div>

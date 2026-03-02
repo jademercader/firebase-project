@@ -1,7 +1,6 @@
 'use client';
 
-import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
-import { useUser, useAuth as useFirebaseAuth, initiateAnonymousSignIn } from '@/firebase';
+import { createContext, useContext, useState, type ReactNode } from 'react';
 
 interface User {
   name: string;
@@ -20,37 +19,35 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const { user: firebaseUser, isUserLoading } = useUser();
-  const auth = useFirebaseAuth();
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<User | null>({
+    name: 'Health Admin',
+    email: 'admin@barangay.gov'
+  });
+  const [isLoading, setIsLoading] = useState(false);
 
-  // Automatically sign in anonymously if not logged in to support Firestore writes
-  useEffect(() => {
-    if (!isUserLoading && !firebaseUser && auth) {
-      initiateAnonymousSignIn(auth);
-    }
-  }, [firebaseUser, isUserLoading, auth]);
+  const login = (credentials: any) => {
+    // Simplified mock login
+    setUser({ name: 'Health Admin', email: 'admin@barangay.gov' });
+    return true;
+  };
 
-  // Bridge Firebase user to the application's user context
-  useEffect(() => {
-    if (firebaseUser) {
-      setUser({
-        name: firebaseUser.displayName || 'Health Admin',
-        email: firebaseUser.email || 'admin@barangay.gov'
-      });
-    } else {
-      setUser(null);
-    }
-  }, [firebaseUser]);
+  const signup = (details: any) => {
+    setUser({ name: details.name, email: details.email });
+    return true;
+  };
+
+  const logout = () => {
+    setUser(null);
+  };
 
   return (
     <AuthContext.Provider value={{ 
       user, 
-      isAuthenticated: !!firebaseUser, 
-      isLoading: isUserLoading, 
-      login: () => true, 
-      signup: () => true, 
-      logout: () => {} 
+      isAuthenticated: !!user, 
+      isLoading, 
+      login, 
+      signup, 
+      logout 
     }}>
       {children}
     </AuthContext.Provider>
