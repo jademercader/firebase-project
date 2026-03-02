@@ -1,4 +1,3 @@
-
 'use client';
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -39,7 +38,11 @@ export function ClusterControls() {
     };
     fetchLocalData();
     window.addEventListener('storage', fetchLocalData);
-    return () => window.removeEventListener('storage', fetchLocalData);
+    window.addEventListener('records-updated', fetchLocalData);
+    return () => {
+        window.removeEventListener('storage', fetchLocalData);
+        window.removeEventListener('records-updated', fetchLocalData);
+    };
   }, [mounted]);
 
   const hasData = localRecords.length > 0;
@@ -91,7 +94,6 @@ export function ClusterControls() {
           });
 
           window.dispatchEvent(new Event('analysis-updated'));
-          window.dispatchEvent(new StorageEvent('storage', { key: ANALYSIS_STORAGE_KEY }));
       } else {
           toast({
               variant: "destructive",
@@ -106,9 +108,9 @@ export function ClusterControls() {
   if (!mounted) return <Skeleton className="h-[400px] w-full" />;
 
   return (
-    <Card>
+    <Card className="border-primary/10 shadow-sm">
       <CardHeader>
-        <CardTitle className="font-headline">K-Means Health Clustering Engine</CardTitle>
+        <CardTitle className="font-headline text-2xl">K-Means Health Clustering Engine</CardTitle>
         <CardDescription>
           Identify population segments based on specific health markers using local records.
         </CardDescription>
@@ -133,11 +135,11 @@ export function ClusterControls() {
         )}
 
         <div className="space-y-4">
-            <Label className="flex items-center gap-2">
+            <Label className="flex items-center gap-2 text-slate-700 font-bold">
               Select Analysis Dimensions
               <Info className="w-3 h-3 text-muted-foreground" />
             </Label>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-100">
                 {healthIndicators.map((indicator) => {
                     const indicatorMap: Record<string, string> = {
                         'averageAge': 'age',
@@ -148,15 +150,16 @@ export function ClusterControls() {
                     const propName = indicatorMap[indicator.id] || indicator.id;
                     
                     return (
-                        <div key={indicator.id} className="flex items-center space-x-2">
+                        <div key={indicator.id} className="flex items-center space-x-3">
                             <Checkbox 
                                 id={indicator.id} 
                                 checked={selectedIndicators.includes(propName)}
                                 onCheckedChange={(checked) => handleIndicatorChange(indicator.id, !!checked)}
+                                className="w-5 h-5"
                             />
                             <label
                                 htmlFor={indicator.id}
-                                className="text-sm font-medium leading-none cursor-pointer"
+                                className="text-sm font-semibold leading-none cursor-pointer text-slate-600 hover:text-primary transition-colors"
                             >
                                 {indicator.name}
                             </label>
@@ -165,10 +168,12 @@ export function ClusterControls() {
                 })}
             </div>
         </div>
-        <div className="space-y-4">
+        <div className="space-y-4 bg-slate-50 p-4 rounded-xl border border-slate-100">
             <div className="flex justify-between items-center">
-                <Label htmlFor="clusters">Number of Clusters: {numClusters}</Label>
-                <span className="text-xs font-bold text-primary px-2 py-0.5 bg-primary/10 rounded">{numClusters} SEGMENTS</span>
+                <Label htmlFor="clusters" className="text-slate-700 font-bold">Number of Clusters: {numClusters}</Label>
+                <span className="text-xs font-black text-primary px-3 py-1 bg-primary/10 rounded-full border border-primary/20 shadow-sm">
+                    {numClusters} SEGMENTS
+                </span>
             </div>
             <Slider
               id="clusters"
@@ -177,22 +182,25 @@ export function ClusterControls() {
               step={1}
               value={[numClusters]}
               onValueChange={(value) => setNumClusters(value[0])}
+              className="py-4"
             />
-            <p className="text-[10px] text-muted-foreground italic">Determine exactly how many segments you want to identify in Calbayog City.</p>
+            <p className="text-[10px] text-muted-foreground italic font-medium">
+                Determine exactly how many segments you want to identify in Calbayog City.
+            </p>
         </div>
          <Button 
             onClick={handleRunAnalysis} 
             disabled={isAnalysisRunning || !hasData} 
-            className="w-full md:w-auto shadow-sm hover:shadow-md transition-all"
+            className="w-full md:w-auto h-12 px-8 text-base font-bold shadow-lg hover:shadow-xl hover:translate-y-[-1px] active:translate-y-[1px] transition-all"
          >
           {isAnalysisRunning ? (
             <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Processing...
+              <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+              Processing Analysis...
             </>
           ) : (
             <>
-              <PlayCircle className="mr-2 h-4 w-4" />
+              <PlayCircle className="mr-2 h-5 w-5" />
               Execute Clustering Analysis
             </>
           )}

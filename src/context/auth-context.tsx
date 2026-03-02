@@ -1,4 +1,3 @@
-
 'use client';
 
 import { createContext, useContext, useState, type ReactNode } from 'react';
@@ -20,6 +19,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  // Simplified stable mock user for local analysis engine
   const [user, setUser] = useState<User | null>({
     name: 'Health Admin',
     email: 'admin@barangay.gov'
@@ -27,7 +27,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(false);
 
   const login = (credentials: any) => {
-    // Simplified mock login
     setUser({ name: 'Health Admin', email: 'admin@barangay.gov' });
     return true;
   };

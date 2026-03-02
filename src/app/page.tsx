@@ -40,8 +40,8 @@ export default function DashboardPage() {
 
   return (
     <AppLayout>
-      <div className="bg-slate-50/20 min-h-screen" suppressHydrationWarning>
-        <div className="max-w-[1600px] mx-auto space-y-6 p-4 md:p-8 pt-6">
+      <div className="bg-slate-50/20 min-h-screen">
+        <div className="max-w-[1400px] mx-auto space-y-6 p-4 md:p-8 pt-6">
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
             <div>
               <h2 className="text-3xl font-bold tracking-tight font-headline flex items-center gap-3 text-slate-900">

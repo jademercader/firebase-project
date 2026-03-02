@@ -1,4 +1,3 @@
-
 'use client';
 import { useState } from 'react';
 import Papa from 'papaparse';
@@ -87,6 +86,9 @@ export default function UploadPage() {
     
     // Save to localStorage for local analysis only
     localStorage.setItem('health_records', JSON.stringify(records));
+    
+    // Dispatch custom event for real-time dashboard updates
+    window.dispatchEvent(new Event('records-updated'));
     
     toast({
       title: 'Data Saved Locally',
