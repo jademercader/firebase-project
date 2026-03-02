@@ -2,7 +2,6 @@ import type { HealthRecord, Cluster, AnalysisResult } from '@/lib/types';
 
 /**
  * Enhanced Local Coordinate Map for Calbayog City.
- * Used for high-fidelity spatial anchoring when records lack GPS coordinates.
  */
 const CALBAYOG_BRGY_COORDS: Record<string, { lat: number, lng: number }> = {
   'Obrero': { lat: 12.0667, lng: 124.5917 },
@@ -42,7 +41,7 @@ function addJitter(val: number, amount: number = 0.003) {
 }
 
 /**
- * Robust K-Means Clustering Engine.
+ * Robust K-Means Clustering Engine inspired by scikit-learn.
  * Features: K-Means++ Initialization, Min-Max Normalization, Convergence Check.
  */
 export function performLocalKMeans(
@@ -158,29 +157,14 @@ export function performLocalKMeans(
     });
     
     centroids = newCentroids.map((c, idx) => {
-      if (counts[idx] === 0) {
-        let maxDist = -1;
-        let furthestIdx = 0;
-        normalizedPoints.forEach((p, pIdx) => {
-          let minDist = Infinity;
-          centroids.forEach(cent => {
-            const d = euclideanDistance(p.normVector, cent);
-            if (d < minDist) minDist = d;
-          });
-          if (minDist > maxDist) {
-            maxDist = minDist;
-            furthestIdx = pIdx;
-          }
-        });
-        return { ...normalizedPoints[furthestIdx].normVector };
-      }
+      if (counts[idx] === 0) return centroids[idx];
       const updated: Record<string, number> = {};
       features.forEach(f => updated[f] = c[f] / counts[idx]);
       return updated;
     });
   }
 
-  // 5. Validation Scoring (Silhouette Score)
+  // 5. Validation Scoring
   const silhouetteScores = normalizedPoints.map((p, i) => {
     const cIdx = assignments[i];
     const sameCluster = normalizedPoints.filter((_, idx) => assignments[idx] === cIdx && idx !== i);

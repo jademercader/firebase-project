@@ -12,6 +12,9 @@ import { Stethoscope, LayoutDashboard, UploadCloud, FileText, Settings, HelpCirc
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 
+/**
+ * AppSidebar provides main navigation links for the City Health Insights platform.
+ */
 export function AppSidebar() {
   const pathname = usePathname();
 
@@ -44,7 +47,6 @@ export function AppSidebar() {
                 asChild
                 isActive={pathname === item.href}
                 tooltip={item.label}
-                className="transition-all duration-200"
               >
                 <Link href={item.href}>
                   <item.icon className={pathname === item.href ? "text-primary" : ""} />

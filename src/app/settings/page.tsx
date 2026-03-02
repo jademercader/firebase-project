@@ -6,6 +6,9 @@ import { Switch } from '@/components/ui/switch';
 import { Settings as SettingsIcon, Bell, Shield, Database } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 
+/**
+ * SettingsPage allows users to configure application behavior and data persistence.
+ */
 export default function SettingsPage() {
   return (
     <AppLayout>
@@ -24,14 +27,14 @@ export default function SettingsPage() {
               <CardHeader>
                 <div className="flex items-center gap-2">
                   <Bell className="w-5 h-5 text-primary" />
-                  <CardTitle className="text-lg">Notifications</CardTitle>
+                  <CardTitle className="text-lg text-slate-800">Notifications</CardTitle>
                 </div>
                 <CardDescription>Manage how you receive updates and alerts.</CardDescription>
-              </Header>
+              </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
-                    <Label className="text-sm font-bold">Cluster Alerts</Label>
+                    <Label className="text-sm font-bold">Health Alerts</Label>
                     <p className="text-xs text-muted-foreground">Notify when high-risk clusters are detected.</p>
                   </div>
                   <Switch defaultChecked />
@@ -51,25 +54,25 @@ export default function SettingsPage() {
               <CardHeader>
                 <div className="flex items-center gap-2">
                   <Database className="w-5 h-5 text-primary" />
-                  <CardTitle className="text-lg">Data Management</CardTitle>
+                  <CardTitle className="text-lg text-slate-800">Data Management</CardTitle>
                 </div>
                 <CardDescription>Control local data persistence and analysis behavior.</CardDescription>
-              </Header>
+              </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
-                    <Label className="text-sm font-bold">Local Persistence</Label>
-                    <p className="text-xs text-muted-foreground">Keep data stored in the browser after logout.</p>
+                    <Label className="text-sm font-bold">Session Ephemeral Mode</Label>
+                    <p className="text-xs text-muted-foreground">Automatically erase all data on browser refresh/restart.</p>
                   </div>
-                  <Switch defaultChecked />
+                  <Switch defaultChecked disabled />
                 </div>
                 <Separator />
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
-                    <Label className="text-sm font-bold">Auto-Redirect</Label>
-                    <p className="text-xs text-muted-foreground">Automatically navigate to dashboard after data upload.</p>
+                    <Label className="text-sm font-bold">Persistence during Navigation</Label>
+                    <p className="text-xs text-muted-foreground">Maintain active analysis when switching between app menus.</p>
                   </div>
-                  <Switch defaultChecked />
+                  <Switch defaultChecked disabled />
                 </div>
               </CardContent>
             </Card>
@@ -78,15 +81,15 @@ export default function SettingsPage() {
               <CardHeader>
                 <div className="flex items-center gap-2">
                   <Shield className="w-5 h-5 text-primary" />
-                  <CardTitle className="text-lg">Security & Privacy</CardTitle>
+                  <CardTitle className="text-lg text-slate-800">Security & Privacy</CardTitle>
                 </div>
                 <CardDescription>Manage your data privacy settings.</CardDescription>
-              </Header>
+              </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
-                    <Label className="text-sm font-bold">Anonymize Data</Label>
-                    <p className="text-xs text-muted-foreground">Mask patient names in generated reports.</p>
+                    <Label className="text-sm font-bold">Anonymize Patient Data</Label>
+                    <p className="text-xs text-muted-foreground">Mask specific identifiers in generated reports.</p>
                   </div>
                   <Switch />
                 </div>

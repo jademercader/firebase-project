@@ -12,6 +12,9 @@ import { useMounted } from '@/hooks/use-mounted';
 
 const CLUSTERS_STORAGE_KEY = 'health_clusters';
 
+/**
+ * TrendAnalysis provides a simple, readable summary of health risks identified in population clusters.
+ */
 export function TrendAnalysis() {
   const mounted = useMounted();
   const [clusters, setClusters] = useState<Cluster[]>([]);

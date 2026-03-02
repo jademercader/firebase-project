@@ -16,8 +16,8 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const USERS_STORAGE_KEY = 'bh_insights_users';
-const CURRENT_USER_KEY = 'bh_insights_current_user';
+const USERS_STORAGE_KEY = 'ch_insights_users';
+const CURRENT_USER_KEY = 'ch_insights_current_user';
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -25,7 +25,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
 
   useEffect(() => {
-    // Initial load of auth state from local storage only
+    // 1. Initial load of auth state
     const savedUser = localStorage.getItem(CURRENT_USER_KEY);
     if (savedUser) {
       try {
@@ -34,6 +34,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         localStorage.removeItem(CURRENT_USER_KEY);
       }
     }
+    
+    // 2. Strict Session Reset: Clear all health data on full browser load/refresh
+    // We only clear if it's NOT a redirect from a fresh upload
+    const isJustUploaded = sessionStorage.getItem('just_uploaded');
+    if (!isJustUploaded) {
+      localStorage.removeItem('health_records');
+      localStorage.removeItem('analysis_result');
+      localStorage.removeItem('health_clusters');
+      localStorage.removeItem('selected_report_cluster_id');
+    }
+    
     setIsLoading(false);
   }, []);
 
