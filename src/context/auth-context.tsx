@@ -24,10 +24,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
 
   useEffect(() => {
-    // Initial load of auth state
+    // Initial load of auth state from local storage only
     const savedUser = localStorage.getItem(CURRENT_USER_KEY);
     if (savedUser) {
-      setUser(JSON.parse(savedUser));
+      try {
+        setUser(JSON.parse(savedUser));
+      } catch (e) {
+        localStorage.removeItem(CURRENT_USER_KEY);
+      }
     }
     setIsLoading(false);
   }, []);

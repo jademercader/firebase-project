@@ -1,16 +1,13 @@
-
 'use client';
 import { useState } from 'react';
 import Papa from 'papaparse';
 import { FileUploader } from '@/components/upload/file-uploader';
 import { DataTable } from '@/components/upload/data-table';
+import { CleansingSuggestions } from '@/components/upload/cleansing-suggestions';
 import { HealthRecord } from '@/lib/types';
 import AppLayout from '@/components/layout/app-layout';
 import { useToast } from '@/hooks/use-toast';
 
-/**
- * Robust helper to extract values from a row by trying multiple possible header variations.
- */
 const getRowValue = (row: any, keys: string[]): string => {
   for (const key of keys) {
     if (row[key] !== undefined && row[key] !== null) {
@@ -75,7 +72,7 @@ export default function UploadPage() {
           setRecords(parsedRecords);
           toast({
             title: 'File Parsed Successfully',
-            description: `${parsedRecords.length} records loaded and ready for saving.`,
+            description: `${parsedRecords.length} records loaded.`,
           });
         },
       });
@@ -85,31 +82,34 @@ export default function UploadPage() {
   const handleSaveData = () => {
     if (records.length === 0) return;
     
-    // Save exclusively to localStorage for stable local analysis
+    // Save strictly to local storage
     localStorage.setItem('health_records', JSON.stringify(records));
-    
-    // Dispatch custom event for real-time dashboard updates
     window.dispatchEvent(new Event('records-updated'));
     
     toast({
       title: 'Data Saved Locally',
-      description: `${records.length} records are now available for analysis.`,
+      description: `${records.length} records are now ready for analysis.`,
     });
   }
 
   return (
     <AppLayout>
-      <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
+      <div className="max-w-[1400px] mx-auto space-y-6 p-4 md:p-8 pt-6">
         <div className="flex items-center justify-between space-y-2">
             <h2 className="text-3xl font-bold tracking-tight font-headline">Barangay Data Consolidation</h2>
         </div>
-        <div className="space-y-6">
-            <FileUploader 
-              onFileSelected={handleFileSelected} 
-              onSaveData={handleSaveData} 
-              hasRecords={records.length > 0}
-            />
-            <DataTable records={records} />
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+            <div className="lg:col-span-8 space-y-6">
+                <FileUploader 
+                  onFileSelected={handleFileSelected} 
+                  onSaveData={handleSaveData} 
+                  hasRecords={records.length > 0}
+                />
+                <DataTable records={records} />
+            </div>
+            <div className="lg:col-span-4">
+                <CleansingSuggestions records={records} />
+            </div>
         </div>
       </div>
     </AppLayout>
