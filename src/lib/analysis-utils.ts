@@ -1,3 +1,4 @@
+
 import type { HealthRecord, Cluster, AnalysisResult } from '@/lib/types';
 
 /**
@@ -44,6 +45,7 @@ function addJitter(val: number, amount: number = 0.003) {
 /**
  * Robust K-Means Clustering Engine.
  * Features: K-Means++ Initialization, Min-Max Normalization, Convergence Check.
+ * Inspired by scikit-learn for high-fidelity population health segments.
  */
 export function performLocalKMeans(
   records: HealthRecord[],
@@ -73,7 +75,6 @@ export function performLocalKMeans(
     }
 
     if (selectedIndicators.includes('disease') && record.disease && record.disease !== 'None') {
-      // Simple hash for disease to numeric for clustering
       const hash = record.disease.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
       vector['disease_val'] = hash % 100;
     }
@@ -81,7 +82,7 @@ export function performLocalKMeans(
     return { record, vector, brgyName, lat: coords.lat, lng: coords.lng };
   });
 
-  // 2. Normalization (Min-Max Scaling)
+  // 2. Normalization (Min-Max Scaling) to prevent high-magnitude features like Age from dominating coordinates
   const features = Object.keys(dataPoints[0].vector);
   const minMax: Record<string, { min: number, max: number }> = {};
   features.forEach(f => {
@@ -98,14 +99,11 @@ export function performLocalKMeans(
     return { ...p, normVector };
   });
 
-  // 3. K-Means++ Initialization
+  // 3. K-Means++ Initialization for stable and high-quality starting points
   const k = Math.min(numClusters, normalizedPoints.length);
   let centroids: Record<string, number>[] = [];
-  
-  // Pick first centroid randomly
   centroids.push({ ...normalizedPoints[Math.floor(Math.random() * normalizedPoints.length)].normVector });
   
-  // Pick subsequent centroids with probability proportional to distance squared
   for (let i = 1; i < k; i++) {
     const distances = normalizedPoints.map(p => {
       let minDist = Infinity;
@@ -125,7 +123,7 @@ export function performLocalKMeans(
     centroids.push({ ...normalizedPoints[idx].normVector });
   }
 
-  // 4. Iterative Optimization (Expectation-Maximization)
+  // 4. Iterative EM Optimization
   let assignments: number[] = new Array(normalizedPoints.length).fill(-1);
   let iterations = 0;
   const maxIterations = 100;
@@ -135,7 +133,6 @@ export function performLocalKMeans(
     iterations++;
     const oldAssignments = [...assignments];
     
-    // Assignment Step
     normalizedPoints.forEach((p, pIdx) => {
       let minDist = Infinity;
       let bestC = 0;
@@ -149,10 +146,8 @@ export function performLocalKMeans(
       assignments[pIdx] = bestC;
     });
 
-    // Convergence Check
     converged = assignments.every((val, i) => val === oldAssignments[i]);
 
-    // Update Step
     const newCentroids = centroids.map(() => ({} as Record<string, number>));
     const counts = new Array(centroids.length).fill(0);
     
@@ -166,7 +161,6 @@ export function performLocalKMeans(
     
     centroids = newCentroids.map((c, idx) => {
       if (counts[idx] === 0) {
-        // Re-seed empty cluster with furthest point from all centroids
         let maxDist = -1;
         let furthestIdx = 0;
         normalizedPoints.forEach((p, pIdx) => {
@@ -188,7 +182,7 @@ export function performLocalKMeans(
     });
   }
 
-  // 5. Validation Scoring (Silhouette)
+  // 5. Validation Scoring (Silhouette Score)
   const silhouetteScores = normalizedPoints.map((p, i) => {
     const cIdx = assignments[i];
     const sameCluster = normalizedPoints.filter((_, idx) => assignments[idx] === cIdx && idx !== i);
@@ -207,7 +201,7 @@ export function performLocalKMeans(
 
   const avgSilhouetteScore = silhouetteScores.reduce((a, b) => a + b, 0) / Math.max(1, silhouetteScores.length);
 
-  // 6. Final Synthesis & Labeling
+  // 6. Synthesis and Denormalization
   const clusters: Cluster[] = centroids.map((cVector, idx) => {
     const members = normalizedPoints.filter((_, pIdx) => assignments[pIdx] === idx);
     if (members.length === 0) return null;
@@ -226,7 +220,6 @@ export function performLocalKMeans(
 
     const averageAge = clusterRecords.reduce((sum, r) => sum + r.age, 0) / clusterRecords.length;
 
-    // Denormalize centroid for map display
     const denormLat = (cVector['lat'] * (minMax['lat'].max - minMax['lat'].min)) + minMax['lat'].min;
     const denormLng = (cVector['lng'] * (minMax['lng'].max - minMax['lng'].min)) + minMax['lng'].min;
 

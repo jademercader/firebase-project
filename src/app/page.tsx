@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect } from 'react';
@@ -20,30 +21,38 @@ const DynamicClusterMap = dynamic(
   }
 );
 
+// Module-level variable to track if this is the first time the JS environment has loaded (i.e., a full refresh)
+let isInitialLoad = true;
+
 export default function DashboardPage() {
   const mounted = useMounted();
 
-  // Session-Based Analysis Reset: 
-  // Erases results and data on mount (refresh/restart) to ensure a clean session.
-  // We use sessionStorage to detect if we just came from an upload redirect.
+  /**
+   * Session-Based Data Erasure logic:
+   * Erases analysis results and records ONLY on a full browser refresh (isInitialLoad = true).
+   * Navigation between menus in the SPA does not reset the module-level 'isInitialLoad'.
+   */
   useEffect(() => {
-    if (mounted) {
+    if (mounted && isInitialLoad) {
       const justUploaded = sessionStorage.getItem('just_uploaded');
       
-      // Always clear analysis results to avoid repetitions
+      // Clear analysis results to avoid repetitions on fresh session load
       localStorage.removeItem('analysis_result');
       localStorage.removeItem('health_clusters');
       localStorage.removeItem('selected_report_cluster_id');
       
       if (!justUploaded) {
-        // It's a fresh visit or manual refresh. Wipe the raw dataset.
+        // It's a fresh visit or manual refresh (not a redirect from upload). Wipe the raw dataset.
         localStorage.removeItem('health_records');
       }
       
-      // Clear the session flag so subsequent refreshes wipe the data
+      // Clear the session flag so subsequent refreshes wipe the data correctly
       sessionStorage.removeItem('just_uploaded');
       
-      // Notify all components that the data state has changed
+      // Mark initial load as complete so navigation doesn't trigger a wipe
+      isInitialLoad = false;
+      
+      // Notify components that data state has changed
       window.dispatchEvent(new Event('analysis-updated'));
     }
   }, [mounted]);
