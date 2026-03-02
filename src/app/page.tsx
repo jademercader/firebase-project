@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect } from 'react';
@@ -23,16 +24,15 @@ const DynamicClusterMap = dynamic(
 export default function DashboardPage() {
   const mounted = useMounted();
 
-  // Erase ALL data and analysis on refresh to ensure a clean slate
+  // Erase PREVIOUS analysis results on refresh to ensure a clean slate, 
+  // but keep the source records so analysis can be re-run with different settings.
   useEffect(() => {
     if (mounted) {
       localStorage.removeItem('analysis_result');
       localStorage.removeItem('health_clusters');
-      localStorage.removeItem('health_records'); // Clear source records too as requested
       
-      // Notify components to update their state to "empty"
+      // Notify components to update their state to "ready for new analysis"
       window.dispatchEvent(new Event('analysis-updated'));
-      window.dispatchEvent(new Event('records-updated'));
     }
   }, [mounted]);
 
@@ -41,11 +41,13 @@ export default function DashboardPage() {
     return (
       <AppLayout>
         <div className="flex-1 space-y-6 p-4 md:p-8 pt-6 bg-slate-50/20">
-          <Skeleton className="h-10 w-[200px] md:w-[300px]" />
-          <Skeleton className="h-48 md:h-64 w-full" />
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            <Skeleton className="lg:col-span-8 h-[400px] md:h-[600px]" />
-            <Skeleton className="lg:col-span-4 h-[400px] md:h-[600px]" />
+          <div className="max-w-[1400px] mx-auto space-y-6">
+            <Skeleton className="h-10 w-[300px]" />
+            <Skeleton className="h-48 w-full" />
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+              <Skeleton className="lg:col-span-8 h-[600px]" />
+              <Skeleton className="lg:col-span-4 h-[600px]" />
+            </div>
           </div>
         </div>
       </AppLayout>

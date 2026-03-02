@@ -1,3 +1,4 @@
+
 'use client';
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -162,7 +163,7 @@ export function ClusterControls() {
                                 id={indicator.id} 
                                 checked={selectedIndicators.includes(propName)}
                                 onCheckedChange={(checked) => handleIndicatorChange(indicator.id, !!checked)}
-                                className="w-5 h-5"
+                                className="w-5 h-4"
                                 disabled={!hasData}
                             />
                             <label

@@ -1,3 +1,4 @@
+
 'use client';
 import { useEffect, useState } from 'react';
 import { 
@@ -26,24 +27,24 @@ import { useMounted } from '@/hooks/use-mounted';
 
 const ANALYSIS_STORAGE_KEY = 'analysis_result';
 
-// Classic Excel-inspired color palette
+// Excel-inspired medical color palette
 const CHART_COLORS = [
-  '#4472C4', // Excel Blue
-  '#ED7D31', // Excel Orange
-  '#A5A5A5', // Excel Grey
-  '#FFC000', // Excel Gold
-  '#5B9BD5', // Excel Light Blue
-  '#70AD47', // Excel Green
-  '#264478', // Excel Dark Blue
-  '#9E480E', // Excel Dark Orange
-  '#636363', // Excel Dark Grey
-  '#997300', // Excel Dark Gold
+  '#4472C4', // Office Blue
+  '#ED7D31', // Office Orange
+  '#A5A5A5', // Office Grey
+  '#FFC000', // Office Gold
+  '#5B9BD5', // Office Light Blue
+  '#70AD47', // Office Green
+  '#264478', // Office Dark Blue
+  '#9E480E', // Office Dark Orange
+  '#636363', // Office Dark Grey
+  '#997300', // Office Dark Gold
 ];
 
 const ExcelTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
     return (
-      <div className="bg-white border border-slate-300 p-2 shadow-md text-xs font-sans">
+      <div className="bg-white border border-slate-300 p-2 shadow-md text-[10px] md:text-xs font-sans">
         <p className="font-bold border-b border-slate-200 mb-1 pb-1">{label}</p>
         <div className="space-y-1">
           {payload.map((entry: any, index: number) => (
@@ -87,9 +88,9 @@ export function ClusterCharts() {
   if (!mounted || isLoading) {
       return (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <Skeleton className="h-[250px] md:h-[300px] w-full rounded-xl" />
-          <Skeleton className="h-[250px] md:h-[300px] w-full rounded-xl" />
-          <Skeleton className="h-[250px] md:h-[300px] w-full rounded-xl" />
+          <Skeleton className="h-[300px] w-full rounded-xl" />
+          <Skeleton className="h-[300px] w-full rounded-xl" />
+          <Skeleton className="h-[300px] w-full rounded-xl" />
         </div>
       );
   }
@@ -105,14 +106,14 @@ export function ClusterCharts() {
   const showAge = selectedIndicators.includes('age');
   const showGender = selectedIndicators.includes('gender');
 
-  // 1. Population Pie
+  // 1. Population Overview
   const populationData = clusters.map((c, i) => ({
     name: `Cluster ${c.id}`,
     value: c.records.length,
     color: CHART_COLORS[i % CHART_COLORS.length]
   }));
 
-  // 2. High Risk Barangay Distribution
+  // 2. High Risk Barangay Distribution (NEW)
   const barangayRiskMap: Record<string, number> = {};
   clusters.forEach(cluster => {
     cluster.records.forEach(record => {
@@ -129,7 +130,7 @@ export function ClusterCharts() {
     .sort((a, b) => b.count - a.count)
     .slice(0, 10);
 
-  // 3. Validation Radar
+  // 3. Performance Radar
   const performanceData = [
     { metric: 'Distinctness', score: Math.max(20, Math.round((globalValidation.avgSilhouetteScore + 1) * 50)) },
     { metric: 'Cohesion', score: Math.max(10, globalValidation.totalWCSS) },
@@ -162,7 +163,6 @@ export function ClusterCharts() {
     name: `Cluster ${c.id}`,
     'Male': c.demographics.genderDistribution['Male'] || 0,
     'Female': c.demographics.genderDistribution['Female'] || 0,
-    'Avg Age': Math.round(c.demographics.averageAge),
   }));
 
   return (
@@ -171,16 +171,16 @@ export function ClusterCharts() {
             {/* Validation Radar */}
             <Card className="shadow border-slate-200">
                 <CardHeader className="pb-2 border-b border-slate-100 bg-slate-50/50">
-                    <CardTitle className="text-xs md:text-sm font-bold flex items-center gap-2 text-slate-700">
+                    <CardTitle className="text-sm font-bold flex items-center gap-2 text-slate-700">
                         <Target className="w-4 h-4 text-slate-500" />
                         Analysis Performance
                     </CardTitle>
                 </CardHeader>
-                <CardContent className="h-[250px] md:h-[280px] pt-4">
+                <CardContent className="h-[250px] md:h-[300px] pt-4">
                     <ResponsiveContainer width="100%" height="100%">
                         <RadarChart cx="50%" cy="50%" outerRadius="70%" data={performanceData}>
                             <PolarGrid stroke="#d1d5db" />
-                            <PolarAngleAxis dataKey="metric" fontSize={9} tick={{ fill: '#4b5563', fontWeight: 600 }} />
+                            <PolarAngleAxis dataKey="metric" fontSize={10} tick={{ fill: '#4b5563', fontWeight: 600 }} />
                             <Radar name="Performance" dataKey="score" stroke="#4472C4" fill="#4472C4" fillOpacity={0.6} />
                             <Tooltip content={<ExcelTooltip />} />
                         </RadarChart>
@@ -188,15 +188,15 @@ export function ClusterCharts() {
                 </CardContent>
             </Card>
 
-            {/* High Risk Barangay Chart */}
+            {/* High Risk Barangay Chart (NEW) */}
             <Card className="shadow border-slate-200">
                 <CardHeader className="pb-2 border-b border-slate-100 bg-slate-50/50">
-                    <CardTitle className="text-xs md:text-sm font-bold flex items-center gap-2 text-slate-700">
+                    <CardTitle className="text-sm font-bold flex items-center gap-2 text-slate-700">
                         <MapIcon className="w-4 h-4 text-slate-500" />
                         High-Risk Neighborhoods
                     </CardTitle>
                 </CardHeader>
-                <CardContent className="h-[250px] md:h-[280px] pt-4">
+                <CardContent className="h-[250px] md:h-[300px] pt-4">
                     <ResponsiveContainer width="100%" height="100%">
                         <BarChart data={barangayRiskData} layout="vertical" margin={{ left: 5, right: 30, top: 0, bottom: 0 }}>
                             <CartesianGrid strokeDasharray="0 0" horizontal={true} vertical={false} stroke="#e5e7eb" />
@@ -204,7 +204,7 @@ export function ClusterCharts() {
                             <YAxis 
                                 dataKey="name" 
                                 type="category" 
-                                fontSize={9} 
+                                fontSize={10} 
                                 width={80}
                                 tick={{ fontWeight: 600, fill: '#374151' }}
                                 axisLine={{ stroke: '#9ca3af' }}
@@ -217,15 +217,15 @@ export function ClusterCharts() {
                 </CardContent>
             </Card>
 
-            {/* Population Distribution */}
+            {/* Population Overview */}
             <Card className="shadow border-slate-200">
                 <CardHeader className="pb-2 border-b border-slate-100 bg-slate-50/50">
-                    <CardTitle className="text-xs md:text-sm font-bold flex items-center gap-2 text-slate-700">
+                    <CardTitle className="text-sm font-bold flex items-center gap-2 text-slate-700">
                         <PieChartIcon className="w-4 h-4 text-slate-500" />
                         Population Overview
                     </CardTitle>
                 </CardHeader>
-                <CardContent className="h-[250px] md:h-[280px] pt-4">
+                <CardContent className="h-[250px] md:h-[300px] pt-4">
                     <ResponsiveContainer width="100%" height="100%">
                         <PieChart>
                             <Pie 
@@ -236,12 +236,12 @@ export function ClusterCharts() {
                                 dataKey="value" 
                                 label={({ name, percent }) => `${name.split(' ')[1]} ${(percent * 100).toFixed(0)}%`}
                                 labelLine={true}
-                                fontSize={9}
+                                fontSize={10}
                             >
                                 {populationData.map((entry, index) => <Cell key={index} fill={entry.color} stroke="#fff" strokeWidth={1} />)}
                             </Pie>
                             <Tooltip content={<ExcelTooltip />} />
-                            <Legend verticalAlign="bottom" align="center" iconType="rect" wrapperStyle={{ fontSize: '9px', paddingTop: '10px' }} />
+                            <Legend verticalAlign="bottom" align="center" iconType="rect" wrapperStyle={{ fontSize: '10px', paddingTop: '10px' }} />
                         </PieChart>
                     </ResponsiveContainer>
                 </CardContent>
@@ -253,19 +253,19 @@ export function ClusterCharts() {
             {showVaccination && (
                 <Card className="shadow border-slate-200">
                     <CardHeader className="border-b border-slate-100 bg-slate-50/50">
-                        <CardTitle className="text-xs md:text-sm font-bold flex items-center gap-2">
+                        <CardTitle className="text-sm font-bold flex items-center gap-2">
                             <Syringe className="w-4 h-4 text-slate-500" />
-                            Vaccination Status by Segment
+                            Vaccination Distribution by Segment
                         </CardTitle>
                     </CardHeader>
-                    <CardContent className="h-[300px] md:h-[350px] pt-6">
+                    <CardContent className="h-[350px] pt-6">
                         <ResponsiveContainer width="100%" height="100%">
                             <BarChart data={vaccinationData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
                                 <CartesianGrid strokeDasharray="0 0" vertical={false} stroke="#e5e7eb" />
-                                <XAxis dataKey="name" fontSize={10} tick={{ fontWeight: 600, fill: '#374151' }} axisLine={{ stroke: '#9ca3af' }} tickLine={false} />
-                                <YAxis fontSize={10} axisLine={{ stroke: '#9ca3af' }} tickLine={false} tick={{ fill: '#6b7280' }} />
+                                <XAxis dataKey="name" fontSize={11} tick={{ fontWeight: 600, fill: '#374151' }} axisLine={{ stroke: '#9ca3af' }} tickLine={false} />
+                                <YAxis fontSize={11} axisLine={{ stroke: '#9ca3af' }} tickLine={false} tick={{ fill: '#6b7280' }} />
                                 <Tooltip content={<ExcelTooltip />} />
-                                <Legend verticalAlign="top" align="right" iconType="rect" wrapperStyle={{ fontSize: '9px', paddingBottom: '20px' }} />
+                                <Legend verticalAlign="top" align="right" iconType="rect" wrapperStyle={{ fontSize: '10px', paddingBottom: '20px' }} />
                                 <Bar dataKey="Fully Vaccinated" stackId="vax" fill="#4472C4" />
                                 <Bar dataKey="Partially Vaccinated" stackId="vax" fill="#ED7D31" />
                                 <Bar dataKey="Not Vaccinated" stackId="vax" fill="#A5A5A5" />
@@ -279,19 +279,19 @@ export function ClusterCharts() {
             {showGender && (
                 <Card className="shadow border-slate-200">
                     <CardHeader className="border-b border-slate-100 bg-slate-50/50">
-                        <CardTitle className="text-xs md:text-sm font-bold flex items-center gap-2">
+                        <CardTitle className="text-sm font-bold flex items-center gap-2">
                             <Users className="w-4 h-4 text-slate-500" />
-                            Gender Demographic Split
+                            Gender Demographics
                         </CardTitle>
                     </CardHeader>
-                    <CardContent className="h-[300px] md:h-[350px] pt-6">
+                    <CardContent className="h-[350px] pt-6">
                         <ResponsiveContainer width="100%" height="100%">
                             <BarChart data={demographicData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
                                 <CartesianGrid strokeDasharray="0 0" vertical={false} stroke="#e5e7eb" />
-                                <XAxis dataKey="name" fontSize={10} tick={{ fontWeight: 600, fill: '#374151' }} axisLine={{ stroke: '#9ca3af' }} tickLine={false} />
-                                <YAxis fontSize={10} axisLine={{ stroke: '#9ca3af' }} tickLine={false} tick={{ fill: '#6b7280' }} />
+                                <XAxis dataKey="name" fontSize={11} tick={{ fontWeight: 600, fill: '#374151' }} axisLine={{ stroke: '#9ca3af' }} tickLine={false} />
+                                <YAxis fontSize={11} axisLine={{ stroke: '#9ca3af' }} tickLine={false} tick={{ fill: '#6b7280' }} />
                                 <Tooltip content={<ExcelTooltip />} />
-                                <Legend verticalAlign="top" align="right" iconType="rect" wrapperStyle={{ fontSize: '9px', paddingBottom: '20px' }} />
+                                <Legend verticalAlign="top" align="right" iconType="rect" wrapperStyle={{ fontSize: '10px', paddingBottom: '20px' }} />
                                 <Bar dataKey="Male" fill="#4472C4" barSize={25} />
                                 <Bar dataKey="Female" fill="#ED7D31" barSize={25} />
                             </BarChart>
@@ -305,7 +305,7 @@ export function ClusterCharts() {
         {showDisease && (
             <Card className="shadow border-slate-200 overflow-hidden">
                 <CardHeader className="flex flex-col md:flex-row md:items-center justify-between gap-2 border-b border-slate-100 bg-slate-50/50">
-                    <CardTitle className="text-sm md:text-base font-bold flex items-center gap-2">
+                    <CardTitle className="text-base font-bold flex items-center gap-2">
                         <Activity className="w-5 h-5 text-slate-500" />
                         Disease Prevalence Matrix
                     </CardTitle>
@@ -322,7 +322,7 @@ export function ClusterCharts() {
                             <CartesianGrid strokeDasharray="0 0" vertical={false} stroke="#e5e7eb" />
                             <XAxis 
                                 dataKey="disease" 
-                                fontSize={9} 
+                                fontSize={10} 
                                 angle={-45}
                                 textAnchor="end"
                                 interval={0}
@@ -331,9 +331,9 @@ export function ClusterCharts() {
                                 axisLine={{ stroke: '#9ca3af' }}
                                 tickLine={false}
                             />
-                            <YAxis fontSize={9} axisLine={{ stroke: '#9ca3af' }} tickLine={false} tick={{ fill: '#6b7280' }} />
+                            <YAxis fontSize={10} axisLine={{ stroke: '#9ca3af' }} tickLine={false} tick={{ fill: '#6b7280' }} />
                             <Tooltip content={<ExcelTooltip />} />
-                            <Legend verticalAlign="top" align="right" iconType="rect" wrapperStyle={{ fontSize: '9px', paddingBottom: '30px' }} />
+                            <Legend verticalAlign="top" align="right" iconType="rect" wrapperStyle={{ fontSize: '10px', paddingBottom: '30px' }} />
                             {clusters.map((c, i) => (
                                 <Bar 
                                     key={c.id}
