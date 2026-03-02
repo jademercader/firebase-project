@@ -1,0 +1,530 @@
+{
+  "entities": {
+    "Barangay": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Barangay",
+      "type": "object",
+      "description": "Represents an administrative unit (Barangay) for which health records are collected and analyzed.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Barangay entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "The official name of the Barangay."
+        },
+        "description": {
+          "type": "string",
+          "description": "A brief description or additional details about the Barangay."
+        },
+        "geojsonCoordinates": {
+          "type": "string",
+          "description": "GeoJSON representation of the Barangay's boundaries, used for map visualization.",
+          "format": "uri"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "geojsonCoordinates"
+      ]
+    },
+    "HealthIndicatorDefinition": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "HealthIndicatorDefinition",
+      "type": "object",
+      "description": "Defines the types of health indicators used in records and analysis, providing standardization.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the HealthIndicatorDefinition entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "The common name of the health indicator (e.g., 'Disease Prevalence', 'Vaccination Rate')."
+        },
+        "description": {
+          "type": "string",
+          "description": "A detailed explanation of what the health indicator measures."
+        },
+        "unit": {
+          "type": "string",
+          "description": "The unit of measurement for the indicator (e.g., '%', 'count', 'cases/1000')."
+        },
+        "dataType": {
+          "type": "string",
+          "description": "The expected data type for the indicator's value (e.g., 'number', 'boolean', 'string')."
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "unit",
+        "dataType"
+      ]
+    },
+    "UploadedDataset": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "UploadedDataset",
+      "type": "object",
+      "description": "Stores metadata about raw health record files uploaded by users.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the UploadedDataset entity."
+        },
+        "barangayId": {
+          "type": "string",
+          "description": "Reference to the Barangay this dataset pertains to. (Relationship: Barangay 1:N UploadedDataset)"
+        },
+        "originalFileName": {
+          "type": "string",
+          "description": "The original name of the uploaded file."
+        },
+        "fileType": {
+          "type": "string",
+          "description": "The format of the uploaded file (e.g., 'CSV', 'XLSX')."
+        },
+        "uploadDate": {
+          "type": "string",
+          "description": "The date and time when the file was uploaded.",
+          "format": "date-time"
+        },
+        "storagePath": {
+          "type": "string",
+          "description": "The URI or path where the original uploaded file is stored.",
+          "format": "uri"
+        },
+        "status": {
+          "type": "string",
+          "description": "The current status of the uploaded dataset (e.g., 'Uploaded', 'Processing', 'Error')."
+        }
+      },
+      "required": [
+        "id",
+        "barangayId",
+        "originalFileName",
+        "fileType",
+        "uploadDate",
+        "storagePath",
+        "status"
+      ]
+    },
+    "ProcessedDataset": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "ProcessedDataset",
+      "type": "object",
+      "description": "Represents a version of a dataset after cleansing and standardization, ready for analysis.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the ProcessedDataset entity."
+        },
+        "uploadedDatasetId": {
+          "type": "string",
+          "description": "Reference to the original UploadedDataset from which this processed data was derived. (Relationship: UploadedDataset 1:N ProcessedDataset)"
+        },
+        "processingDate": {
+          "type": "string",
+          "description": "The date and time when the dataset was processed and cleansed.",
+          "format": "date-time"
+        },
+        "status": {
+          "type": "string",
+          "description": "The cleansing status of the dataset (e.g., 'Cleaned', 'IssuesDetected', 'ReadyForAnalysis')."
+        },
+        "processingSummary": {
+          "type": "string",
+          "description": "A summary of the cleansing actions performed and issues identified/corrected."
+        },
+        "version": {
+          "type": "number",
+          "description": "The version number of this processed dataset, incremented for subsequent processing runs."
+        }
+      },
+      "required": [
+        "id",
+        "uploadedDatasetId",
+        "processingDate",
+        "status",
+        "version"
+      ]
+    },
+    "HealthRecord": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "HealthRecord",
+      "type": "object",
+      "description": "Stores individual, cleaned health data entries, which are the granular points for cluster analysis.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the HealthRecord entity."
+        },
+        "processedDatasetId": {
+          "type": "string",
+          "description": "Reference to the ProcessedDataset this health record belongs to. (Relationship: ProcessedDataset 1:N HealthRecord)"
+        },
+        "barangayId": {
+          "type": "string",
+          "description": "Reference to the Barangay where this health record originates. (Relationship: Barangay 1:N HealthRecord)"
+        },
+        "recordIdentifier": {
+          "type": "string",
+          "description": "An identifier from the original source record, if available, for tracking."
+        },
+        "recordDate": {
+          "type": "string",
+          "description": "The date when the health record was collected or reported.",
+          "format": "date-time"
+        },
+        "age": {
+          "type": "number",
+          "description": "The age of the individual the record pertains to."
+        },
+        "gender": {
+          "type": "string",
+          "description": "The gender of the individual (e.g., 'Male', 'Female', 'Other')."
+        },
+        "residenceCoordinates": {
+          "type": "string",
+          "description": "GeoJSON point representing the individual's approximate residence for map visualization (e.g., '{\"type\": \"Point\", \"coordinates\": [longitude, latitude]}')."
+        },
+        "diseasePrevalence": {
+          "type": "number",
+          "description": "Example health indicator: a numerical value representing disease prevalence (e.g., cases per 1000 people)."
+        },
+        "vaccinationRate": {
+          "type": "number",
+          "description": "Example health indicator: a numerical value representing vaccination rate (e.g., percentage vaccinated)."
+        },
+        "malnutritionRate": {
+          "type": "number",
+          "description": "Example health indicator: a numerical value representing malnutrition rate (e.g., percentage of malnourished children)."
+        },
+        "sanitationAccess": {
+          "type": "boolean",
+          "description": "Example health indicator: indicates if the individual has access to proper sanitation facilities."
+        }
+      },
+      "required": [
+        "id",
+        "processedDatasetId",
+        "barangayId",
+        "recordIdentifier",
+        "recordDate",
+        "age",
+        "gender"
+      ]
+    },
+    "ClusterAnalysis": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "ClusterAnalysis",
+      "type": "object",
+      "description": "Records the details and parameters of each execution of the cluster analysis tool.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the ClusterAnalysis entity."
+        },
+        "processedDatasetId": {
+          "type": "string",
+          "description": "Reference to the ProcessedDataset used for this cluster analysis. (Relationship: ProcessedDataset 1:N ClusterAnalysis)"
+        },
+        "analysisDate": {
+          "type": "string",
+          "description": "The date and time when the cluster analysis was performed.",
+          "format": "date-time"
+        },
+        "selectedHealthIndicatorDefinitionIds": {
+          "type": "array",
+          "description": "References to HealthIndicatorDefinition entities that were selected for clustering. (Relationship: HealthIndicatorDefinition N:N ClusterAnalysis)",
+          "items": {
+            "type": "string"
+          }
+        },
+        "numberOfClusters": {
+          "type": "number",
+          "description": "The number of clusters identified or specified for this analysis."
+        },
+        "clusteringAlgorithm": {
+          "type": "string",
+          "description": "The algorithm used for clustering (e.g., 'K-Means', 'DBSCAN')."
+        },
+        "metricsUsed": {
+          "type": "string",
+          "description": "Description of metrics or methods used to determine cluster count (e.g., 'Elbow Method', 'Silhouette Score')."
+        },
+        "status": {
+          "type": "string",
+          "description": "The status of the cluster analysis (e.g., 'Completed', 'Failed', 'Pending')."
+        },
+        "summary": {
+          "type": "string",
+          "description": "An overall summary or key findings of the cluster analysis."
+        }
+      },
+      "required": [
+        "id",
+        "processedDatasetId",
+        "analysisDate",
+        "selectedHealthIndicatorDefinitionIds",
+        "numberOfClusters",
+        "clusteringAlgorithm",
+        "status"
+      ]
+    },
+    "Cluster": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Cluster",
+      "type": "object",
+      "description": "Stores the results for a single identified cluster within a specific Cluster Analysis.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Cluster entity."
+        },
+        "clusterAnalysisId": {
+          "type": "string",
+          "description": "Reference to the ClusterAnalysis this cluster belongs to. (Relationship: ClusterAnalysis 1:N Cluster)"
+        },
+        "clusterNumber": {
+          "type": "number",
+          "description": "A numerical identifier for the cluster within its analysis (e.g., 1, 2, 3)."
+        },
+        "description": {
+          "type": "string",
+          "description": "A descriptive label for the cluster (e.g., 'High-risk area', 'Low vaccination rates')."
+        },
+        "centroidData": {
+          "type": "string",
+          "description": "Aggregated average values for the selected health indicators for this cluster, stored as a JSON string representation of an object (e.g., '{\"diseasePrevalence\": 0.6, \"vaccinationRate\": 0.3}')."
+        },
+        "healthRecordIds": {
+          "type": "array",
+          "description": "References to HealthRecord entities that belong to this cluster. (Relationship: HealthRecord N:N Cluster)",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "clusterAnalysisId",
+        "clusterNumber",
+        "description",
+        "centroidData",
+        "healthRecordIds"
+      ]
+    },
+    "Report": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Report",
+      "type": "object",
+      "description": "Logs and tracks details about custom reports generated from cluster analysis results.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Report entity."
+        },
+        "clusterAnalysisId": {
+          "type": "string",
+          "description": "Reference to the ClusterAnalysis from which this report was generated. (Relationship: ClusterAnalysis 1:N Report)"
+        },
+        "reportName": {
+          "type": "string",
+          "description": "The user-defined name for the generated report."
+        },
+        "generationDate": {
+          "type": "string",
+          "description": "The date and time when the report was generated.",
+          "format": "date-time"
+        },
+        "generatedFilePath": {
+          "type": "string",
+          "description": "The URI or path where the generated report file (e.g., PDF) is stored.",
+          "format": "uri"
+        },
+        "reportParameters": {
+          "type": "string",
+          "description": "A JSON string representing the parameters and filters used to generate the report (e.g., '{\"selectedClusters\": [\"cluster1Id\"], \"includedDemographics\": [\"age\", \"gender\"]}')."
+        }
+      },
+      "required": [
+        "id",
+        "clusterAnalysisId",
+        "reportName",
+        "generationDate",
+        "generatedFilePath",
+        "reportParameters"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/barangays/{barangayId}",
+        "definition": {
+          "entityName": "Barangay",
+          "schema": {
+            "$ref": "#/backend/entities/Barangay"
+          },
+          "description": "Stores global information about administrative units (Barangays). Intended to be readable by authenticated users, with write access managed by an implicit admin role or backend service.",
+          "params": [
+            {
+              "name": "barangayId",
+              "description": "Unique identifier for a specific Barangay."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/health_indicator_definitions/{indicatorDefinitionId}",
+        "definition": {
+          "entityName": "HealthIndicatorDefinition",
+          "schema": {
+            "$ref": "#/backend/entities/HealthIndicatorDefinition"
+          },
+          "description": "Stores global definitions for various health indicators. Intended to be readable by authenticated users, with write access managed by an implicit admin role or backend service.",
+          "params": [
+            {
+              "name": "indicatorDefinitionId",
+              "description": "Unique identifier for a specific HealthIndicatorDefinition."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/uploaded_datasets/{uploadedDatasetId}",
+        "definition": {
+          "entityName": "UploadedDataset",
+          "schema": {
+            "$ref": "#/backend/entities/UploadedDataset"
+          },
+          "description": "Metadata for raw health record files uploaded by a specific user. Includes denormalized 'ownerId' (equal to 'userId' from the path) for authorization independence.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "Unique identifier of the user who owns this dataset."
+            },
+            {
+              "name": "uploadedDatasetId",
+              "description": "Unique identifier for a specific UploadedDataset."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/processed_datasets/{processedDatasetId}",
+        "definition": {
+          "entityName": "ProcessedDataset",
+          "schema": {
+            "$ref": "#/backend/entities/ProcessedDataset"
+          },
+          "description": "Cleaned and standardized versions of a user's uploaded dataset. Includes denormalized 'ownerId' (equal to 'userId' from the path) and 'barangayId' (copied from the associated UploadedDataset) for authorization independence and query efficiency.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "Unique identifier of the user who owns this processed dataset."
+            },
+            {
+              "name": "processedDatasetId",
+              "description": "Unique identifier for a specific ProcessedDataset."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/health_records/{healthRecordId}",
+        "definition": {
+          "entityName": "HealthRecord",
+          "schema": {
+            "$ref": "#/backend/entities/HealthRecord"
+          },
+          "description": "Individual cleaned health data entries belonging to a specific user. Includes denormalized 'ownerId' (equal to 'userId' from the path) for authorization independence. 'processedDatasetId' and 'barangayId' are already part of the schema.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "Unique identifier of the user who owns this health record."
+            },
+            {
+              "name": "healthRecordId",
+              "description": "Unique identifier for a specific HealthRecord."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/cluster_analyses/{clusterAnalysisId}",
+        "definition": {
+          "entityName": "ClusterAnalysis",
+          "schema": {
+            "$ref": "#/backend/entities/ClusterAnalysis"
+          },
+          "description": "Records details of a cluster analysis run initiated by a specific user. Includes denormalized 'ownerId' (equal to 'userId' from the path) and 'barangayId' (copied from the associated ProcessedDataset) for authorization independence and query efficiency.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "Unique identifier of the user who initiated this cluster analysis."
+            },
+            {
+              "name": "clusterAnalysisId",
+              "description": "Unique identifier for a specific ClusterAnalysis."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/cluster_analyses/{clusterAnalysisId}/clusters/{clusterId}",
+        "definition": {
+          "entityName": "Cluster",
+          "schema": {
+            "$ref": "#/backend/entities/Cluster"
+          },
+          "description": "Stores results for a single identified cluster within a user's specific Cluster Analysis. Includes denormalized 'ownerId' (equal to 'userId' from the parent path) for authorization independence. 'clusterAnalysisId' is already part of the schema.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "Unique identifier of the user who owns the parent cluster analysis."
+            },
+            {
+              "name": "clusterAnalysisId",
+              "description": "Unique identifier for the parent ClusterAnalysis."
+            },
+            {
+              "name": "clusterId",
+              "description": "Unique identifier for a specific Cluster."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/reports/{reportId}",
+        "definition": {
+          "entityName": "Report",
+          "schema": {
+            "$ref": "#/backend/entities/Report"
+          },
+          "description": "Logs details about custom reports generated by a specific user. Includes denormalized 'ownerId' (equal to 'userId' from the path) and 'barangayId' (copied from the associated ClusterAnalysis) for authorization independence and query efficiency. 'clusterAnalysisId' is already part of the schema.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "Unique identifier of the user who generated this report."
+            },
+            {
+              "name": "reportId",
+              "description": "Unique identifier for a specific Report."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore structure is designed to support a multi-user 'Barangay Health Insights' system, prioritizing secure, scalable, and debuggable authorization. The core strategy revolves around **Authorization Independence** and **Structural Segregation**, ensuring simple security rules.\n\n1.  **Authorization Independence (CRITICAL):** For all user-owned data, an `ownerId` field (mirroring `request.auth.uid`) is denormalized directly into the document. This eliminates the need for `get()` calls in security rules to ascertain ownership, which is crucial for atomic operations and debuggability. For example, a `ProcessedDataset` document will contain `ownerId` and `barangayId` (copied from its parent `UploadedDataset`) directly, allowing `allow read, write: if request.auth.uid == resource.data.ownerId;` rules without querying parent documents. The `barangayId` is further denormalized into `ProcessedDataset`, `ClusterAnalysis`, and `Report` to allow efficient querying and authorization context without relying on `get()` calls to `UploadedDataset` or `Barangay` documents.\n\n2.  **Structural Segregation (Homogeneous Security Posture):** Data is segregated into global/master collections and user-specific subcollections. \n    *   `/barangays/{barangayId}` and `/health_indicator_definitions/{indicatorDefinitionId}` are global collections, designed to be generally readable by authenticated users (and writable by an implicit administrator role, if defined outside the current schema or via Cloud Functions). Their security posture is uniform: globally accessible reference data.\n    *   All user-generated and owned data, such as uploaded datasets, processed data, health records, cluster analyses, and reports, are nested under `/users/{userId}/...`. This automatically enforces ownership, as `userId` in the path corresponds to `request.auth.uid`, making authorization rules highly explicit and localized to the user's data.\n\n3.  **QAPs (Rules are not Filters):** This structure inherently supports Query-As-Permissions. By organizing user-owned data under `/users/{userId}`, any client-side query within that path (e.g., `db.collection('users').doc(request.auth.uid).collection('uploaded_datasets').get()`) is implicitly filtered by `request.auth.uid`. For global collections, a simple `list` operation retrieves all accessible documents. The denormalized `ownerId` fields further enable client-side queries with `where('ownerId', '==', request.auth.uid)` if such collections were structured as top-level collections, though the current user-nested structure is more direct.\n\n4.  **DBAC (No Custom Claims) and Global Roles:** The prompt mandates DBAC and global roles via existence-over-content (e.g., `/roles_admin/{uid}`). However, as no `User` or `AdminRole` entity schema was provided, a dedicated `AdminRole` collection with a corresponding `$ref` cannot be explicitly defined according to output requirements. Therefore, `Barangay` and `HealthIndicatorDefinition` are designed as read-only for authenticated users, with write access implied to be handled by a trusted backend service (e.g., Cloud Functions with Admin SDK) or assuming that a `User` entity with roles would be added to the schema if needed for in-database role management.\n\nThis design ensures that security rules are straightforward, mostly relying on `request.auth.uid == userId` (from path) or `request.auth.uid == resource.data.ownerId` (from denormalized field), thereby achieving the critical goal of authorization independence and simplified debugging."
+  }
+}

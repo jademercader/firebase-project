@@ -1,0 +1,162 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    /**
+     * MULTI-USER BARANGAY HEALTH INSIGHTS SECURITY MODEL
+     *
+     * Core Philosophy:
+     * This ruleset enforces a strict user-ownership model using hierarchical path-based 
+     * authorization and denormalized ownership fields. It is designed for high 
+     * authorization security while maintaining flexibility for data schemas during prototyping.
+     *
+     * Data Structure:
+     * 1. Global Reference Data: /barangays and /health_indicator_definitions are read-only 
+     *    for all authenticated users.
+     * 2. User-Owned Data: All health records, datasets, analyses, and reports are nested 
+     *    under /users/{userId}/ to isolate data between users.
+     *
+     * Key Security Decisions:
+     * - Authorization Independence: Documents contain a denormalized 'ownerId' field 
+     *   to allow for simple, performant rules that don't require cross-document lookups.
+     * - Strict Path Consistency: Rules ensure that users can only write data into 
+     *   their own specific subcollections by matching the 'userId' in the path 
+     *   with their authentication UID.
+     * - Relational Integrity: While general data types are not enforced (Prototyping Mode), 
+     *   critical fields like 'ownerId' are validated on creation and enforced as 
+     *   immutable on update.
+     */
+
+    // --- Global Helper Functions ---
+
+    /** @description Checks if the request is from a signed-in user. */
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    /** @description Checks if the user's UID matches the provided ID. */
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    /** @description Combines ownership check with a check that the document exists. */
+    function isExistingOwner(userId) {
+      return isOwner(userId) && resource != null;
+    }
+
+    // --- Collection Rules ---
+
+    /**
+     * @description Global reference data for administrative units.
+     * @path /barangays/{barangayId}
+     * @allow (get, list) if a user is signed in via any provider.
+     * @deny (create, update, delete) for all users; managed by admin/backend.
+     * @principle Public authenticated read with restricted writes.
+     */
+    match /barangays/{barangayId} {
+      allow get, list: if isSignedIn();
+      allow create, update, delete: if false;
+    }
+
+    /**
+     * @description Standard definitions for health measurement indicators.
+     * @path /health_indicator_definitions/{indicatorDefinitionId}
+     * @allow (get, list) if a user is signed in.
+     * @deny (create, update, delete) for all users; managed by admin/backend.
+     * @principle Public authenticated read with restricted writes.
+     */
+    match /health_indicator_definitions/{indicatorDefinitionId} {
+      allow get, list: if isSignedIn();
+      allow create, update, delete: if false;
+    }
+
+    /**
+     * @description Metadata for raw health data files uploaded by users.
+     * @path /users/{userId}/uploaded_datasets/{uploadedDatasetId}
+     * @allow (create) if the user is the path owner and sets 'ownerId' to their UID.
+     * @allow (update) if the existing owner is the user and 'ownerId' is not modified.
+     * @deny (list) if the user tries to view datasets of another user.
+     * @principle Enforces path-based ownership and relational integrity of the owner field.
+     */
+    match /users/{userId}/uploaded_datasets/{uploadedDatasetId} {
+      allow get, list: if isOwner(userId);
+      allow create: if isOwner(userId) && request.resource.data.ownerId == request.auth.uid;
+      allow update: if isExistingOwner(userId) && request.resource.data.ownerId == resource.data.ownerId;
+      allow delete: if isExistingOwner(userId);
+    }
+
+    /**
+     * @description Standardized/cleaned versions of uploaded health data.
+     * @path /users/{userId}/processed_datasets/{processedDatasetId}
+     * @allow (create) if the user is the path owner and sets 'ownerId' correctly.
+     * @allow (delete) if the user owns the document.
+     * @deny (get) if the UID in the path does not match the requester's UID.
+     * @principle Structural segregation of user data trees.
+     */
+    match /users/{userId}/processed_datasets/{processedDatasetId} {
+      allow get, list: if isOwner(userId);
+      allow create: if isOwner(userId) && request.resource.data.ownerId == request.auth.uid;
+      allow update: if isExistingOwner(userId) && request.resource.data.ownerId == resource.data.ownerId;
+      allow delete: if isExistingOwner(userId);
+    }
+
+    /**
+     * @description Individual granular health data entries.
+     * @path /users/{userId}/health_records/{healthRecordId}
+     * @allow (list) for the owner to retrieve their own records.
+     * @allow (create) if path userId and data ownerId match request auth.
+     * @deny (update) if the request attempts to change the document ownership.
+     * @principle Authorization independence through denormalized ownerId.
+     */
+    match /users/{userId}/health_records/{healthRecordId} {
+      allow get, list: if isOwner(userId);
+      allow create: if isOwner(userId) && request.resource.data.ownerId == request.auth.uid;
+      allow update: if isExistingOwner(userId) && request.resource.data.ownerId == resource.data.ownerId;
+      allow delete: if isExistingOwner(userId);
+    }
+
+    /**
+     * @description Parameters and metadata for cluster analysis executions.
+     * @path /users/{userId}/cluster_analyses/{clusterAnalysisId}
+     * @allow (create) if the user initiates the analysis under their own path.
+     * @deny (update) if the existing document doesn't exist or is owned by another.
+     * @principle Robustness check for state-changing operations.
+     */
+    match /users/{userId}/cluster_analyses/{clusterAnalysisId} {
+      allow get, list: if isOwner(userId);
+      allow create: if isOwner(userId) && request.resource.data.ownerId == request.auth.uid;
+      allow update: if isExistingOwner(userId) && request.resource.data.ownerId == resource.data.ownerId;
+      allow delete: if isExistingOwner(userId);
+
+      /**
+       * @description Resulting data clusters from a specific analysis run.
+       * @path /users/{userId}/cluster_analyses/{clusterAnalysisId}/clusters/{clusterId}
+       * @allow (get) if the parent analysis path belongs to the user.
+       * @deny (create) if the ownerId field in the cluster data is missing or incorrect.
+       * @principle Secures subcollections using parent path ownership.
+       */
+      match /clusters/{clusterId} {
+        allow get, list: if isOwner(userId);
+        allow create: if isOwner(userId) && request.resource.data.ownerId == request.auth.uid;
+        allow update: if isExistingOwner(userId) && request.resource.data.ownerId == resource.data.ownerId;
+        allow delete: if isExistingOwner(userId);
+      }
+    }
+
+    /**
+     * @description Generated reports based on analysis results.
+     * @path /users/{userId}/reports/{reportId}
+     * @allow (create) if creating a report in the user's own report collection.
+     * @allow (update) if the ownerId is preserved.
+     * @deny (list) if the user is not authenticated.
+     * @principle Ensures data consistency between the path and internal fields.
+     */
+    match /users/{userId}/reports/{reportId} {
+      allow get, list: if isOwner(userId);
+      allow create: if isOwner(userId) && request.resource.data.ownerId == request.auth.uid;
+      allow update: if isExistingOwner(userId) && request.resource.data.ownerId == resource.data.ownerId;
+      allow delete: if isExistingOwner(userId);
+    }
+
+  }
+}
