@@ -16,13 +16,12 @@ import {
   PieChart,
   Pie,
   Cell,
-  Legend,
-  LabelList
+  Legend
 } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
-import { Activity, Target, CheckCircle2, UserCircle, Syringe, Baby, TrendingUp, AlertTriangle, ShieldAlert, PieChartIcon } from 'lucide-react';
+import { Activity, Target, ShieldAlert, PieChartIcon, Syringe, Users, Baby } from 'lucide-react';
 import type { AnalysisResult } from '@/lib/types';
 import { useMounted } from '@/hooks/use-mounted';
 
@@ -31,7 +30,6 @@ const ANALYSIS_STORAGE_KEY = 'analysis_result';
 const CHART_COLORS = [
   '#2563eb', '#f97316', '#16a34a', '#9333ea', '#e11d48', 
   '#0891b2', '#f59e0b', '#4f46e5', '#be185d', '#15803d', 
-  '#1e40af', '#c2410c', '#166534', '#6b21a8', '#991b1b',
 ];
 
 const CustomTooltip = ({ active, payload, label }: any) => {
@@ -96,12 +94,14 @@ export function ClusterCharts() {
   const showAge = selectedIndicators.includes('age');
   const showGender = selectedIndicators.includes('gender');
 
+  // 1. Population Pie
   const populationData = clusters.map((c, i) => ({
     name: `Cluster ${c.id}`,
     value: c.records.length,
     color: CHART_COLORS[i % CHART_COLORS.length]
   }));
 
+  // 2. Validation Radar
   const performanceData = [
     { metric: 'Distinctness', score: Math.max(20, Math.round((globalValidation.avgSilhouetteScore + 1) * 50)) },
     { metric: 'Cohesion', score: Math.max(10, globalValidation.totalWCSS) },
@@ -110,6 +110,7 @@ export function ClusterCharts() {
     { metric: 'Separation', score: 82 }
   ];
 
+  // 3. Disease Burden
   const diseaseBurdenMap: Record<string, number> = {};
   const allDiseases = Array.from(new Set(clusters.flatMap(c => 
     Object.keys(c.healthMetrics).filter(k => !['Vaccinated', 'Partially Vaccinated', 'Not Vaccinated', 'Male', 'Female', 'Other'].includes(k))
@@ -129,82 +130,78 @@ export function ClusterCharts() {
     return entry;
   });
 
+  // 4. Vaccination Data
   const vaccinationData = clusters.map(c => ({
-    name: `C${c.id}`,
+    name: `Cluster ${c.id}`,
     'Full': c.healthMetrics['Vaccinated'] || 0,
     'Partial': c.healthMetrics['Partially Vaccinated'] || 0,
-    'Unvaccinated': c.healthMetrics['Not Vaccinated'] || 0,
+    'None': c.healthMetrics['Not Vaccinated'] || 0,
   }));
 
-  const genderData = clusters.map(c => ({
-    name: `C${c.id}`,
+  // 5. Demographics (Gender & Age)
+  const demographicData = clusters.map(c => ({
+    name: `Cluster ${c.id}`,
     'Male': c.demographics.genderDistribution['Male'] || 0,
     'Female': c.demographics.genderDistribution['Female'] || 0,
-    'Other': c.demographics.genderDistribution['Other'] || 0,
-  }));
-
-  const ageData = clusters.map(c => ({
-    name: `C${c.id}`,
     'Avg Age': Math.round(c.demographics.averageAge),
   }));
 
   return (
     <div className="space-y-8">
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 items-stretch">
-            <Card className="shadow-md border-slate-200 flex flex-col h-full">
+            {/* Validation */}
+            <Card className="shadow-md border-slate-200">
                 <CardHeader className="pb-2">
                     <CardTitle className="text-lg font-bold flex items-center gap-2 text-slate-900">
                         <Target className="w-5 h-5 text-primary" />
                         Analysis Validation
                     </CardTitle>
-                    <CardDescription className="text-xs">Statistical quality metrics of current clustering.</CardDescription>
+                    <CardDescription className="text-xs">Statistical quality metrics of clustering.</CardDescription>
                 </CardHeader>
-                <CardContent className="pt-4 flex-grow flex flex-col justify-center">
-                    <div className="h-[200px] w-full">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <RadarChart cx="50%" cy="50%" outerRadius="70%" data={performanceData}>
-                                <PolarGrid stroke="#e2e8f0" />
-                                <PolarAngleAxis dataKey="metric" fontSize={10} tick={{ fill: '#64748b', fontWeight: 700 }} />
-                                <Radar dataKey="score" stroke="hsl(var(--primary))" fill="hsl(var(--primary))" fillOpacity={0.4} />
-                            </RadarChart>
-                        </ResponsiveContainer>
-                    </div>
+                <CardContent className="h-[250px] pt-4">
+                    <ResponsiveContainer width="100%" height="100%">
+                        <RadarChart cx="50%" cy="50%" outerRadius="70%" data={performanceData}>
+                            <PolarGrid stroke="#e2e8f0" />
+                            <PolarAngleAxis dataKey="metric" fontSize={10} tick={{ fill: '#64748b', fontWeight: 700 }} />
+                            <Radar dataKey="score" stroke="hsl(var(--primary))" fill="hsl(var(--primary))" fillOpacity={0.4} />
+                        </RadarChart>
+                    </ResponsiveContainer>
                 </CardContent>
             </Card>
 
-            <Card className="shadow-md border-slate-200 flex flex-col h-full">
+            {/* Population Pie */}
+            <Card className="shadow-md border-slate-200">
                 <CardHeader className="pb-2">
                     <CardTitle className="text-lg font-bold flex items-center gap-2 text-slate-900">
                         <PieChartIcon className="w-5 h-5 text-primary" />
                         Population Distribution
                     </CardTitle>
-                    <CardDescription className="text-xs">Relative size of each cluster.</CardDescription>
+                    <CardDescription className="text-xs">Relative size of each identified segment.</CardDescription>
                 </CardHeader>
-                <CardContent className="pt-0 flex-grow flex flex-col items-center justify-center">
-                    <div className="h-[240px] w-full mt-2">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <PieChart>
-                                <Pie data={populationData} cx="50%" cy="50%" innerRadius={60} outerRadius={90} paddingAngle={5} dataKey="value" stroke="white" strokeWidth={2}>
-                                    {populationData.map((entry, index) => <Cell key={index} fill={entry.color} />)}
-                                </Pie>
-                                <Tooltip content={<CustomTooltip />} />
-                                <Legend iconType="circle" wrapperStyle={{ paddingTop: '10px' }} formatter={(v) => <span className="text-[10px] font-bold text-slate-600">{v}</span>} />
-                            </PieChart>
-                        </ResponsiveContainer>
-                    </div>
+                <CardContent className="h-[250px] pt-0">
+                    <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                            <Pie data={populationData} cx="50%" cy="50%" innerRadius={60} outerRadius={90} paddingAngle={5} dataKey="value" stroke="white" strokeWidth={2}>
+                                {populationData.map((entry, index) => <Cell key={index} fill={entry.color} />)}
+                            </Pie>
+                            <Tooltip content={<CustomTooltip />} />
+                            <Legend iconType="circle" />
+                        </PieChart>
+                    </ResponsiveContainer>
                 </CardContent>
             </Card>
 
-            <Card className="shadow-md border-slate-200 bg-destructive/5 flex flex-col h-full">
+            {/* High-Risk Priority */}
+            <Card className="shadow-md border-slate-200 bg-destructive/5">
                 <CardHeader className="pb-2">
                     <CardTitle className="text-lg font-bold flex items-center gap-2 text-destructive">
                         <ShieldAlert className="w-5 h-5" />
-                        High-Risk Priority
+                        High-Risk Markers
                     </CardTitle>
-                    <CardDescription className="text-xs">Top 5 diseases with highest prevalence.</CardDescription>
+                    <CardDescription className="text-xs">Top diseases needing immediate intervention.</CardDescription>
                 </CardHeader>
-                <CardContent className="pt-4 space-y-3 flex-grow overflow-y-auto max-h-[350px]">
-                    {diseaseBurdenData.slice(0, 5).map((item, idx) => (
+                <CardContent className="pt-4 space-y-3">
+                    {diseaseBurdenData.slice(0, 5).map((item) => (
                          <div key={item.disease} className="flex items-center justify-between p-2 rounded-lg bg-white border border-destructive/10 shadow-sm">
                             <span className="text-sm font-bold text-slate-800">{item.disease}</span>
                             <Badge variant="destructive" className="font-black text-[10px]">
@@ -216,56 +213,124 @@ export function ClusterCharts() {
             </Card>
         </div>
 
-        {showDisease && (
-            <Card className="shadow-md border-slate-200 overflow-hidden">
-                <CardHeader className="border-b bg-slate-50/50 pb-4">
-                    <CardTitle className="text-xl font-bold flex items-center gap-2 text-slate-900">
-                        <Activity className="w-5 h-5 text-primary" />
-                        Specific Disease Distribution Details
-                    </CardTitle>
-                    <CardDescription>Granular involvement of all health markers across population clusters.</CardDescription>
-                </CardHeader>
-                <CardContent className="pt-6">
-                    <div className="h-[500px] w-full">
+        <div className="grid gap-6 md:grid-cols-2">
+            {/* Vaccination Status Stacked Bar */}
+            {showVaccination && (
+                <Card className="shadow-md border-slate-200">
+                    <CardHeader>
+                        <CardTitle className="text-lg font-bold flex items-center gap-2">
+                            <Syringe className="w-5 h-5 text-primary" />
+                            Vaccination Distribution
+                        </CardTitle>
+                        <CardDescription>Comparative protection levels across segments.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="h-[300px]">
                         <ResponsiveContainer width="100%" height="100%">
-                            <BarChart 
-                              data={diseaseChartData} 
-                              margin={{ top: 20, right: 30, left: 10, bottom: 120 }}
-                              barCategoryGap="20%"
-                            >
-                                <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#f1f5f9" />
-                                <XAxis 
-                                    dataKey="disease" 
-                                    fontSize={11} 
-                                    tickLine={true} 
-                                    axisLine={false}
-                                    angle={-45}
-                                    textAnchor="end"
-                                    interval={0}
-                                    height={140}
-                                    dx={-5}
-                                    dy={5}
-                                    tick={{ fill: '#1e293b', fontWeight: 800 }}
-                                />
-                                <YAxis 
-                                    fontSize={10} 
-                                    tickLine={false} 
-                                    axisLine={false} 
-                                    tick={{ fill: '#94a3b8', fontWeight: 700 }}
-                                />
+                            <BarChart data={vaccinationData}>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                                <XAxis dataKey="name" fontSize={11} tick={{ fontWeight: 700 }} />
+                                <YAxis fontSize={10} axisLine={false} tickLine={false} />
                                 <Tooltip content={<CustomTooltip />} />
-                                {clusters.map((c, i) => (
-                                    <Bar 
-                                        key={c.id}
-                                        name={`Cluster ${c.id}`}
-                                        dataKey={`Cluster ${c.id}`} 
-                                        fill={CHART_COLORS[i % CHART_COLORS.length]} 
-                                        radius={[4, 4, 0, 0]} 
-                                    />
-                                ))}
+                                <Legend />
+                                <Bar dataKey="Full" stackId="a" fill="#16a34a" />
+                                <Bar dataKey="Partial" stackId="a" fill="#f59e0b" />
+                                <Bar dataKey="None" stackId="a" fill="#e11d48" />
                             </BarChart>
                         </ResponsiveContainer>
-                    </div>
+                    </CardContent>
+                </Card>
+            )}
+
+            {/* Gender Distribution Bar */}
+            {showGender && (
+                <Card className="shadow-md border-slate-200">
+                    <CardHeader>
+                        <CardTitle className="text-lg font-bold flex items-center gap-2">
+                            <Users className="w-5 h-5 text-primary" />
+                            Gender Composition
+                        </CardTitle>
+                        <CardDescription>Demographic balance within each population cluster.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="h-[300px]">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={demographicData}>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                                <XAxis dataKey="name" fontSize={11} tick={{ fontWeight: 700 }} />
+                                <YAxis fontSize={10} axisLine={false} tickLine={false} />
+                                <Tooltip content={<CustomTooltip />} />
+                                <Legend />
+                                <Bar dataKey="Male" fill="#2563eb" radius={[4, 4, 0, 0]} />
+                                <Bar dataKey="Female" fill="#e11d48" radius={[4, 4, 0, 0]} />
+                            </BarChart>
+                        </ResponsiveContainer>
+                    </CardContent>
+                </Card>
+            )}
+        </div>
+
+        {/* Large Disease Chart */}
+        {showDisease && (
+            <Card className="shadow-md border-slate-200">
+                <CardHeader>
+                    <CardTitle className="text-xl font-bold flex items-center gap-2">
+                        <Activity className="w-5 h-5 text-primary" />
+                        Comprehensive Disease Matrix
+                    </CardTitle>
+                    <CardDescription>Prevalence of specific conditions mapped to population segments.</CardDescription>
+                </CardHeader>
+                <CardContent className="h-[450px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                        <BarChart 
+                            data={diseaseChartData} 
+                            margin={{ top: 20, right: 30, left: 10, bottom: 100 }}
+                        >
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                            <XAxis 
+                                dataKey="disease" 
+                                fontSize={11} 
+                                angle={-45}
+                                textAnchor="end"
+                                interval={0}
+                                height={120}
+                                tick={{ fill: '#1e293b', fontWeight: 800 }}
+                            />
+                            <YAxis fontSize={10} axisLine={false} tickLine={false} />
+                            <Tooltip content={<CustomTooltip />} />
+                            {clusters.map((c, i) => (
+                                <Bar 
+                                    key={c.id}
+                                    name={`Cluster ${c.id}`}
+                                    dataKey={`Cluster ${c.id}`} 
+                                    fill={CHART_COLORS[i % CHART_COLORS.length]} 
+                                    radius={[4, 4, 0, 0]} 
+                                />
+                            ))}
+                        </BarChart>
+                    </ResponsiveContainer>
+                </CardContent>
+            </Card>
+        )}
+
+        {/* Average Age Comparison */}
+        {showAge && (
+            <Card className="shadow-md border-slate-200">
+                <CardHeader>
+                    <CardTitle className="text-lg font-bold flex items-center gap-2">
+                        <Baby className="w-5 h-5 text-primary" />
+                        Age Profiles
+                    </CardTitle>
+                    <CardDescription>Average age of individuals per cluster.</CardDescription>
+                </CardHeader>
+                <CardContent className="h-[300px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={demographicData}>
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                            <XAxis dataKey="name" fontSize={11} tick={{ fontWeight: 700 }} />
+                            <YAxis fontSize={10} axisLine={false} tickLine={false} />
+                            <Tooltip content={<CustomTooltip />} />
+                            <Bar dataKey="Avg Age" fill="#9333ea" radius={[4, 4, 0, 0]} />
+                        </BarChart>
+                    </ResponsiveContainer>
                 </CardContent>
             </Card>
         )}

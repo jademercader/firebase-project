@@ -1,3 +1,4 @@
+
 'use client';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -47,7 +48,7 @@ export default function UploadPage() {
                 const street = getRowValue(row, ['address', 'Address', 'Street', 'Location', 'Purok', 'Street Address']);
                 const brgy = getRowValue(row, ['barangay', 'Barangay', 'Brgy', 'Area']);
                 
-                // Combine Street and Barangay into Address for accurate spatial analysis
+                // Combine Street and Barangay for accurate spatial logic
                 const fullAddress = brgy 
                   ? `${street}${street ? ', ' : ''}Brgy. ${brgy.replace(/^Brgy\.?\s+/i, '')}` 
                   : (street || 'Calbayog City');
@@ -83,10 +84,10 @@ export default function UploadPage() {
   const handleSaveData = () => {
     if (records.length === 0) return;
     
-    // Save strictly to local storage as per requirement
+    // Save to local storage
     localStorage.setItem('health_records', JSON.stringify(records));
     
-    // Trigger update for other components
+    // Trigger update event
     window.dispatchEvent(new Event('records-updated'));
     
     toast({
@@ -104,7 +105,7 @@ export default function UploadPage() {
         <div className="flex items-center justify-between space-y-2">
             <h2 className="text-3xl font-bold tracking-tight font-headline text-slate-900">Barangay Data Consolidation</h2>
         </div>
-        <div className="space-y-6">
+        <div className="grid grid-cols-1 gap-6">
             <FileUploader 
                 onFileSelected={handleFileSelected} 
                 onSaveData={handleSaveData} 
