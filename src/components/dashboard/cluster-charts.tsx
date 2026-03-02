@@ -111,7 +111,7 @@ export function ClusterCharts() {
     color: CHART_COLORS[i % CHART_COLORS.length]
   }));
 
-  // 2. High Risk Barangay Distribution (NEW)
+  // 2. High Risk Barangay Distribution
   const barangayRiskMap: Record<string, number> = {};
   clusters.forEach(cluster => {
     cluster.records.forEach(record => {
@@ -128,13 +128,13 @@ export function ClusterCharts() {
     .sort((a, b) => b.count - a.count)
     .slice(0, 10);
 
-  // 3. Performance Radar
+  // 3. Performance Radar (Simplified Labels)
   const performanceData = [
-    { metric: 'Distinctness', score: Math.max(20, Math.round((globalValidation.avgSilhouetteScore + 1) * 50)) },
-    { metric: 'Cohesion', score: Math.max(10, globalValidation.totalWCSS) },
-    { metric: 'Density', score: 85 },
-    { metric: 'Stability', score: 90 },
-    { metric: 'Resolution', score: 78 }
+    { metric: 'Clear Groups', score: Math.max(20, Math.round((globalValidation.avgSilhouetteScore + 1) * 50)) },
+    { metric: 'Group Tightness', score: Math.max(10, globalValidation.totalWCSS) },
+    { metric: 'Data Volume', score: 85 },
+    { metric: 'Reliability', score: 90 },
+    { metric: 'Detail Level', score: 78 }
   ];
 
   // 4. Disease Matrix
