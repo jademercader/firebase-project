@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect } from 'react';
 import { ClusterControls } from '@/components/dashboard/cluster-controls';
 import { ClusterCharts } from '@/components/dashboard/cluster-charts';
 import { TrendAnalysis } from '@/components/dashboard/trend-analysis';
@@ -21,6 +22,16 @@ const DynamicClusterMap = dynamic(
 
 export default function DashboardPage() {
   const mounted = useMounted();
+
+  // Erase analysis results on refresh to avoid repetitions
+  useEffect(() => {
+    if (mounted) {
+      localStorage.removeItem('analysis_result');
+      localStorage.removeItem('health_clusters');
+      // Notify components to update their state to "empty"
+      window.dispatchEvent(new Event('analysis-updated'));
+    }
+  }, [mounted]);
 
   // HCI Mount Guard: Prevents hydration mismatch and layout shifts
   if (!mounted) {
