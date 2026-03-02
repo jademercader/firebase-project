@@ -45,7 +45,6 @@ function addJitter(val: number, amount: number = 0.003) {
 /**
  * Robust K-Means Clustering Engine.
  * Features: K-Means++ Initialization, Min-Max Normalization, Convergence Check.
- * Inspired by scikit-learn for high-fidelity population health segments.
  */
 export function performLocalKMeans(
   records: HealthRecord[],
@@ -82,7 +81,7 @@ export function performLocalKMeans(
     return { record, vector, brgyName, lat: coords.lat, lng: coords.lng };
   });
 
-  // 2. Normalization (Min-Max Scaling) to prevent high-magnitude features like Age from dominating coordinates
+  // 2. Normalization (Min-Max Scaling)
   const features = Object.keys(dataPoints[0].vector);
   const minMax: Record<string, { min: number, max: number }> = {};
   features.forEach(f => {
@@ -99,7 +98,7 @@ export function performLocalKMeans(
     return { ...p, normVector };
   });
 
-  // 3. K-Means++ Initialization for stable and high-quality starting points
+  // 3. K-Means++ Initialization
   const k = Math.min(numClusters, normalizedPoints.length);
   let centroids: Record<string, number>[] = [];
   centroids.push({ ...normalizedPoints[Math.floor(Math.random() * normalizedPoints.length)].normVector });
@@ -264,29 +263,29 @@ function euclideanDistance(v1: Record<string, number>, v2: Record<string, number
 }
 
 function getClusterFocusLabel(metrics: Record<string, number>, avgAge: number): string {
-  if (avgAge > 65) return "Senior Risk Focus";
-  if (avgAge < 15) return "Pediatric Priority";
+  if (avgAge > 65) return "Elderly Patients";
+  if (avgAge < 15) return "Children/Youth";
   
   const diseases = Object.entries(metrics)
     .filter(([k]) => !['Vaccinated', 'Partially Vaccinated', 'Not Vaccinated', 'Male', 'Female', 'Other'].includes(k))
     .sort((a, b) => b[1] - a[1]);
     
-  return diseases.length > 0 ? `${diseases[0][0]} Alert` : "General Demographic";
+  return diseases.length > 0 ? `${diseases[0][0]} Cases` : "General Group";
 }
 
 export function generateStatisticalTrends(clusters: Cluster[]): string {
-  if (clusters.length === 0) return "Execute analysis to generate summary.";
-  let summary = "ROBUST STATISTICAL RISK SUMMARY\n==============================\n\n";
+  if (clusters.length === 0) return "Please run the analysis to see the summary.";
+  let summary = "SIMPLE HEALTH SUMMARY\n=====================\n\n";
   clusters.forEach(c => {
     const topDisease = Object.entries(c.healthMetrics)
       .filter(([k]) => !['Vaccinated', 'Partially Vaccinated', 'Not Vaccinated', 'Male', 'Female', 'Other'].includes(k))
       .sort((a, b) => b[1] - a[1])[0];
     
-    summary += `${c.name}\n`;
-    summary += `- Population Density: ${c.records.length} reported cases\n`;
-    summary += `- Median Demographic: ${c.demographics.averageAge.toFixed(1)} years old\n`;
-    summary += `- Critical Risk Vector: ${topDisease ? topDisease[0] : 'Environmental/General'}\n`;
-    summary += `- Validation Score: ${((c.validation?.silhouetteScore || 0) * 100).toFixed(1)}% distinctness\n\n`;
+    summary += `Group ${c.id}: ${c.name.includes(':') ? c.name.split(':')[1].trim() : c.name}\n`;
+    summary += `- Patients in this group: ${c.records.length}\n`;
+    summary += `- Average age: ${c.demographics.averageAge.toFixed(0)} years old\n`;
+    summary += `- Main health concern: ${topDisease ? topDisease[0] : 'None identified'}\n`;
+    summary += `- Group clarity: ${Math.max(0, (c.validation?.silhouetteScore || 0) * 100).toFixed(0)}% (Higher is better)\n\n`;
   });
   return summary;
 }
