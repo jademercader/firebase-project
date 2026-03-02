@@ -38,43 +38,46 @@ export function AppSidebar() {
         <SidebarMenu>
           {menuItems.map((item) => (
             <SidebarMenuItem key={item.href}>
-              <Link href={item.href} passHref legacyBehavior>
-                <SidebarMenuButton
-                  isActive={pathname === item.href}
-                  icon={<item.icon />}
-                  tooltip={item.label}
-                >
-                  {item.label}
-                </SidebarMenuButton>
-              </Link>
+              <SidebarMenuButton
+                asChild
+                isActive={pathname === item.href}
+                tooltip={item.label}
+              >
+                <Link href={item.href}>
+                  <item.icon />
+                  <span>{item.label}</span>
+                </Link>
+              </SidebarMenuButton>
             </SidebarMenuItem>
           ))}
         </SidebarMenu>
       </SidebarContent>
       <SidebarFooter>
         <SidebarMenu>
-            <SidebarMenuItem>
-              <Link href="/settings" passHref legacyBehavior>
-                <SidebarMenuButton 
-                  isActive={pathname === '/settings'} 
-                  icon={<Settings />} 
-                  tooltip="Settings"
-                >
-                  Settings
-                </SidebarMenuButton>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              asChild
+              isActive={pathname === '/settings'}
+              tooltip="Settings"
+            >
+              <Link href="/settings">
+                <Settings />
+                <span>Settings</span>
               </Link>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-              <Link href="/help" passHref legacyBehavior>
-                <SidebarMenuButton 
-                  isActive={pathname === '/help'} 
-                  icon={<HelpCircle />} 
-                  tooltip="Help"
-                >
-                  Help
-                </SidebarMenuButton>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              asChild
+              isActive={pathname === '/help'}
+              tooltip="Help"
+            >
+              <Link href="/help">
+                <HelpCircle />
+                <span>Help</span>
               </Link>
-            </SidebarMenuItem>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>
     </Sidebar>
