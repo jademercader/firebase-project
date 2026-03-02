@@ -4,17 +4,16 @@ import { useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { UploadCloud, Save, Loader2 } from 'lucide-react';
+import { UploadCloud, Save } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface FileUploaderProps {
     onFileSelected: (file: File) => void;
     onSaveData: () => void;
     hasRecords: boolean;
-    isLoading?: boolean;
 }
 
-export function FileUploader({ onFileSelected, onSaveData, hasRecords, isLoading = false }: FileUploaderProps) {
+export function FileUploader({ onFileSelected, onSaveData, hasRecords }: FileUploaderProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const handleFileChange = () => {
@@ -42,28 +41,18 @@ export function FileUploader({ onFileSelected, onSaveData, hasRecords, isLoading
                 ref={fileInputRef}
                 onChange={handleFileChange}
                 className="flex-grow"
-                disabled={isLoading}
              />
              <Button 
                 onClick={handleSaveClick} 
-                disabled={!hasRecords || isLoading}
+                disabled={!hasRecords}
                 className="min-w-[200px]"
              >
-                {isLoading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Connecting...
-                  </>
-                ) : (
-                  <>
-                    <Save className="mr-2 h-4 w-4" />
-                    Save Data for Analysis
-                  </>
-                )}
+                <Save className="mr-2 h-4 w-4" />
+                Save Data for Analysis
             </Button>
         </div>
         <p className="text-xs text-muted-foreground mt-2">
-          {isLoading ? "Establishing cloud connection..." : "Note: Please ensure your CSV file has a header row."}
+          Note: Please ensure your CSV file has a header row.
         </p>
       </CardContent>
     </Card>

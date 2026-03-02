@@ -1,3 +1,4 @@
+
 'use client';
 import { useState } from 'react';
 import Papa from 'papaparse';
@@ -84,11 +85,11 @@ export default function UploadPage() {
   const handleSaveData = () => {
     if (records.length === 0) return;
     
-    // Save to localStorage for local analysis
+    // Save to localStorage for local analysis only
     localStorage.setItem('health_records', JSON.stringify(records));
     
     toast({
-      title: 'Data Saved Successfully',
+      title: 'Data Saved Locally',
       description: `${records.length} records are now available for analysis on the dashboard.`,
     });
   }
