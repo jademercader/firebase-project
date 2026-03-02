@@ -90,19 +90,20 @@ export default function UploadPage() {
     window.dispatchEvent(new Event('records-updated'));
     
     toast({
-      title: 'Data Saved Locally',
-      description: `${records.length} records are now ready for analysis.`,
+      title: 'Data Consolidated',
+      description: `${records.length} records are now active. Redirecting to dashboard...`,
     });
 
     // Automatically navigate to the dashboard menu
-    router.push('/');
+    setTimeout(() => router.push('/'), 1000);
   }
 
   return (
     <AppLayout>
       <div className="max-w-[1400px] mx-auto space-y-6 p-4 md:p-8 pt-6">
-        <div className="flex items-center justify-between space-y-2">
+        <div className="flex flex-col gap-2">
             <h2 className="text-3xl font-bold tracking-tight font-headline text-slate-900">Barangay Data Consolidation</h2>
+            <p className="text-slate-500 font-medium">Consolidate local records for spatial clustering and trend analysis.</p>
         </div>
         <div className="grid grid-cols-1 gap-6">
             <FileUploader 
