@@ -1,4 +1,3 @@
-
 'use client';
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -57,14 +56,14 @@ export function TrendAnalysis() {
       <CardHeader className="bg-slate-50/50 border-b pb-4">
         <CardTitle className="font-headline text-lg flex items-center gap-2 text-slate-900">
             <LineChart className="w-5 h-5 text-primary" />
-            Simple Health Summary
+            Summary Health Analysis
         </CardTitle>
         <CardDescription className="text-xs">A quick look at the health risks for each group identified.</CardDescription>
       </CardHeader>
       <CardContent className="flex-grow p-0 relative overflow-hidden">
         <div className="h-full w-full absolute inset-0 p-4">
             <Textarea
-              placeholder={clusters.length === 0 ? "Run the analysis to see the health summary." : "Click the button below to see the summary..."}
+              placeholder={clusters.length === 0 ? "Run the analysis to see the health analysis." : "Click the button below to see the analysis..."}
               value={analysisResult}
               readOnly
               className="h-full w-full resize-none bg-slate-50/30 font-mono text-xs leading-relaxed border-none focus-visible:ring-0 custom-scrollbar p-4 rounded-lg shadow-inner"
@@ -74,7 +73,7 @@ export function TrendAnalysis() {
              <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/50 backdrop-blur-sm">
                 <div className="flex flex-col items-center gap-2">
                     <ActivityIcon className="animate-pulse w-8 h-8 text-primary" />
-                    <p className="text-xs font-black animate-pulse tracking-widest text-primary">WRITING SUMMARY...</p>
+                    <p className="text-xs font-black animate-pulse tracking-widest text-primary">WRITING ANALYSIS...</p>
                 </div>
             </div>
           )}

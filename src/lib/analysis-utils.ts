@@ -1,4 +1,3 @@
-
 import type { HealthRecord, Cluster, AnalysisResult } from '@/lib/types';
 
 /**
@@ -274,8 +273,8 @@ function getClusterFocusLabel(metrics: Record<string, number>, avgAge: number): 
 }
 
 export function generateStatisticalTrends(clusters: Cluster[]): string {
-  if (clusters.length === 0) return "Please run the analysis to see the summary.";
-  let summary = "SIMPLE HEALTH SUMMARY\n=====================\n\n";
+  if (clusters.length === 0) return "Please run the analysis to see the results.";
+  let summary = "SUMMARY HEALTH ANALYSIS\n=====================\n\n";
   clusters.forEach(c => {
     const topDisease = Object.entries(c.healthMetrics)
       .filter(([k]) => !['Vaccinated', 'Partially Vaccinated', 'Not Vaccinated', 'Male', 'Female', 'Other'].includes(k))
@@ -285,7 +284,7 @@ export function generateStatisticalTrends(clusters: Cluster[]): string {
     summary += `- Patients in this group: ${c.records.length}\n`;
     summary += `- Average age: ${c.demographics.averageAge.toFixed(0)} years old\n`;
     summary += `- Main health concern: ${topDisease ? topDisease[0] : 'None identified'}\n`;
-    summary += `- Group clarity: ${Math.max(0, (c.validation?.silhouetteScore || 0) * 100).toFixed(0)}% (Higher is better)\n\n`;
+    summary += `- Data reliability: ${Math.max(0, (c.validation?.silhouetteScore || 0) * 100).toFixed(0)}% (Higher means clearer results)\n\n`;
   });
   return summary;
 }
