@@ -24,23 +24,23 @@ export default function DashboardPage() {
   const mounted = useMounted();
 
   // Session-Based Analysis Reset: 
-  // Erases results on mount (refresh) to ensure a clean session.
+  // Erases results and data on mount (refresh/restart) to ensure a clean session.
   // We use sessionStorage to detect if we just came from an upload redirect.
   useEffect(() => {
     if (mounted) {
-      // Always clear analysis results on dashboard visit/refresh
-      localStorage.removeItem('analysis_result');
-      localStorage.removeItem('health_clusters');
-      
       const justUploaded = sessionStorage.getItem('just_uploaded');
       
+      // Always clear analysis results to avoid repetitions
+      localStorage.removeItem('analysis_result');
+      localStorage.removeItem('health_clusters');
+      localStorage.removeItem('selected_report_cluster_id');
+      
       if (!justUploaded) {
-        // It's a direct visit or refresh, NOT a redirect from upload.
-        // Wipe raw data to force user to upload "the first dataset to use"
+        // It's a fresh visit or manual refresh. Wipe the raw dataset.
         localStorage.removeItem('health_records');
       }
       
-      // Clear the flag so subsequent refreshes wipe the data
+      // Clear the session flag so subsequent refreshes wipe the data
       sessionStorage.removeItem('just_uploaded');
       
       // Notify all components that the data state has changed
