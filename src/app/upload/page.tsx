@@ -34,7 +34,6 @@ export default function UploadPage() {
         skipEmptyLines: 'greedy',
         transformHeader: (header) => header.trim(),
         complete: (results) => {
-          // Ignore non-critical errors often found in standard CSV exports
           const criticalErrors = results.errors.filter(e => 
             e.code !== 'TooManyFields' && 
             e.code !== 'UndetectableDelimiter' &&
@@ -56,13 +55,20 @@ export default function UploadPage() {
                 
                 const vaccinationStatus = getRowValue(row, ['vaccinationStatus', 'Vaccination Status', 'Vaccinated', 'Status']) as HealthRecord['vaccinationStatus'] || 'Not Vaccinated';
                 
-                // Extract Address components robustly
-                const street = getRowValue(row, ['address', 'Address', 'Street', 'Location', 'Purok']);
-                const brgy = getRowValue(row, ['barangay', 'Barangay', 'Brgy']);
-                const fullAddress = brgy ? `${street}${street ? ', ' : ''}${brgy}` : (street || 'Calbayog City');
+                // HCI Fix: Correct Barangay to Address mapping
+                const street = getRowValue(row, ['address', 'Address', 'Street', 'Location', 'Purok', 'Street Address']);
+                const brgy = getRowValue(row, ['barangay', 'Barangay', 'Brgy', 'Area']);
+                
+                // Combine Street and Barangay into Address
+                const fullAddress = brgy 
+                  ? `${street}${street ? ', ' : ''}Brgy. ${brgy.replace(/^Brgy\.?\s+/i, '')}` 
+                  : (street || 'Calbayog City');
 
                 const latStr = getRowValue(row, ['latitude', 'lat', 'Latitude', 'Lat', 'GPS Lat']);
                 const lngStr = getRowValue(row, ['longitude', 'long', 'lng', 'Longitude', 'Lng', 'Long', 'GPS Lng']);
+
+                // Ensure Disease is mapped accurately from health-specific columns only
+                const diseaseValue = getRowValue(row, ['disease', 'Disease', 'Condition', 'Diagnosis', 'Medical Condition']);
 
                 return {
                   id: getRowValue(row, ['id', 'ID', 'No.', 'Patient ID']) || `rec-${Date.now()}-${index}`,
@@ -70,7 +76,7 @@ export default function UploadPage() {
                   age: isNaN(age) ? 0 : age,
                   gender: ['Male', 'Female', 'Other'].includes(gender) ? gender : 'Other',
                   address: fullAddress,
-                  disease: getRowValue(row, ['disease', 'Disease', 'Condition', 'Diagnosis']) || 'None',
+                  disease: diseaseValue || 'None',
                   vaccinationStatus: ['Vaccinated', 'Partially Vaccinated', 'Not Vaccinated'].includes(vaccinationStatus) ? vaccinationStatus : 'Not Vaccinated',
                   checkupDate: getRowValue(row, ['checkupDate', 'Checkup Date', 'Date']) || new Date().toISOString().split('T')[0],
                   latitude: latStr ? parseFloat(latStr) : undefined,
@@ -81,7 +87,7 @@ export default function UploadPage() {
           setRecords(parsedRecords);
           toast({
             title: 'File Parsed Successfully',
-            description: `${parsedRecords.length} records loaded and mapped to Calbayog spatial points.`,
+            description: `${parsedRecords.length} records loaded and mapped to Barangay spatial points.`,
           });
         },
       });

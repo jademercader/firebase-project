@@ -22,6 +22,7 @@ const DynamicClusterMap = dynamic(
 export default function DashboardPage() {
   const mounted = useMounted();
 
+  // HCI Mount Guard: Prevents hydration mismatch and layout shifts
   if (!mounted) {
     return (
       <AppLayout>

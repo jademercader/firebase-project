@@ -1,4 +1,3 @@
-
 'use client';
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -6,13 +5,12 @@ import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
-import { PlayCircle, Info, Database } from 'lucide-react';
+import { PlayCircle, Info, Database, AlertCircle } from 'lucide-react';
 import { healthIndicators } from '@/lib/mock-data';
 import { useToast } from '@/hooks/use-toast';
 import { runClusterAnalysis } from '@/app/actions';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import type { HealthRecord } from '@/lib/types';
-import { mockHealthRecords } from '@/lib/mock-data';
 import { useMounted } from '@/hooks/use-mounted';
 
 const ANALYSIS_STORAGE_KEY = 'analysis_result';
@@ -40,15 +38,15 @@ export function ClusterControls() {
                 setHealthRecords(parsedRecords);
                 setIsUsingUploadedData(true);
             } else {
-                setHealthRecords(mockHealthRecords);
+                setHealthRecords([]);
                 setIsUsingUploadedData(false);
             }
         } else {
-            setHealthRecords(mockHealthRecords);
+            setHealthRecords([]);
             setIsUsingUploadedData(false);
         }
     } catch (error) {
-        setHealthRecords(mockHealthRecords);
+        setHealthRecords([]);
         setIsUsingUploadedData(false);
     }
   }, [mounted]);
@@ -72,8 +70,8 @@ export function ClusterControls() {
       if (healthRecords.length === 0) {
         toast({
             variant: "destructive",
-            title: "No Data",
-            description: "Please upload a CSV file or ensure mock data is available."
+            title: "Analysis Denied",
+            description: "No uploaded dataset detected. Please upload a CSV file in the 'Upload Data' section first."
         });
         return;
       }
@@ -87,7 +85,6 @@ export function ClusterControls() {
       });
 
       if (result.success && result.data) {
-          // Store selected indicators within the result for chart filtering
           const storedData = {
               ...result.data,
               selectedIndicators: selectedIndicators
@@ -124,21 +121,27 @@ export function ClusterControls() {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
-        <Alert className={isUsingUploadedData ? 'border-primary/50 text-primary' : ''}>
-          <Database className="h-4 w-4" />
-          <AlertTitle className="font-bold">
-            {isUsingUploadedData ? 'Dataset Source: Uploaded CSV' : 'Dataset Source: Mock Data'}
-          </AlertTitle>
-          <AlertDescription>
-            {isUsingUploadedData
-              ? `Ready to analyze ${healthRecords.length} records from your file.`
-              : 'Using demonstration records. Upload a CSV to map your own data.'}
-          </AlertDescription>
-        </Alert>
+        {isUsingUploadedData ? (
+          <Alert className="border-primary/50 text-primary bg-primary/5">
+            <Database className="h-4 w-4" />
+            <AlertTitle className="font-bold">Dataset Source: User Upload</AlertTitle>
+            <AlertDescription>
+              Ready to analyze {healthRecords.length} records from your specific dataset.
+            </AlertDescription>
+          </Alert>
+        ) : (
+          <Alert variant="destructive" className="bg-destructive/5">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle className="font-bold">Dataset Required</AlertTitle>
+            <AlertDescription>
+              Analysis is disabled. Please go to the <strong>Upload Data</strong> page and provide a CSV file to proceed.
+            </AlertDescription>
+          </Alert>
+        )}
 
         <div className="space-y-4">
             <Label className="flex items-center gap-2">
-              Select Analysis Dimensions (Euclidean Distance)
+              Select Analysis Dimensions
               <Info className="w-3 h-3 text-muted-foreground" />
             </Label>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -170,7 +173,10 @@ export function ClusterControls() {
             </div>
         </div>
         <div className="space-y-4">
-            <Label htmlFor="clusters">Number of Clusters: {numClusters}</Label>
+            <div className="flex justify-between items-center">
+                <Label htmlFor="clusters">Number of Clusters: {numClusters}</Label>
+                <span className="text-xs font-bold text-primary px-2 py-0.5 bg-primary/10 rounded">{numClusters} SEGMENTS</span>
+            </div>
             <Slider
               id="clusters"
               min={2}
@@ -181,7 +187,11 @@ export function ClusterControls() {
             />
             <p className="text-[10px] text-muted-foreground italic">Determine exactly how many segments you want to identify in Calbayog City.</p>
         </div>
-         <Button onClick={handleRunAnalysis} disabled={isAnalysisRunning} className="w-full md:w-auto">
+         <Button 
+            onClick={handleRunAnalysis} 
+            disabled={isAnalysisRunning || !isUsingUploadedData} 
+            className="w-full md:w-auto shadow-sm hover:shadow-md transition-all"
+         >
           <PlayCircle className="mr-2 h-4 w-4" />
           {isAnalysisRunning ? 'Processing Dataset...' : 'Execute Clustering Analysis'}
         </Button>
