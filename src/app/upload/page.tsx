@@ -1,3 +1,4 @@
+
 'use client';
 import { useState } from 'react';
 import Papa from 'papaparse';
@@ -29,7 +30,7 @@ export default function UploadPage() {
   const [records, setRecords] = useState<HealthRecord[]>([]);
   const { toast } = useToast();
   const { firestore } = useFirestore();
-  const { user } = useUser();
+  const { user, isUserLoading } = useUser();
 
   const handleFileSelected = (file: File) => {
     if (file) {
@@ -133,6 +134,7 @@ export default function UploadPage() {
               onFileSelected={handleFileSelected} 
               onSaveData={handleSaveData} 
               hasRecords={records.length > 0}
+              isLoading={isUserLoading}
             />
             <DataTable records={records} />
         </div>

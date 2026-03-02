@@ -1,3 +1,4 @@
+
 'use client';
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -5,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
-import { PlayCircle, Info, Cloud, AlertCircle } from 'lucide-react';
+import { PlayCircle, Info, Cloud, AlertCircle, Loader2 } from 'lucide-react';
 import { healthIndicators } from '@/lib/mock-data';
 import { useToast } from '@/hooks/use-toast';
 import { runClusterAnalysis } from '@/app/actions';
@@ -14,6 +15,7 @@ import type { HealthRecord } from '@/lib/types';
 import { useMounted } from '@/hooks/use-mounted';
 import { useFirestore, useUser, useCollection, useMemoFirebase } from '@/firebase';
 import { collection } from 'firebase/firestore';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const ANALYSIS_STORAGE_KEY = 'analysis_result';
 const CLUSTERS_STORAGE_KEY = 'health_clusters';
@@ -28,7 +30,7 @@ export function ClusterControls() {
   const { toast } = useToast();
 
   const { firestore } = useFirestore();
-  const { user } = useUser();
+  const { user, isUserLoading } = useUser();
 
   // Fetch records from Firestore cloud database instead of localStorage
   const recordsRef = useMemoFirebase(() => {
@@ -99,7 +101,7 @@ export function ClusterControls() {
       setIsAnalysisRunning(false);
   };
 
-  if (!mounted) return null;
+  if (!mounted) return <Skeleton className="h-[400px] w-full" />;
 
   return (
     <Card>
@@ -110,7 +112,15 @@ export function ClusterControls() {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
-        {hasData ? (
+        {isUserLoading || isDbLoading ? (
+          <Alert className="border-blue-200 text-blue-800 bg-blue-50">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            <AlertTitle className="font-bold">Syncing with Cloud...</AlertTitle>
+            <AlertDescription>
+              Authenticating and retrieving your records from the secure database.
+            </AlertDescription>
+          </Alert>
+        ) : hasData ? (
           <Alert className="border-primary/50 text-primary bg-primary/5">
             <Cloud className="h-4 w-4" />
             <AlertTitle className="font-bold">Source: Cloud Database</AlertTitle>
@@ -149,6 +159,7 @@ export function ClusterControls() {
                                 id={indicator.id} 
                                 checked={selectedIndicators.includes(propName)}
                                 onCheckedChange={(checked) => handleIndicatorChange(indicator.id, !!checked)}
+                                disabled={isUserLoading || isDbLoading}
                             />
                             <label
                                 htmlFor={indicator.id}
@@ -173,16 +184,26 @@ export function ClusterControls() {
               step={1}
               value={[numClusters]}
               onValueChange={(value) => setNumClusters(value[0])}
+              disabled={isUserLoading || isDbLoading}
             />
             <p className="text-[10px] text-muted-foreground italic">Determine exactly how many segments you want to identify in Calbayog City.</p>
         </div>
          <Button 
             onClick={handleRunAnalysis} 
-            disabled={isAnalysisRunning || !hasData || isDbLoading} 
+            disabled={isAnalysisRunning || !hasData || isDbLoading || isUserLoading} 
             className="w-full md:w-auto shadow-sm hover:shadow-md transition-all"
          >
-          <PlayCircle className="mr-2 h-4 w-4" />
-          {isAnalysisRunning ? 'Processing Cloud Data...' : 'Execute Clustering Analysis'}
+          {isAnalysisRunning ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Processing Cloud Data...
+            </>
+          ) : (
+            <>
+              <PlayCircle className="mr-2 h-4 w-4" />
+              Execute Clustering Analysis
+            </>
+          )}
         </Button>
       </CardContent>
     </Card>

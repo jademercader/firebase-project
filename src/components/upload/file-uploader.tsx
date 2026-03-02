@@ -1,18 +1,20 @@
+
 'use client';
 import { useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { UploadCloud, Save } from 'lucide-react';
+import { UploadCloud, Save, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface FileUploaderProps {
     onFileSelected: (file: File) => void;
     onSaveData: () => void;
     hasRecords: boolean;
+    isLoading?: boolean;
 }
 
-export function FileUploader({ onFileSelected, onSaveData, hasRecords }: FileUploaderProps) {
+export function FileUploader({ onFileSelected, onSaveData, hasRecords, isLoading = false }: FileUploaderProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const handleFileChange = () => {
@@ -33,19 +35,36 @@ export function FileUploader({ onFileSelected, onSaveData, hasRecords }: FileUpl
         <CardDescription>Upload records (CSV format supported) to make them available for analysis on the dashboard.</CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="flex w-full items-center space-x-2">
+        <div className="flex flex-col md:flex-row w-full items-start md:items-center space-y-4 md:space-y-0 md:space-x-2">
             <Input 
                 type="file" 
                 accept=".csv"
                 ref={fileInputRef}
                 onChange={handleFileChange}
+                className="flex-grow"
+                disabled={isLoading}
              />
-             <Button onClick={handleSaveClick} disabled={!hasRecords}>
-                <Save className="mr-2 h-4 w-4" />
-                Save Data for Analysis
+             <Button 
+                onClick={handleSaveClick} 
+                disabled={!hasRecords || isLoading}
+                className="min-w-[200px]"
+             >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Connecting...
+                  </>
+                ) : (
+                  <>
+                    <Save className="mr-2 h-4 w-4" />
+                    Save Data for Analysis
+                  </>
+                )}
             </Button>
         </div>
-        <p className="text-xs text-muted-foreground mt-2">Note: Please ensure your CSV file has a header row.</p>
+        <p className="text-xs text-muted-foreground mt-2">
+          {isLoading ? "Establishing cloud connection..." : "Note: Please ensure your CSV file has a header row."}
+        </p>
       </CardContent>
     </Card>
   );

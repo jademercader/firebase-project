@@ -1,3 +1,6 @@
 {
+  "firebase_hosting": {
+    "deploymentHostingUrl": "https://my-sick-9c7fb.web.app"
+  },
   "gemini_api": {}
 }
