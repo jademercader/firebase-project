@@ -2,7 +2,7 @@
 
 ## Abstract
 
-This document delineates the comprehensive system architecture for the "Barangay Health Insights" platform. It provides a detailed specification of the software frameworks, libraries, external services, and underlying hardware infrastructure that constitute the project. The design prioritizes a modern, scalable, and maintainable technology stack to support its data analysis and visualization objectives.
+This document delineates the comprehensive system architecture for the "City Health Insights" platform. It provides a detailed specification of the software frameworks, libraries, external services, and underlying hardware infrastructure that constitute the project. The design prioritizes a modern, scalable, and maintainable technology stack to support its data analysis and visualization objectives.
 
 ---
 
@@ -65,7 +65,7 @@ The system's data processing and analytical capabilities are powered by a combin
 
 ## 3.0 System Requirements
 
-This section specifies the necessary prerequisites for the operation and development of the Barangay Health Insights system.
+This section specifies the necessary prerequisites for the operation and development of the City Health Insights system.
 
 ### 3.1 End-User (Client) Prerequisites
 

@@ -4,8 +4,8 @@ import { Toaster } from '@/components/ui/toaster';
 import { AuthProvider } from '@/context/auth-context';
 
 export const metadata: Metadata = {
-  title: 'Barangay Health Insights',
-  description: 'Cluster Analysis of Barangay Health Records for Improved Public Health Monitoring',
+  title: 'City Health Insights',
+  description: 'Cluster Analysis of City Health Records for Improved Public Health Monitoring',
   icons: null,
 };
 

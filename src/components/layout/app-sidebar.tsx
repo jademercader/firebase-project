@@ -23,18 +23,20 @@ export function AppSidebar() {
 
   return (
     <Sidebar>
-      <SidebarHeader>
-        <div className="flex items-center gap-2">
-          <Stethoscope className="w-8 h-8 text-primary" />
+      <SidebarHeader className="p-4">
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-primary rounded-xl shadow-lg shadow-primary/20">
+            <Stethoscope className="w-6 h-6 text-primary-foreground" />
+          </div>
           <div className="flex flex-col">
-            <h2 className="text-lg font-semibold tracking-tight font-headline text-sidebar-foreground">
-              Barangay Health
+            <h2 className="text-lg font-black tracking-tight font-headline text-sidebar-foreground">
+              City Health
             </h2>
-            <p className="text-xs text-sidebar-foreground/70">Insights</p>
+            <p className="text-[10px] uppercase font-bold tracking-widest text-sidebar-foreground/60">Insights Platform</p>
           </div>
         </div>
       </SidebarHeader>
-      <SidebarContent>
+      <SidebarContent className="px-2">
         <SidebarMenu>
           {menuItems.map((item) => (
             <SidebarMenuItem key={item.href}>
@@ -42,17 +44,18 @@ export function AppSidebar() {
                 asChild
                 isActive={pathname === item.href}
                 tooltip={item.label}
+                className="transition-all duration-200"
               >
                 <Link href={item.href}>
-                  <item.icon />
-                  <span>{item.label}</span>
+                  <item.icon className={pathname === item.href ? "text-primary" : ""} />
+                  <span className="font-bold">{item.label}</span>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
           ))}
         </SidebarMenu>
       </SidebarContent>
-      <SidebarFooter>
+      <SidebarFooter className="p-2">
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton
@@ -62,7 +65,7 @@ export function AppSidebar() {
             >
               <Link href="/settings">
                 <Settings />
-                <span>Settings</span>
+                <span className="font-bold">Settings</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
@@ -74,7 +77,7 @@ export function AppSidebar() {
             >
               <Link href="/help">
                 <HelpCircle />
-                <span>Help</span>
+                <span className="font-bold">Help Center</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>

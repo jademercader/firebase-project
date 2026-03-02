@@ -82,13 +82,8 @@ export default function UploadPage() {
   const handleSaveData = () => {
     if (records.length === 0) return;
     
-    // Save to local storage
     localStorage.setItem('health_records', JSON.stringify(records));
-    
-    // Set a session flag to prevent Dashboard from wiping the data on redirect
     sessionStorage.setItem('just_uploaded', 'true');
-    
-    // Trigger update event
     window.dispatchEvent(new Event('records-updated'));
     
     toast({
@@ -96,7 +91,6 @@ export default function UploadPage() {
       description: `${records.length} records are now active. Redirecting to dashboard...`,
     });
 
-    // Automatically navigate to the dashboard menu
     router.push('/');
   }
 
@@ -104,7 +98,7 @@ export default function UploadPage() {
     <AppLayout>
       <div className="max-w-[1400px] mx-auto space-y-6 p-4 md:p-8 pt-6">
         <div className="flex flex-col gap-2">
-            <h2 className="text-2xl md:text-3xl font-bold tracking-tight font-headline text-slate-900">Barangay Data Consolidation</h2>
+            <h2 className="text-2xl md:text-3xl font-bold tracking-tight font-headline text-slate-900">City Data Consolidation</h2>
             <p className="text-sm md:text-base text-slate-500 font-medium">Consolidate local records for spatial clustering and trend analysis.</p>
         </div>
         <div className="grid grid-cols-1 gap-6">

@@ -56,7 +56,7 @@ export default function SignupPage() {
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl font-bold">Create an Account</CardTitle>
-          <CardDescription>Get started with Barangay Health Insights.</CardDescription>
+          <CardDescription>Get started with City Health Insights.</CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>

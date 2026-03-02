@@ -3,7 +3,7 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * MULTI-USER BARANGAY HEALTH INSIGHTS SECURITY MODEL
+     * MULTI-USER CITY HEALTH INSIGHTS SECURITY MODEL
      *
      * Core Philosophy:
      * This ruleset enforces a strict user-ownership model using hierarchical path-based 
