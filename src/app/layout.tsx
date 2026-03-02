@@ -5,7 +5,7 @@ import { AuthProvider } from '@/context/auth-context';
 
 export const metadata: Metadata = {
   title: 'City Health Insights',
-  description: 'Cluster Analysis of City Health Records for Improved Public Health Monitoring',
+  description: 'Spatial Cluster Analysis for Public Health Monitoring',
   icons: null,
 };
 

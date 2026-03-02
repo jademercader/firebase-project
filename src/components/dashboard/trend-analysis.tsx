@@ -58,22 +58,22 @@ export function TrendAnalysis() {
             <LineChart className="w-5 h-5 text-primary" />
             Summary Health Analysis
         </CardTitle>
-        <CardDescription className="text-xs">A quick look at the health risks for each group identified.</CardDescription>
+        <CardDescription className="text-xs">A clear look at health risks identified in your data segments.</CardDescription>
       </CardHeader>
       <CardContent className="flex-grow p-0 relative overflow-hidden">
         <div className="h-full w-full absolute inset-0 p-4">
             <Textarea
-              placeholder={clusters.length === 0 ? "Run the analysis to see the health analysis." : "Click the button below to see the analysis..."}
+              placeholder={clusters.length === 0 ? "Upload data and run analysis to see insights here." : "Click the button below to generate a readable summary..."}
               value={analysisResult}
               readOnly
-              className="h-full w-full resize-none bg-slate-50/30 font-mono text-xs leading-relaxed border-none focus-visible:ring-0 custom-scrollbar p-4 rounded-lg shadow-inner"
+              className="h-full w-full resize-none bg-slate-50/30 font-sans text-xs leading-relaxed border-none focus-visible:ring-0 custom-scrollbar p-4 rounded-lg shadow-inner"
             />
         </div>
         {isLoading && (
              <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/50 backdrop-blur-sm">
                 <div className="flex flex-col items-center gap-2">
                     <ActivityIcon className="animate-pulse w-8 h-8 text-primary" />
-                    <p className="text-xs font-black animate-pulse tracking-widest text-primary">WRITING ANALYSIS...</p>
+                    <p className="text-xs font-black animate-pulse tracking-widest text-primary">WRITING SUMMARY...</p>
                 </div>
             </div>
           )}
@@ -81,7 +81,7 @@ export function TrendAnalysis() {
       <CardFooter className="bg-slate-50/50 border-t p-4">
         <Button onClick={handleAnalyzeTrends} disabled={isLoading || clusters.length === 0} className="w-full shadow-sm hover:shadow-md transition-all">
           <ShieldAlert className="w-4 h-4 mr-2" />
-          {isLoading ? 'Processing...' : 'Check Health Risks'}
+          {isLoading ? 'Processing...' : 'Generate Summary Analysis'}
         </Button>
       </CardFooter>
     </Card>

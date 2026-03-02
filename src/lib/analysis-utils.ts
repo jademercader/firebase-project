@@ -262,14 +262,14 @@ function euclideanDistance(v1: Record<string, number>, v2: Record<string, number
 }
 
 function getClusterFocusLabel(metrics: Record<string, number>, avgAge: number): string {
-  if (avgAge > 65) return "Elderly Patients";
-  if (avgAge < 15) return "Children/Youth";
+  if (avgAge > 65) return "Elderly Group";
+  if (avgAge < 15) return "Children Group";
   
   const diseases = Object.entries(metrics)
     .filter(([k]) => !['Vaccinated', 'Partially Vaccinated', 'Not Vaccinated', 'Male', 'Female', 'Other'].includes(k))
     .sort((a, b) => b[1] - a[1]);
     
-  return diseases.length > 0 ? `${diseases[0][0]} Cases` : "General Group";
+  return diseases.length > 0 ? `${diseases[0][0]} Focus` : "General Group";
 }
 
 export function generateStatisticalTrends(clusters: Cluster[]): string {
@@ -281,10 +281,10 @@ export function generateStatisticalTrends(clusters: Cluster[]): string {
       .sort((a, b) => b[1] - a[1])[0];
     
     summary += `Group ${c.id}: ${c.name.includes(':') ? c.name.split(':')[1].trim() : c.name}\n`;
-    summary += `- Patients in this group: ${c.records.length}\n`;
-    summary += `- Average age: ${c.demographics.averageAge.toFixed(0)} years old\n`;
-    summary += `- Main health concern: ${topDisease ? topDisease[0] : 'None identified'}\n`;
-    summary += `- Data reliability: ${Math.max(0, (c.validation?.silhouetteScore || 0) * 100).toFixed(0)}% (Higher means clearer results)\n\n`;
+    summary += `- This group contains ${c.records.length} patients.\n`;
+    summary += `- The typical age is about ${c.demographics.averageAge.toFixed(0)} years old.\n`;
+    summary += `- The main health concern identified is ${topDisease ? topDisease[0] : 'None'}.\n`;
+    summary += `- Results reliability: ${Math.max(0, (c.validation?.silhouetteScore || 0) * 100).toFixed(0)}% (Higher is better)\n\n`;
   });
   return summary;
 }

@@ -26,16 +26,15 @@ import { useMounted } from '@/hooks/use-mounted';
 
 const ANALYSIS_STORAGE_KEY = 'analysis_result';
 
-// Professional Excel corporate color palette
 const CHART_COLORS = [
-  '#4472C4', // Office Blue
-  '#ED7D31', // Office Orange
-  '#A5A5A5', // Office Grey
-  '#FFC000', // Office Gold
-  '#5B9BD5', // Office Light Blue
-  '#70AD47', // Office Green
-  '#264478', // Office Dark Blue
-  '#9E480E', // Office Dark Orange
+  '#4472C4',
+  '#ED7D31',
+  '#A5A5A5',
+  '#FFC000',
+  '#5B9BD5',
+  '#70AD47',
+  '#264478',
+  '#9E480E',
 ];
 
 const ExcelTooltip = ({ active, payload, label }: any) => {
@@ -100,18 +99,12 @@ export function ClusterCharts() {
 
   const { clusters, globalValidation, selectedIndicators = [] } = analysisResult;
 
-  const showDisease = selectedIndicators.includes('disease');
-  const showVaccination = selectedIndicators.includes('vaccinationStatus');
-  const showGender = selectedIndicators.includes('gender');
-
-  // 1. Population Overview
   const populationData = clusters.map((c, i) => ({
     name: `Cluster ${c.id}`,
     value: c.records.length,
     color: CHART_COLORS[i % CHART_COLORS.length]
   }));
 
-  // 2. High Risk Barangay Distribution
   const barangayRiskMap: Record<string, number> = {};
   clusters.forEach(cluster => {
     cluster.records.forEach(record => {
@@ -128,7 +121,6 @@ export function ClusterCharts() {
     .sort((a, b) => b.count - a.count)
     .slice(0, 10);
 
-  // 3. Performance Radar (Simplified Labels)
   const performanceData = [
     { metric: 'Clear Groups', score: Math.max(20, Math.round((globalValidation.avgSilhouetteScore + 1) * 50)) },
     { metric: 'Group Tightness', score: Math.max(10, globalValidation.totalWCSS) },
@@ -137,7 +129,6 @@ export function ClusterCharts() {
     { metric: 'Detail Level', score: 78 }
   ];
 
-  // 4. Disease Matrix
   const allDiseases = Array.from(new Set(clusters.flatMap(c => 
     Object.keys(c.healthMetrics).filter(k => !['Vaccinated', 'Partially Vaccinated', 'Not Vaccinated', 'Male', 'Female', 'Other'].includes(k))
   ))).sort();
@@ -148,7 +139,6 @@ export function ClusterCharts() {
     return entry;
   });
 
-  // 5. Vaccination Data
   const vaccinationData = clusters.map(c => ({
     name: `Cluster ${c.id}`,
     'Fully Vaccinated': c.healthMetrics['Vaccinated'] || 0,
@@ -156,7 +146,6 @@ export function ClusterCharts() {
     'Not Vaccinated': c.healthMetrics['Not Vaccinated'] || 0,
   }));
 
-  // 6. Demographics
   const demographicData = clusters.map(c => ({
     name: `Cluster ${c.id}`,
     'Male': c.demographics.genderDistribution['Male'] || 0,
@@ -166,7 +155,6 @@ export function ClusterCharts() {
   return (
     <div className="space-y-6 md:space-y-8 animate-in fade-in duration-500 max-w-[1400px] mx-auto">
         <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-            {/* Validation Radar */}
             <Card className="shadow border-slate-200">
                 <CardHeader className="pb-2 border-b border-slate-100 bg-slate-50/50">
                     <CardTitle className="text-sm font-bold flex items-center gap-2 text-slate-700">
@@ -186,7 +174,6 @@ export function ClusterCharts() {
                 </CardContent>
             </Card>
 
-            {/* High Risk Barangay Chart */}
             <Card className="shadow border-slate-200">
                 <CardHeader className="pb-2 border-b border-slate-100 bg-slate-50/50">
                     <CardTitle className="text-sm font-bold flex items-center gap-2 text-slate-700">
@@ -215,7 +202,6 @@ export function ClusterCharts() {
                 </CardContent>
             </Card>
 
-            {/* Population Overview */}
             <Card className="shadow border-slate-200">
                 <CardHeader className="pb-2 border-b border-slate-100 bg-slate-50/50">
                     <CardTitle className="text-sm font-bold flex items-center gap-2 text-slate-700">
@@ -247,105 +233,96 @@ export function ClusterCharts() {
         </div>
 
         <div className="grid gap-6 grid-cols-1 md:grid-cols-2">
-            {/* Vaccination Status */}
-            {showVaccination && (
-                <Card className="shadow border-slate-200">
-                    <CardHeader className="border-b border-slate-100 bg-slate-50/50">
-                        <CardTitle className="text-sm font-bold flex items-center gap-2 text-slate-700">
-                            <Syringe className="w-4 h-4 text-slate-500" />
-                            Vaccination Distribution by Segment
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent className="h-[350px] pt-6">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={vaccinationData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-                                <CartesianGrid strokeDasharray="0 0" vertical={false} stroke="#e5e7eb" />
-                                <XAxis dataKey="name" fontSize={11} tick={{ fontWeight: 600, fill: '#374151' }} axisLine={{ stroke: '#9ca3af' }} tickLine={false} />
-                                <YAxis fontSize={11} axisLine={{ stroke: '#9ca3af' }} tickLine={false} tick={{ fill: '#6b7280' }} />
-                                <Tooltip content={<ExcelTooltip />} />
-                                <Legend verticalAlign="top" align="right" iconType="rect" wrapperStyle={{ fontSize: '10px', paddingBottom: '20px' }} />
-                                <Bar dataKey="Fully Vaccinated" stackId="vax" fill="#4472C4" />
-                                <Bar dataKey="Partially Vaccinated" stackId="vax" fill="#ED7D31" />
-                                <Bar dataKey="Not Vaccinated" stackId="vax" fill="#A5A5A5" />
-                            </BarChart>
-                        </ResponsiveContainer>
-                    </CardContent>
-                </Card>
-            )}
-
-            {/* Gender Demographic Split */}
-            {showGender && (
-                <Card className="shadow border-slate-200">
-                    <CardHeader className="border-b border-slate-100 bg-slate-50/50">
-                        <CardTitle className="text-sm font-bold flex items-center gap-2 text-slate-700">
-                            <Users className="w-4 h-4 text-slate-500" />
-                            Gender Demographics
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent className="h-[350px] pt-6">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={demographicData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-                                <CartesianGrid strokeDasharray="0 0" vertical={false} stroke="#e5e7eb" />
-                                <XAxis dataKey="name" fontSize={11} tick={{ fontWeight: 600, fill: '#374151' }} axisLine={{ stroke: '#9ca3af' }} tickLine={false} />
-                                <YAxis fontSize={11} axisLine={{ stroke: '#9ca3af' }} tickLine={false} tick={{ fill: '#6b7280' }} />
-                                <Tooltip content={<ExcelTooltip />} />
-                                <Legend verticalAlign="top" align="right" iconType="rect" wrapperStyle={{ fontSize: '10px', paddingBottom: '20px' }} />
-                                <Bar dataKey="Male" fill="#4472C4" barSize={25} />
-                                <Bar dataKey="Female" fill="#ED7D31" barSize={25} />
-                            </BarChart>
-                        </ResponsiveContainer>
-                    </CardContent>
-                </Card>
-            )}
-        </div>
-
-        {/* Comprehensive Disease Matrix */}
-        {showDisease && (
-            <Card className="shadow border-slate-200 overflow-hidden">
-                <CardHeader className="flex flex-col md:flex-row md:items-center justify-between gap-2 border-b border-slate-100 bg-slate-50/50">
-                    <CardTitle className="text-base font-bold flex items-center gap-2 text-slate-700">
-                        <Activity className="w-5 h-5 text-slate-500" />
-                        Disease Prevalence Matrix
+            <Card className="shadow border-slate-200">
+                <CardHeader className="border-b border-slate-100 bg-slate-50/50">
+                    <CardTitle className="text-sm font-bold flex items-center gap-2 text-slate-700">
+                        <Syringe className="w-4 h-4 text-slate-500" />
+                        Vaccination Distribution
                     </CardTitle>
-                    <Badge variant="outline" className="bg-slate-100 text-slate-700 border-slate-300 font-bold px-2 py-0.5 text-[10px] w-fit">
-                        Consolidated Analysis
-                    </Badge>
                 </CardHeader>
-                <CardContent className="h-[400px] md:h-[500px] pt-6 overflow-x-auto">
-                    <ResponsiveContainer width="100%" height="100%" minWidth={400}>
-                        <BarChart 
-                            data={diseaseChartData} 
-                            margin={{ top: 20, right: 30, left: 0, bottom: 80 }}
-                        >
+                <CardContent className="h-[350px] pt-6">
+                    <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={vaccinationData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
                             <CartesianGrid strokeDasharray="0 0" vertical={false} stroke="#e5e7eb" />
-                            <XAxis 
-                                dataKey="disease" 
-                                fontSize={10} 
-                                angle={-45}
-                                textAnchor="end"
-                                interval={0}
-                                height={80}
-                                tick={{ fill: '#374151', fontWeight: 600 }}
-                                axisLine={{ stroke: '#9ca3af' }}
-                                tickLine={false}
-                            />
-                            <YAxis fontSize={10} axisLine={{ stroke: '#9ca3af' }} tickLine={false} tick={{ fill: '#6b7280' }} />
+                            <XAxis dataKey="name" fontSize={11} tick={{ fontWeight: 600, fill: '#374151' }} axisLine={{ stroke: '#9ca3af' }} tickLine={false} />
+                            <YAxis fontSize={11} axisLine={{ stroke: '#9ca3af' }} tickLine={false} tick={{ fill: '#6b7280' }} />
                             <Tooltip content={<ExcelTooltip />} />
-                            <Legend verticalAlign="top" align="right" iconType="rect" wrapperStyle={{ fontSize: '10px', paddingBottom: '30px' }} />
-                            {clusters.map((c, i) => (
-                                <Bar 
-                                    key={c.id}
-                                    name={`C${c.id}`}
-                                    dataKey={`Cluster ${c.id}`} 
-                                    fill={CHART_COLORS[i % CHART_COLORS.length]} 
-                                    barSize={10}
-                                />
-                            ))}
+                            <Legend verticalAlign="top" align="right" iconType="rect" wrapperStyle={{ fontSize: '10px', paddingBottom: '20px' }} />
+                            <Bar dataKey="Fully Vaccinated" stackId="vax" fill="#4472C4" />
+                            <Bar dataKey="Partially Vaccinated" stackId="vax" fill="#ED7D31" />
+                            <Bar dataKey="Not Vaccinated" stackId="vax" fill="#A5A5A5" />
                         </BarChart>
                     </ResponsiveContainer>
                 </CardContent>
             </Card>
-        )}
+
+            <Card className="shadow border-slate-200">
+                <CardHeader className="border-b border-slate-100 bg-slate-50/50">
+                    <CardTitle className="text-sm font-bold flex items-center gap-2 text-slate-700">
+                        <Users className="w-4 h-4 text-slate-500" />
+                        Gender Demographics
+                    </CardTitle>
+                </CardHeader>
+                <CardContent className="h-[350px] pt-6">
+                    <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={demographicData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                            <CartesianGrid strokeDasharray="0 0" vertical={false} stroke="#e5e7eb" />
+                            <XAxis dataKey="name" fontSize={11} tick={{ fontWeight: 600, fill: '#374151' }} axisLine={{ stroke: '#9ca3af' }} tickLine={false} />
+                            <YAxis fontSize={11} axisLine={{ stroke: '#9ca3af' }} tickLine={false} tick={{ fill: '#6b7280' }} />
+                            <Tooltip content={<ExcelTooltip />} />
+                            <Legend verticalAlign="top" align="right" iconType="rect" wrapperStyle={{ fontSize: '10px', paddingBottom: '20px' }} />
+                            <Bar dataKey="Male" fill="#4472C4" barSize={25} />
+                            <Bar dataKey="Female" fill="#ED7D31" barSize={25} />
+                        </BarChart>
+                    </ResponsiveContainer>
+                </CardContent>
+            </Card>
+        </div>
+
+        <Card className="shadow border-slate-200 overflow-hidden">
+            <CardHeader className="flex flex-col md:flex-row md:items-center justify-between gap-2 border-b border-slate-100 bg-slate-50/50">
+                <CardTitle className="text-base font-bold flex items-center gap-2 text-slate-700">
+                    <Activity className="w-5 h-5 text-slate-500" />
+                    Disease Prevalence Matrix
+                </CardTitle>
+                <Badge variant="outline" className="bg-slate-100 text-slate-700 border-slate-300 font-bold px-2 py-0.5 text-[10px] w-fit">
+                    Consolidated Analysis
+                </Badge>
+            </CardHeader>
+            <CardContent className="h-[400px] md:h-[500px] pt-6 overflow-x-auto">
+                <ResponsiveContainer width="100%" height="100%" minWidth={400}>
+                    <BarChart 
+                        data={diseaseChartData} 
+                        margin={{ top: 20, right: 30, left: 0, bottom: 80 }}
+                    >
+                        <CartesianGrid strokeDasharray="0 0" vertical={false} stroke="#e5e7eb" />
+                        <XAxis 
+                            dataKey="disease" 
+                            fontSize={10} 
+                            angle={-45}
+                            textAnchor="end"
+                            interval={0}
+                            height={80}
+                            tick={{ fill: '#374151', fontWeight: 600 }}
+                            axisLine={{ stroke: '#9ca3af' }}
+                            tickLine={false}
+                        />
+                        <YAxis fontSize={10} axisLine={{ stroke: '#9ca3af' }} tickLine={false} tick={{ fill: '#6b7280' }} />
+                        <Tooltip content={<ExcelTooltip />} />
+                        <Legend verticalAlign="top" align="right" iconType="rect" wrapperStyle={{ fontSize: '10px', paddingBottom: '30px' }} />
+                        {clusters.map((c, i) => (
+                            <Bar 
+                                key={c.id}
+                                name={`C${c.id}`}
+                                dataKey={`Cluster ${c.id}`} 
+                                fill={CHART_COLORS[i % CHART_COLORS.length]} 
+                                barSize={10}
+                            />
+                        ))}
+                    </BarChart>
+                </ResponsiveContainer>
+            </CardContent>
+        </Card>
     </div>
   );
 }

@@ -54,7 +54,7 @@ export default function SettingsPage() {
                   <CardTitle className="text-lg">Data Management</CardTitle>
                 </div>
                 <CardDescription>Control local data persistence and analysis behavior.</CardDescription>
-              </CardHeader>
+              </Header>
               <CardContent className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
@@ -81,7 +81,7 @@ export default function SettingsPage() {
                   <CardTitle className="text-lg">Security & Privacy</CardTitle>
                 </div>
                 <CardDescription>Manage your data privacy settings.</CardDescription>
-              </CardHeader>
+              </Header>
               <CardContent className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
