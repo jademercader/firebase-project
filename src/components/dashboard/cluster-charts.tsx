@@ -17,7 +17,7 @@ import {
   Cell,
   Legend
 } from 'recharts';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { Activity, Target, PieChartIcon, Syringe, Users, Baby, Map as MapIcon } from 'lucide-react';
@@ -87,9 +87,9 @@ export function ClusterCharts() {
   if (!mounted || isLoading) {
       return (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <Skeleton className="h-[300px] w-full rounded-xl" />
-          <Skeleton className="h-[300px] w-full rounded-xl" />
-          <Skeleton className="h-[300px] w-full rounded-xl" />
+          <Skeleton className="h-[250px] md:h-[300px] w-full rounded-xl" />
+          <Skeleton className="h-[250px] md:h-[300px] w-full rounded-xl" />
+          <Skeleton className="h-[250px] md:h-[300px] w-full rounded-xl" />
         </div>
       );
   }
@@ -166,21 +166,21 @@ export function ClusterCharts() {
   }));
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500 max-w-[1400px] mx-auto">
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+    <div className="space-y-6 md:space-y-8 animate-in fade-in duration-500 max-w-[1400px] mx-auto">
+        <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
             {/* Validation Radar */}
             <Card className="shadow border-slate-200">
                 <CardHeader className="pb-2 border-b border-slate-100 bg-slate-50/50">
-                    <CardTitle className="text-sm font-bold flex items-center gap-2 text-slate-700">
+                    <CardTitle className="text-xs md:text-sm font-bold flex items-center gap-2 text-slate-700">
                         <Target className="w-4 h-4 text-slate-500" />
                         Analysis Performance
                     </CardTitle>
                 </CardHeader>
-                <CardContent className="h-[280px] pt-4">
+                <CardContent className="h-[250px] md:h-[280px] pt-4">
                     <ResponsiveContainer width="100%" height="100%">
                         <RadarChart cx="50%" cy="50%" outerRadius="70%" data={performanceData}>
                             <PolarGrid stroke="#d1d5db" />
-                            <PolarAngleAxis dataKey="metric" fontSize={10} tick={{ fill: '#4b5563', fontWeight: 600 }} />
+                            <PolarAngleAxis dataKey="metric" fontSize={9} tick={{ fill: '#4b5563', fontWeight: 600 }} />
                             <Radar name="Performance" dataKey="score" stroke="#4472C4" fill="#4472C4" fillOpacity={0.6} />
                             <Tooltip content={<ExcelTooltip />} />
                         </RadarChart>
@@ -188,30 +188,30 @@ export function ClusterCharts() {
                 </CardContent>
             </Card>
 
-            {/* High Risk Barangay Chart - Ranked List Style */}
+            {/* High Risk Barangay Chart */}
             <Card className="shadow border-slate-200">
                 <CardHeader className="pb-2 border-b border-slate-100 bg-slate-50/50">
-                    <CardTitle className="text-sm font-bold flex items-center gap-2 text-slate-700">
+                    <CardTitle className="text-xs md:text-sm font-bold flex items-center gap-2 text-slate-700">
                         <MapIcon className="w-4 h-4 text-slate-500" />
                         High-Risk Neighborhoods
                     </CardTitle>
                 </CardHeader>
-                <CardContent className="h-[280px] pt-4">
+                <CardContent className="h-[250px] md:h-[280px] pt-4">
                     <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={barangayRiskData} layout="vertical" margin={{ left: 10, right: 30, top: 0, bottom: 0 }}>
+                        <BarChart data={barangayRiskData} layout="vertical" margin={{ left: 5, right: 30, top: 0, bottom: 0 }}>
                             <CartesianGrid strokeDasharray="0 0" horizontal={true} vertical={false} stroke="#e5e7eb" />
                             <XAxis type="number" hide />
                             <YAxis 
                                 dataKey="name" 
                                 type="category" 
-                                fontSize={10} 
-                                width={100}
+                                fontSize={9} 
+                                width={80}
                                 tick={{ fontWeight: 600, fill: '#374151' }}
                                 axisLine={{ stroke: '#9ca3af' }}
                                 tickLine={false}
                             />
                             <Tooltip content={<ExcelTooltip />} />
-                            <Bar dataKey="count" fill="#ED7D31" barSize={18} name="Total Cases" />
+                            <Bar dataKey="count" fill="#ED7D31" barSize={14} name="Total Cases" />
                         </BarChart>
                     </ResponsiveContainer>
                 </CardContent>
@@ -220,51 +220,52 @@ export function ClusterCharts() {
             {/* Population Distribution */}
             <Card className="shadow border-slate-200">
                 <CardHeader className="pb-2 border-b border-slate-100 bg-slate-50/50">
-                    <CardTitle className="text-sm font-bold flex items-center gap-2 text-slate-700">
+                    <CardTitle className="text-xs md:text-sm font-bold flex items-center gap-2 text-slate-700">
                         <PieChartIcon className="w-4 h-4 text-slate-500" />
                         Population Overview
                     </CardTitle>
                 </CardHeader>
-                <CardContent className="h-[280px] pt-4">
+                <CardContent className="h-[250px] md:h-[280px] pt-4">
                     <ResponsiveContainer width="100%" height="100%">
                         <PieChart>
                             <Pie 
                                 data={populationData} 
                                 cx="50%" 
                                 cy="50%" 
-                                outerRadius={80} 
+                                outerRadius={60} 
                                 dataKey="value" 
-                                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                                label={({ name, percent }) => `${name.split(' ')[1]} ${(percent * 100).toFixed(0)}%`}
                                 labelLine={true}
+                                fontSize={9}
                             >
                                 {populationData.map((entry, index) => <Cell key={index} fill={entry.color} stroke="#fff" strokeWidth={1} />)}
                             </Pie>
                             <Tooltip content={<ExcelTooltip />} />
-                            <Legend verticalAlign="bottom" align="center" iconType="rect" wrapperStyle={{ fontSize: '10px', paddingTop: '10px' }} />
+                            <Legend verticalAlign="bottom" align="center" iconType="rect" wrapperStyle={{ fontSize: '9px', paddingTop: '10px' }} />
                         </PieChart>
                     </ResponsiveContainer>
                 </CardContent>
             </Card>
         </div>
 
-        <div className="grid gap-6 md:grid-cols-2">
-            {/* Vaccination Stacked Column */}
+        <div className="grid gap-6 grid-cols-1 md:grid-cols-2">
+            {/* Vaccination Status */}
             {showVaccination && (
                 <Card className="shadow border-slate-200">
                     <CardHeader className="border-b border-slate-100 bg-slate-50/50">
-                        <CardTitle className="text-sm font-bold flex items-center gap-2">
+                        <CardTitle className="text-xs md:text-sm font-bold flex items-center gap-2">
                             <Syringe className="w-4 h-4 text-slate-500" />
                             Vaccination Status by Segment
                         </CardTitle>
                     </CardHeader>
-                    <CardContent className="h-[350px] pt-6">
+                    <CardContent className="h-[300px] md:h-[350px] pt-6">
                         <ResponsiveContainer width="100%" height="100%">
                             <BarChart data={vaccinationData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
                                 <CartesianGrid strokeDasharray="0 0" vertical={false} stroke="#e5e7eb" />
-                                <XAxis dataKey="name" fontSize={11} tick={{ fontWeight: 600, fill: '#374151' }} axisLine={{ stroke: '#9ca3af' }} tickLine={false} />
-                                <YAxis fontSize={11} axisLine={{ stroke: '#9ca3af' }} tickLine={false} tick={{ fill: '#6b7280' }} />
+                                <XAxis dataKey="name" fontSize={10} tick={{ fontWeight: 600, fill: '#374151' }} axisLine={{ stroke: '#9ca3af' }} tickLine={false} />
+                                <YAxis fontSize={10} axisLine={{ stroke: '#9ca3af' }} tickLine={false} tick={{ fill: '#6b7280' }} />
                                 <Tooltip content={<ExcelTooltip />} />
-                                <Legend verticalAlign="top" align="right" iconType="rect" wrapperStyle={{ fontSize: '10px', paddingBottom: '20px' }} />
+                                <Legend verticalAlign="top" align="right" iconType="rect" wrapperStyle={{ fontSize: '9px', paddingBottom: '20px' }} />
                                 <Bar dataKey="Fully Vaccinated" stackId="vax" fill="#4472C4" />
                                 <Bar dataKey="Partially Vaccinated" stackId="vax" fill="#ED7D31" />
                                 <Bar dataKey="Not Vaccinated" stackId="vax" fill="#A5A5A5" />
@@ -274,25 +275,25 @@ export function ClusterCharts() {
                 </Card>
             )}
 
-            {/* Gender Balance Clustered Column */}
+            {/* Gender Demographic Split */}
             {showGender && (
                 <Card className="shadow border-slate-200">
                     <CardHeader className="border-b border-slate-100 bg-slate-50/50">
-                        <CardTitle className="text-sm font-bold flex items-center gap-2">
+                        <CardTitle className="text-xs md:text-sm font-bold flex items-center gap-2">
                             <Users className="w-4 h-4 text-slate-500" />
                             Gender Demographic Split
                         </CardTitle>
                     </CardHeader>
-                    <CardContent className="h-[350px] pt-6">
+                    <CardContent className="h-[300px] md:h-[350px] pt-6">
                         <ResponsiveContainer width="100%" height="100%">
                             <BarChart data={demographicData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
                                 <CartesianGrid strokeDasharray="0 0" vertical={false} stroke="#e5e7eb" />
-                                <XAxis dataKey="name" fontSize={11} tick={{ fontWeight: 600, fill: '#374151' }} axisLine={{ stroke: '#9ca3af' }} tickLine={false} />
-                                <YAxis fontSize={11} axisLine={{ stroke: '#9ca3af' }} tickLine={false} tick={{ fill: '#6b7280' }} />
+                                <XAxis dataKey="name" fontSize={10} tick={{ fontWeight: 600, fill: '#374151' }} axisLine={{ stroke: '#9ca3af' }} tickLine={false} />
+                                <YAxis fontSize={10} axisLine={{ stroke: '#9ca3af' }} tickLine={false} tick={{ fill: '#6b7280' }} />
                                 <Tooltip content={<ExcelTooltip />} />
-                                <Legend verticalAlign="top" align="right" iconType="rect" wrapperStyle={{ fontSize: '10px', paddingBottom: '20px' }} />
-                                <Bar dataKey="Male" fill="#4472C4" barSize={30} />
-                                <Bar dataKey="Female" fill="#ED7D31" barSize={30} />
+                                <Legend verticalAlign="top" align="right" iconType="rect" wrapperStyle={{ fontSize: '9px', paddingBottom: '20px' }} />
+                                <Bar dataKey="Male" fill="#4472C4" barSize={25} />
+                                <Bar dataKey="Female" fill="#ED7D31" barSize={25} />
                             </BarChart>
                         </ResponsiveContainer>
                     </CardContent>
@@ -300,73 +301,48 @@ export function ClusterCharts() {
             )}
         </div>
 
-        {/* Multi-Series Disease Matrix */}
+        {/* Comprehensive Disease Matrix */}
         {showDisease && (
-            <Card className="shadow border-slate-200">
-                <CardHeader className="flex flex-row items-center justify-between border-b border-slate-100 bg-slate-50/50">
-                    <div>
-                        <CardTitle className="text-base font-bold flex items-center gap-2">
-                            <Activity className="w-5 h-5 text-slate-500" />
-                            Disease Prevalence Matrix
-                        </CardTitle>
-                    </div>
-                    <Badge variant="outline" className="bg-slate-100 text-slate-700 border-slate-300 font-bold px-3 py-1 text-xs">
+            <Card className="shadow border-slate-200 overflow-hidden">
+                <CardHeader className="flex flex-col md:flex-row md:items-center justify-between gap-2 border-b border-slate-100 bg-slate-50/50">
+                    <CardTitle className="text-sm md:text-base font-bold flex items-center gap-2">
+                        <Activity className="w-5 h-5 text-slate-500" />
+                        Disease Prevalence Matrix
+                    </CardTitle>
+                    <Badge variant="outline" className="bg-slate-100 text-slate-700 border-slate-300 font-bold px-2 py-0.5 text-[10px] w-fit">
                         Consolidated Analysis
                     </Badge>
                 </CardHeader>
-                <CardContent className="h-[500px] pt-6">
-                    <ResponsiveContainer width="100%" height="100%">
+                <CardContent className="h-[400px] md:h-[500px] pt-6 overflow-x-auto">
+                    <ResponsiveContainer width="100%" height="100%" minWidth={400}>
                         <BarChart 
                             data={diseaseChartData} 
-                            margin={{ top: 20, right: 30, left: 0, bottom: 100 }}
+                            margin={{ top: 20, right: 30, left: 0, bottom: 80 }}
                         >
                             <CartesianGrid strokeDasharray="0 0" vertical={false} stroke="#e5e7eb" />
                             <XAxis 
                                 dataKey="disease" 
-                                fontSize={11} 
+                                fontSize={9} 
                                 angle={-45}
                                 textAnchor="end"
                                 interval={0}
-                                height={120}
+                                height={80}
                                 tick={{ fill: '#374151', fontWeight: 600 }}
                                 axisLine={{ stroke: '#9ca3af' }}
                                 tickLine={false}
                             />
-                            <YAxis fontSize={11} axisLine={{ stroke: '#9ca3af' }} tickLine={false} tick={{ fill: '#6b7280' }} />
+                            <YAxis fontSize={9} axisLine={{ stroke: '#9ca3af' }} tickLine={false} tick={{ fill: '#6b7280' }} />
                             <Tooltip content={<ExcelTooltip />} />
-                            <Legend verticalAlign="top" align="right" iconType="rect" wrapperStyle={{ fontSize: '10px', paddingBottom: '30px' }} />
+                            <Legend verticalAlign="top" align="right" iconType="rect" wrapperStyle={{ fontSize: '9px', paddingBottom: '30px' }} />
                             {clusters.map((c, i) => (
                                 <Bar 
                                     key={c.id}
-                                    name={`Cluster ${c.id}`}
+                                    name={`C${c.id}`}
                                     dataKey={`Cluster ${c.id}`} 
                                     fill={CHART_COLORS[i % CHART_COLORS.length]} 
-                                    barSize={12}
+                                    barSize={10}
                                 />
                             ))}
-                        </BarChart>
-                    </ResponsiveContainer>
-                </CardContent>
-            </Card>
-        )}
-
-        {/* Average Age Column Chart */}
-        {showAge && (
-            <Card className="shadow border-slate-200">
-                <CardHeader className="border-b border-slate-100 bg-slate-50/50">
-                    <CardTitle className="text-sm font-bold flex items-center gap-2">
-                        <Baby className="w-4 h-4 text-slate-500" />
-                        Mean Population Age
-                    </CardTitle>
-                </CardHeader>
-                <CardContent className="h-[300px] pt-6">
-                    <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={demographicData} margin={{ top: 10, right: 30, left: 0, bottom: 20 }}>
-                            <CartesianGrid strokeDasharray="0 0" vertical={false} stroke="#e5e7eb" />
-                            <XAxis dataKey="name" fontSize={11} tick={{ fontWeight: 600, fill: '#374151' }} axisLine={{ stroke: '#9ca3af' }} tickLine={false} />
-                            <YAxis fontSize={11} axisLine={{ stroke: '#9ca3af' }} tickLine={false} tick={{ fill: '#6b7280' }} />
-                            <Tooltip content={<ExcelTooltip />} />
-                            <Bar dataKey="Avg Age" fill="#4472C4" barSize={50} name="Average Age (Years)" />
                         </BarChart>
                     </ResponsiveContainer>
                 </CardContent>

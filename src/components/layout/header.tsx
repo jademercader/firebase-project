@@ -17,23 +17,23 @@ export function Header() {
   const { user, logout } = useAuth();
 
   return (
-    <header className="sticky top-0 z-10 w-full bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="flex h-14 items-center px-4 md:px-8 border-b">
+    <header className="sticky top-0 z-50 w-full bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div className="flex h-14 md:h-16 items-center px-4 md:px-8 border-b">
         <div className="flex items-center gap-2">
           <SidebarTrigger className="md:hidden" />
         </div>
-        <div className="flex flex-1 items-center justify-end space-x-4">
-          <nav className="flex items-center space-x-2">
-            <Button variant="ghost" size="icon" className="rounded-full">
-              <Bell className="h-5 w-5 text-slate-500" />
+        <div className="flex flex-1 items-center justify-end space-x-2 md:space-x-4">
+          <nav className="flex items-center space-x-1 md:space-x-2">
+            <Button variant="ghost" size="icon" className="rounded-full h-8 w-8 md:h-10 md:w-10">
+              <Bell className="h-4 w-4 md:h-5 md:w-5 text-slate-500" />
               <span className="sr-only">Notifications</span>
             </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="relative h-9 w-9 rounded-full ring-offset-background transition-all hover:ring-2 hover:ring-primary/20">
-                  <Avatar className="h-9 w-9 border-2 border-primary/10">
+                <Button variant="ghost" className="relative h-8 w-8 md:h-10 md:w-10 rounded-full ring-offset-background transition-all hover:ring-2 hover:ring-primary/20 p-0">
+                  <Avatar className="h-8 w-8 md:h-9 md:w-9 border-2 border-primary/10">
                     <AvatarImage src="" alt="User" />
-                    <AvatarFallback className="bg-primary/5 text-primary font-bold">
+                    <AvatarFallback className="bg-primary/5 text-primary text-xs md:text-sm font-bold">
                         {user?.name?.[0].toUpperCase() ?? 'A'}
                     </AvatarFallback>
                   </Avatar>
@@ -43,7 +43,7 @@ export function Header() {
                 <DropdownMenuLabel className="font-normal">
                   <div className="flex flex-col space-y-1">
                     <p className="text-sm font-bold leading-none text-slate-900">{user?.name ?? 'Health Admin'}</p>
-                    <p className="text-xs leading-none text-muted-foreground font-medium">
+                    <p className="text-xs leading-none text-muted-foreground font-medium truncate">
                       {user?.email ?? 'admin@barangay.gov'}
                     </p>
                   </div>
