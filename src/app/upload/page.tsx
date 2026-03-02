@@ -39,16 +39,6 @@ export default function UploadPage() {
         skipEmptyLines: 'greedy',
         transformHeader: (header) => header.trim(),
         complete: (results) => {
-          const criticalErrors = results.errors.filter(e => 
-            e.code !== 'TooManyFields' && 
-            e.code !== 'UndetectableDelimiter' &&
-            e.code !== 'TooFewFields'
-          );
-          
-          if (criticalErrors.length > 0) {
-            console.warn('Parsing warnings:', criticalErrors);
-          }
-          
           const parsedRecords = results.data
             .filter((row: any) => !isRowEmpty(row))
             .map((row: any, index: number): HealthRecord => {
@@ -99,7 +89,15 @@ export default function UploadPage() {
   const handleSaveData = () => {
     if (records.length === 0) return;
     
-    // Persist exclusively to Firestore as per requirements (no local storage)
+    // Check for both availability and loading state
+    if (isUserLoading) {
+      toast({
+        title: 'Authenticating...',
+        description: 'Establishing a secure cloud session. Please wait a moment.',
+      });
+      return;
+    }
+
     if (user && firestore) {
       records.forEach(record => {
         const recordRef = doc(collection(firestore, 'users', user.uid, 'health_records'), record.id);
@@ -112,13 +110,13 @@ export default function UploadPage() {
       
       toast({
         title: 'Cloud Database Synchronized!',
-        description: `${records.length} records have been recorded in your secure database and are ready for dashboard analysis.`,
+        description: `${records.length} records recorded in your secure database.`,
       });
     } else {
       toast({
         variant: 'destructive',
-        title: 'Cloud Connection Pending',
-        description: 'Establishing a secure session. Please wait a moment and try again.',
+        title: 'Cloud Access Error',
+        description: 'Unable to establish a secure session. Please refresh and try again.',
       });
     }
   }
