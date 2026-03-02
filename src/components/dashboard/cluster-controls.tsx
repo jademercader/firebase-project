@@ -33,17 +33,20 @@ export function ClusterControls() {
     const fetchLocalData = () => {
         const saved = localStorage.getItem(RECORDS_STORAGE_KEY);
         if (saved) {
-            setLocalRecords(JSON.parse(saved));
+            try {
+                const parsed = JSON.parse(saved);
+                setLocalRecords(Array.isArray(parsed) ? parsed : []);
+            } catch (e) {
+                setLocalRecords([]);
+            }
         } else {
             setLocalRecords([]);
         }
     };
     fetchLocalData();
-    window.addEventListener('storage', fetchLocalData);
     window.addEventListener('records-updated', fetchLocalData);
     window.addEventListener('analysis-updated', fetchLocalData);
     return () => {
-        window.removeEventListener('storage', fetchLocalData);
         window.removeEventListener('records-updated', fetchLocalData);
         window.removeEventListener('analysis-updated', fetchLocalData);
     };
@@ -138,7 +141,7 @@ export function ClusterControls() {
           </Alert>
         )}
 
-        <div className="space-y-4">
+        <div className={`space-y-4 ${!hasData ? 'opacity-50 pointer-events-none' : ''}`}>
             <Label className="flex items-center gap-2 text-slate-700 font-bold">
               Select Analysis Dimensions
               <Info className="w-3 h-3 text-muted-foreground" />
@@ -164,7 +167,7 @@ export function ClusterControls() {
                             />
                             <label
                                 htmlFor={indicator.id}
-                                className={`text-sm font-semibold leading-none cursor-pointer transition-colors ${!hasData ? 'text-slate-300 cursor-not-allowed' : 'text-slate-600 hover:text-primary'}`}
+                                className={`text-sm font-semibold leading-none cursor-pointer transition-colors ${!hasData ? 'text-slate-300' : 'text-slate-600 hover:text-primary'}`}
                             >
                                 {indicator.name}
                             </label>
@@ -174,7 +177,7 @@ export function ClusterControls() {
             </div>
         </div>
 
-        <div className={`space-y-4 p-4 rounded-xl border transition-colors ${!hasData ? 'bg-slate-50/50 border-slate-100 opacity-50' : 'bg-slate-50 border-slate-100'}`}>
+        <div className={`space-y-4 p-4 rounded-xl border transition-colors ${!hasData ? 'bg-slate-50/50 border-slate-100 opacity-50 pointer-events-none' : 'bg-slate-50 border-slate-100'}`}>
             <div className="flex justify-between items-center">
                 <Label htmlFor="clusters" className="text-slate-700 font-bold">Number of Clusters: {numClusters}</Label>
                 <span className={`text-xs font-black px-3 py-1 rounded-full border shadow-sm ${!hasData ? 'bg-slate-100 text-slate-400 border-slate-200' : 'bg-primary/10 text-primary border-primary/20'}`}>

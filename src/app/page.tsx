@@ -23,13 +23,16 @@ const DynamicClusterMap = dynamic(
 export default function DashboardPage() {
   const mounted = useMounted();
 
-  // Erase analysis results on refresh to avoid repetitions
+  // Erase ALL data and analysis on refresh to ensure a clean slate
   useEffect(() => {
     if (mounted) {
       localStorage.removeItem('analysis_result');
       localStorage.removeItem('health_clusters');
+      localStorage.removeItem('health_records'); // Clear source records too as requested
+      
       // Notify components to update their state to "empty"
       window.dispatchEvent(new Event('analysis-updated'));
+      window.dispatchEvent(new Event('records-updated'));
     }
   }, [mounted]);
 
