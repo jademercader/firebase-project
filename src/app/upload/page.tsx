@@ -88,7 +88,7 @@ export default function UploadPage() {
           setRecords(parsedRecords);
           toast({
             title: 'File Parsed Successfully',
-            description: `${parsedRecords.length} records loaded and mapped to Barangay spatial points.`,
+            description: `${parsedRecords.length} records loaded and ready for database synchronization.`,
           });
         },
       });
@@ -98,10 +98,7 @@ export default function UploadPage() {
   const handleSaveData = () => {
     if (records.length === 0) return;
     
-    // 1. Update local storage for immediate analysis engine use
-    localStorage.setItem('health_records', JSON.stringify(records));
-    
-    // 2. Persist to Firestore if user is authenticated
+    // Persist exclusively to Firestore as per requirements (no local storage)
     if (user && firestore) {
       records.forEach(record => {
         const recordRef = doc(collection(firestore, 'users', user.uid, 'health_records'), record.id);
@@ -113,13 +110,14 @@ export default function UploadPage() {
       });
       
       toast({
-        title: 'Database Updated Successfully!',
-        description: `${records.length} records have been recorded in your cloud database and are ready for analysis.`,
+        title: 'Cloud Database Synchronized!',
+        description: `${records.length} records have been recorded in your secure database and are ready for dashboard analysis.`,
       });
     } else {
       toast({
-        title: 'Data Saved (Local Only)',
-        description: 'Records are available for this session. Sign in to sync with your database.',
+        variant: 'destructive',
+        title: 'Cloud Connection Pending',
+        description: 'Establishing a secure session. Please wait a moment and try again.',
       });
     }
   }

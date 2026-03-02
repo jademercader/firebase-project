@@ -1,20 +1,21 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
-import { PlayCircle, Info, Database, AlertCircle } from 'lucide-react';
+import { PlayCircle, Info, Cloud, AlertCircle } from 'lucide-react';
 import { healthIndicators } from '@/lib/mock-data';
 import { useToast } from '@/hooks/use-toast';
 import { runClusterAnalysis } from '@/app/actions';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import type { HealthRecord } from '@/lib/types';
 import { useMounted } from '@/hooks/use-mounted';
+import { useFirestore, useUser, useCollection, useMemoFirebase } from '@/firebase';
+import { collection } from 'firebase/firestore';
 
 const ANALYSIS_STORAGE_KEY = 'analysis_result';
-const RECORDS_STORAGE_KEY = 'health_records';
 const CLUSTERS_STORAGE_KEY = 'health_clusters';
 
 export function ClusterControls() {
@@ -24,32 +25,20 @@ export function ClusterControls() {
     'age', 'gender', 'vaccinationStatus', 'disease'
   ]);
   const [isAnalysisRunning, setIsAnalysisRunning] = useState(false);
-  const [healthRecords, setHealthRecords] = useState<HealthRecord[]>([]);
-  const [isUsingUploadedData, setIsUsingUploadedData] = useState(false);
   const { toast } = useToast();
 
-  useEffect(() => {
-    if (!mounted) return;
-    try {
-        const savedRecords = localStorage.getItem(RECORDS_STORAGE_KEY);
-        if (savedRecords) {
-            const parsedRecords = JSON.parse(savedRecords);
-            if (parsedRecords.length > 0) {
-                setHealthRecords(parsedRecords);
-                setIsUsingUploadedData(true);
-            } else {
-                setHealthRecords([]);
-                setIsUsingUploadedData(false);
-            }
-        } else {
-            setHealthRecords([]);
-            setIsUsingUploadedData(false);
-        }
-    } catch (error) {
-        setHealthRecords([]);
-        setIsUsingUploadedData(false);
-    }
-  }, [mounted]);
+  const { firestore } = useFirestore();
+  const { user } = useUser();
+
+  // Fetch records from Firestore cloud database instead of localStorage
+  const recordsRef = useMemoFirebase(() => {
+    if (!firestore || !user) return null;
+    return collection(firestore, 'users', user.uid, 'health_records');
+  }, [firestore, user]);
+
+  const { data: dbRecords, isLoading: isDbLoading } = useCollection<HealthRecord>(recordsRef);
+
+  const hasData = dbRecords && dbRecords.length > 0;
 
   const handleIndicatorChange = (indicatorId: string, checked: boolean) => {
     const indicatorMap: Record<string, string> = {
@@ -67,11 +56,11 @@ export function ClusterControls() {
   };
 
   const handleRunAnalysis = async () => {
-      if (healthRecords.length === 0) {
+      if (!dbRecords || dbRecords.length === 0) {
         toast({
             variant: "destructive",
             title: "Analysis Denied",
-            description: "No uploaded dataset detected. Please upload a CSV file in the 'Upload Data' section first."
+            description: "No uploaded dataset detected in your cloud account. Please upload a file in the 'Upload Data' section first."
         });
         return;
       }
@@ -79,7 +68,7 @@ export function ClusterControls() {
       setIsAnalysisRunning(true);
       
       const result = await runClusterAnalysis({
-          healthRecordsData: JSON.stringify(healthRecords),
+          healthRecordsData: JSON.stringify(dbRecords),
           numClusters: numClusters,
           selectedIndicators: selectedIndicators
       });
@@ -94,7 +83,7 @@ export function ClusterControls() {
           
           toast({
               title: "Analysis Complete",
-              description: `Processed ${healthRecords.length} records into ${result.data.clusters.length} clusters.`
+              description: `Processed ${dbRecords.length} cloud records into ${result.data.clusters.length} population clusters.`
           });
 
           window.dispatchEvent(new Event('analysis-updated'));
@@ -117,24 +106,24 @@ export function ClusterControls() {
       <CardHeader>
         <CardTitle className="font-headline">K-Means Health Clustering Engine</CardTitle>
         <CardDescription>
-          Identify population segments based on specific health markers.
+          Identify population segments based on specific health markers using live cloud data.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
-        {isUsingUploadedData ? (
+        {hasData ? (
           <Alert className="border-primary/50 text-primary bg-primary/5">
-            <Database className="h-4 w-4" />
-            <AlertTitle className="font-bold">Dataset Source: User Upload</AlertTitle>
+            <Cloud className="h-4 w-4" />
+            <AlertTitle className="font-bold">Source: Cloud Database</AlertTitle>
             <AlertDescription>
-              Ready to analyze {healthRecords.length} records from your specific dataset.
+              Ready to analyze {dbRecords.length} records synchronized from your account.
             </AlertDescription>
           </Alert>
         ) : (
           <Alert variant="destructive" className="bg-destructive/5">
             <AlertCircle className="h-4 w-4" />
-            <AlertTitle className="font-bold">Dataset Required</AlertTitle>
+            <AlertTitle className="font-bold">Database Required</AlertTitle>
             <AlertDescription>
-              Analysis is disabled. Please go to the <strong>Upload Data</strong> page and provide a CSV file to proceed.
+              Analysis is on standby. Please go to the <strong>Upload Data</strong> page to synchronize your records with the cloud.
             </AlertDescription>
           </Alert>
         )}
@@ -189,11 +178,11 @@ export function ClusterControls() {
         </div>
          <Button 
             onClick={handleRunAnalysis} 
-            disabled={isAnalysisRunning || !isUsingUploadedData} 
+            disabled={isAnalysisRunning || !hasData || isDbLoading} 
             className="w-full md:w-auto shadow-sm hover:shadow-md transition-all"
          >
           <PlayCircle className="mr-2 h-4 w-4" />
-          {isAnalysisRunning ? 'Processing Dataset...' : 'Execute Clustering Analysis'}
+          {isAnalysisRunning ? 'Processing Cloud Data...' : 'Execute Clustering Analysis'}
         </Button>
       </CardContent>
     </Card>
