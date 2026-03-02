@@ -11,6 +11,7 @@ interface AuthContextType {
   login: (credentials: { email: string; password?: string }) => boolean;
   signup: (details: User) => boolean;
   logout: () => void;
+  updateProfile: (updates: Partial<User>) => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -76,6 +77,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     router.push('/login');
   };
 
+  const updateProfile = (updates: Partial<User>) => {
+    if (!user) return false;
+
+    const usersRaw = localStorage.getItem(USERS_STORAGE_KEY);
+    const users: User[] = usersRaw ? JSON.parse(usersRaw) : [];
+    
+    const userIndex = users.findIndex(u => u.email === user.email);
+    if (userIndex === -1) return false;
+
+    const updatedUser = { ...users[userIndex], ...updates };
+    users[userIndex] = updatedUser;
+    localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(users));
+
+    const { password, ...userWithoutPassword } = updatedUser;
+    setUser(userWithoutPassword as User);
+    localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(userWithoutPassword));
+    
+    return true;
+  };
+
   return (
     <AuthContext.Provider value={{ 
       user, 
@@ -83,7 +104,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isLoading, 
       login, 
       signup, 
-      logout 
+      logout,
+      updateProfile
     }}>
       {children}
     </AuthContext.Provider>

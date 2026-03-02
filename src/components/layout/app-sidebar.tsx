@@ -38,7 +38,7 @@ export function AppSidebar() {
         <SidebarMenu>
           {menuItems.map((item) => (
             <SidebarMenuItem key={item.href}>
-              <Link href={item.href} passHref>
+              <Link href={item.href} passHref legacyBehavior>
                 <SidebarMenuButton
                   isActive={pathname === item.href}
                   icon={<item.icon />}
@@ -54,10 +54,26 @@ export function AppSidebar() {
       <SidebarFooter>
         <SidebarMenu>
             <SidebarMenuItem>
-                 <SidebarMenuButton icon={<Settings />} tooltip="Settings">Settings</SidebarMenuButton>
+              <Link href="/settings" passHref legacyBehavior>
+                <SidebarMenuButton 
+                  isActive={pathname === '/settings'} 
+                  icon={<Settings />} 
+                  tooltip="Settings"
+                >
+                  Settings
+                </SidebarMenuButton>
+              </Link>
             </SidebarMenuItem>
             <SidebarMenuItem>
-                <SidebarMenuButton icon={<HelpCircle />} tooltip="Help">Help</SidebarMenuButton>
+              <Link href="/help" passHref legacyBehavior>
+                <SidebarMenuButton 
+                  isActive={pathname === '/help'} 
+                  icon={<HelpCircle />} 
+                  tooltip="Help"
+                >
+                  Help
+                </SidebarMenuButton>
+              </Link>
             </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>
